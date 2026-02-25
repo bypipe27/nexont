@@ -1,0 +1,106 @@
+version: '3.9'
+
+services:
+
+  # ─── Infraestructura ──────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: nexont_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nexont
+      POSTGRES_PASSWORD: nexont_pass
+      POSTGRES_DB: nexont_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  mongodb:
+    image: mongo:7
+    container_name: nexont_mongo
+    restart: unless-stopped
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo_data:/data/db
+
+  redis:
+    image: redis:7-alpine
+    container_name: nexont_redis
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: nexont_rabbitmq
+    restart: unless-stopped
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+
+  # ─── Core API (Monolito Modular) ─────────────────────────────────────────
+  core-api:
+    build: ./core-api
+    container_name: nexont_core_api
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+    env_file:
+      - ./core-api/.env
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+
+  # ─── Microservicios ──────────────────────────────────────────────────────
+  chat-service:
+    build: ./services/chat-service
+    container_name: nexont_chat
+    restart: unless-stopped
+    ports:
+      - '3001:3001'
+    env_file:
+      - ./services/chat-service/.env
+    depends_on:
+      - redis
+      - mongodb
+      - rabbitmq
+
+  chatbot-service:
+    build: ./services/chatbot-service
+    container_name: nexont_chatbot
+    restart: unless-stopped
+    ports:
+      - '8000:8000'
+    env_file:
+      - ./services/chatbot-service/.env
+    depends_on:
+      - redis
+      - rabbitmq
+
+  search-service:
+    build: ./services/search-service
+    container_name: nexont_search
+    restart: unless-stopped
+    ports:
+      - '3002:3002'
+    env_file:
+      - ./services/search-service/.env
+    depends_on:
+      - redis
+
+  # ─── Frontend ────────────────────────────────────────────────────────────
+  frontend:
+    build: ./frontend
+    container_name: nexont_frontend
+    restart: unless-stopped
+    ports:
+      - '80:80'
+    depends_on:
+      - core-api
+
+volumes:
+  postgres_data:
+  mongo_data:
