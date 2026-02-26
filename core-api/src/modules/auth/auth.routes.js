@@ -1,9 +1,8 @@
 const router = require('express').Router();
+const authController = require('./auth.controller');
 
 // POST /api/v1/auth/register
-router.post('/register', (req, res) => {
-  res.json({ message: 'register - TODO' });
-});
+router.post('/register', authController.register);
 
 // POST /api/v1/auth/login
 router.post('/login', (req, res) => {
