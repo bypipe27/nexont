@@ -12,8 +12,43 @@ const register = async (userData) => {
 
   // 1. Verificar si el email ya existe
   const existingUser = await prisma.user.findUnique({ where: { email } });
+
   if (existingUser) {
-    throw new Error('El correo electrónico ya está registrado');
+    // Si ya verificó su email, no puede volver a registrarse
+    if (existingUser.isEmailVerified) {
+      throw new Error('El correo electrónico ya está registrado');
+    }
+
+    // Si existe pero NO ha verificado, actualizar datos y reenviar verificación
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const emailVerifyToken = crypto.randomBytes(32).toString('hex');
+    const emailVerifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    const user = await prisma.user.update({
+      where: { id: existingUser.id },
+      data: {
+        password: hashedPassword,
+        firstName,
+        lastName,
+        emailVerifyToken,
+        emailVerifyExpires,
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        createdAt: true,
+      },
+    });
+
+    try {
+      await sendVerificationEmail(email, firstName, emailVerifyToken);
+    } catch (emailError) {
+      console.error('Error al reenviar correo de verificación:', emailError.message);
+    }
+
+    return { user };
   }
 
   // 2. Encriptar la contraseña
@@ -42,8 +77,12 @@ const register = async (userData) => {
     },
   });
 
-  // 5. Enviar correo de verificación
-  await sendVerificationEmail(email, firstName, emailVerifyToken);
+  // 5. Enviar correo de verificación (no bloquea el registro si falla)
+  try {
+    await sendVerificationEmail(email, firstName, emailVerifyToken);
+  } catch (emailError) {
+    console.error('Error al enviar correo de verificación:', emailError.message);
+  }
 
   return { user };
 };

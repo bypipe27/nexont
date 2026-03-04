@@ -9,6 +9,11 @@ function Home() {
           Ir a Registro
         </button>
       </Link>
+      <Link to="/login" style={{ marginLeft: '10px' }}>
+        <button style={{ padding: '10px 20px', fontSize: '16px', cursor: 'pointer' }}>
+          Iniciar Sesión
+        </button>
+      </Link>
     </div>
   );
 }
