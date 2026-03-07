@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { Link } from 'react-router-dom';
+import api from '../api/api';
 
 function Register() {
   const [formData, setFormData] = useState({
@@ -10,7 +10,8 @@ function Register() {
     password: '',
   });
   const [error, setError] = useState(null);
-  const navigate = useNavigate();
+  const [success, setSuccess] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -19,12 +20,16 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
+    setLoading(true);
     try {
-      const response = await axios.post('http://localhost:3000/api/v1/auth/register', formData);
-      localStorage.setItem('token', response.data.token);
-      navigate('/'); // Redirige a la página de inicio
+      const response = await api.post('/auth/register', formData);
+      setSuccess(response.data.message);
+      setFormData({ firstName: '', lastName: '', email: '', password: '' });
     } catch (err) {
       setError(err.response?.data?.error || 'Error al registrar. Inténtalo de nuevo.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -77,10 +82,18 @@ function Register() {
           />
         </div>
         {error && <p style={{ color: 'red' }}>{error}</p>}
-        <button type="submit" style={{ width: '100%', padding: '10px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '5px' }}>
-          Registrarse
+        {success && <p style={{ color: 'green' }}>{success}</p>}
+        <button
+          type="submit"
+          disabled={loading}
+          style={{ width: '100%', padding: '10px', backgroundColor: loading ? '#aaa' : '#007bff', color: 'white', border: 'none', borderRadius: '5px', cursor: loading ? 'not-allowed' : 'pointer' }}
+        >
+          {loading ? 'Registrando...' : 'Registrarse'}
         </button>
       </form>
+      <p style={{ textAlign: 'center', marginTop: '10px' }}>
+        ¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link>
+      </p>
     </div>
   );
 }
