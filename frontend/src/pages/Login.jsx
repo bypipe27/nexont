@@ -31,10 +31,11 @@ function Login() {
 
       const response = await api.post('/auth/login', formData);
 
-      const { token, user } = response.data;
+      const { token, refreshToken, user } = response.data;
 
-      // Guardar token
+      // Guardar tokens
       localStorage.setItem('token', token);
+      localStorage.setItem('refreshToken', refreshToken);
 
       // Guardar usuario
       localStorage.setItem('user', JSON.stringify(user));
