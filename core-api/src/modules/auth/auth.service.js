@@ -6,6 +6,28 @@ const { sendVerificationEmail } = require('../../shared/email/email.service');
 
 const prisma = new PrismaClient();
 
+// ─── Helpers para tokens ─────────────────────────────────────────────────────
+const generateAccessToken = (user) => {
+  return jwt.sign(
+    {
+      userId: user.id,
+      email: user.email,
+      isAdmin: user.isAdmin,
+      isVerifiedSeller: user.isVerifiedSeller,
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
+  );
+};
+
+const generateRefreshToken = (user) => {
+  return jwt.sign(
+    { userId: user.id, type: 'refresh' },
+    process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET,
+    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d' }
+  );
+};
+
 // ─── REGISTER ────────────────────────────────────────────────────────────────
 const register = async (userData) => {
   const { email, password, firstName, lastName } = userData;
@@ -136,12 +158,9 @@ const login = async ({ email, password }) => {
     throw new Error('Tu cuenta ha sido desactivada. Contacta con soporte.');
   }
 
-  // 5. Generar JWT
-  const token = jwt.sign(
-    { userId: user.id, email: user.email },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN }
-  );
+  // 5. Generar tokens
+  const accessToken = generateAccessToken(user);
+  const refreshToken = generateRefreshToken(user);
 
   return {
     user: {
@@ -149,9 +168,69 @@ const login = async ({ email, password }) => {
       email: user.email,
       firstName: user.firstName,
       lastName: user.lastName,
+      isAdmin: user.isAdmin,
+      isVerifiedSeller: user.isVerifiedSeller,
     },
-    token,
+    token: accessToken,
+    refreshToken,
   };
 };
 
-module.exports = { register, verifyEmail, login };
+// ─── REFRESH TOKEN ────────────────────────────────────────────────────────────
+const refreshAccessToken = async (refreshToken) => {
+  if (!refreshToken) {
+    throw new Error('Refresh token requerido');
+  }
+
+  let payload;
+  try {
+    payload = jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET
+    );
+  } catch {
+    throw new Error('Refresh token inválido o expirado');
+  }
+
+  if (payload.type !== 'refresh') {
+    throw new Error('Token de tipo incorrecto');
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: payload.userId } });
+
+  if (!user || !user.isActive || !user.isEmailVerified) {
+    throw new Error('Usuario no disponible');
+  }
+
+  const newAccessToken = generateAccessToken(user);
+  const newRefreshToken = generateRefreshToken(user);
+
+  return { token: newAccessToken, refreshToken: newRefreshToken };
+};
+
+// ─── GET ME ───────────────────────────────────────────────────────────────────
+const getMe = async (userId) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      firstName: true,
+      lastName: true,
+      phone: true,
+      address: true,
+      isAdmin: true,
+      isVerifiedSeller: true,
+      isEmailVerified: true,
+      createdAt: true,
+    },
+  });
+
+  if (!user) {
+    throw new Error('Usuario no encontrado');
+  }
+
+  return user;
+};
+
+module.exports = { register, verifyEmail, login, refreshAccessToken, getMe };

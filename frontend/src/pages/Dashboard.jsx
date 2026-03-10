@@ -1,30 +1,51 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../api/api";
 
 function Dashboard() {
   const navigate = useNavigate();
-  const [token, setToken] = useState(null);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("token");
+    const fetchUser = async () => {
+      try {
+        const { data } = await api.get("/auth/me");
+        setUser(data.user);
+      } catch {
+        // El interceptor de api.js maneja el redirect a /login en caso de 401
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    if (!storedToken) {
+    fetchUser();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await api.post("/auth/logout");
+    } catch {
+      // Ignorar error en logout
+    } finally {
+      localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
+      localStorage.removeItem("user");
       navigate("/login");
-    } else {
-      setToken(storedToken);
     }
-  }, [navigate]);
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/login");
   };
+
+  if (loading) {
+    return <div style={{ padding: "40px" }}><p>Cargando...</p></div>;
+  }
 
   return (
     <div style={{ padding: "40px" }}>
       <h1>Dashboard</h1>
 
-      <p>Has iniciado sesión correctamente.</p>
+      {user && (
+        <p>Bienvenido, {user.firstName} {user.lastName} ({user.email})</p>
+      )}
 
       <button
         onClick={handleLogout}
