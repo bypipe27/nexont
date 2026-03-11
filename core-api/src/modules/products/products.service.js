@@ -1,13 +1,14 @@
 const prisma = require('../../config/database');
 
 // ─── Crear producto ───────────────────────────────────────────────────────────
-const createProduct = async ({ name, description, price, stock, sellerId }) => {
+const createProduct = async ({ name, description, price, stock, sellerId, imageUrl }) => { // <-- MODIFICADO
   const product = await prisma.product.create({
     data: {
       name,
       description: description || null,
       price,
       stock,
+      imageUrl: imageUrl || null, // <-- NUEVO
       sellerId,
     },
     include: {
@@ -95,9 +96,26 @@ const deleteProduct = async (id, sellerId) => {
   });
 };
 
+// ─── Listar productos del vendedor ────────────────────────────────────────────
+const getMyProducts = async (sellerId) => { // <-- NUEVO
+  const products = await prisma.product.findMany({
+    where: { sellerId, isActive: true },
+    include: {
+      seller: {
+        select: { id: true, firstName: true, lastName: true },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  return products;
+};
+
+
 module.exports = {
   createProduct,
   getProducts,
+  getMyProducts, // <-- NUEVO
   getProductById,
   updateProduct,
   deleteProduct,
