@@ -41,18 +41,22 @@ const getProducts = async (req, res) => {
 // ─── GET /api/v1/products/:id ─────────────────────────────────────────────────
 const getProductById = async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id, 10);
+    if (Number.isNaN(id)) {
+      logger.warn('ID de producto inválido', { id: req.params.id });
+      return res.status(400).json({ error: 'ID de producto inválido' });
+    }
     const product = await productsService.getProductById(id);
     res.json({ product });
   } catch (error) {
-    res.status(404).json({ error: error.message });
+    res.status(error.statusCode || 500).json({ error: error.message });
   }
 };
 
 // ─── PUT /api/v1/products/:id ─────────────────────────────────────────────────
 const updateProduct = async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id, 10);
     if (Number.isNaN(id)) {
       logger.warn('ID de producto inválido al actualizar', { id: req.params.id, userId: req.user?.userId });
       return res.status(400).json({ error: 'ID de producto inválido' });
@@ -69,15 +73,18 @@ const updateProduct = async (req, res) => {
     });
   } catch (error) {
     logger.warn('Error al actualizar producto', { error: error.message });
-    const status = error.message.includes('permiso') ? 403 : 404;
-    res.status(status).json({ error: error.message });
+    res.status(error.statusCode || 500).json({ error: error.message });
   }
 };
 
 // ─── DELETE /api/v1/products/:id ──────────────────────────────────────────────
 const deleteProduct = async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id, 10);
+    if (Number.isNaN(id)) {
+      logger.warn('ID de producto inválido al eliminar', { id: req.params.id, userId: req.user?.userId });
+      return res.status(400).json({ error: 'ID de producto inválido' });
+    }
     const sellerId = req.user.userId;
 
     await productsService.deleteProduct(id, sellerId);
@@ -87,8 +94,7 @@ const deleteProduct = async (req, res) => {
     res.json({ message: 'Producto eliminado correctamente' });
   } catch (error) {
     logger.warn('Error al eliminar producto', { error: error.message });
-    const status = error.message.includes('permiso') ? 403 : 404;
-    res.status(status).json({ error: error.message });
+    res.status(error.statusCode || 500).json({ error: error.message });
   }
 };
 
