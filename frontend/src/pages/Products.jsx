@@ -31,12 +31,22 @@ function Products() {
     setError('');
     setSuccess('');
     setLoading(true);
+
+    const numericPrice = Number(form.price);
+    const numericStock = Number(form.stock);
+
+    if (!Number.isInteger(numericStock)) {
+      setError('El stock debe ser un número entero.');
+      setLoading(false);
+      return;
+    }
+
     try {
       await api.post('/products', {
         name: form.name,
         description: form.description,
-        price: parseFloat(form.price),
-        stock: parseInt(form.stock, 10),
+        price: numericPrice,
+        stock: numericStock,
       });
       setSuccess('Producto publicado correctamente');
       setForm({ name: '', description: '', price: '', stock: '' });
