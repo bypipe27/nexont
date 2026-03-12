@@ -70,6 +70,11 @@ const updateProduct = async (id, sellerId, data) => {
   const updated = await prisma.product.update({
     where: { id },
     data,
+    include: {
+      seller: {
+        select: { id: true, firstName: true, lastName: true, email: true },
+      },
+    },
   });
 
   return updated;
