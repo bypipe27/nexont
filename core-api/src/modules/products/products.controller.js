@@ -1,0 +1,125 @@
+const productsService = require('./products.service');
+const logger = require('../../shared/logger/logger');
+
+// ─── POST /api/v1/products ────────────────────────────────────────────────────
+const createProduct = async (req, res) => {
+  try {
+    const { name, description, price, stock } = req.body;
+    const sellerId = req.user.userId;
+    const imageUrl = req.file ? `/uploads/products/${req.file.filename}` : null; // <-- NUEVO
+
+    const product = await productsService.createProduct({
+      name,
+      description,
+      price,
+      stock,
+      sellerId,
+      imageUrl, // <-- NUEVO
+    });
+
+    logger.info('Producto creado', { productId: product.id, sellerId });
+
+    res.status(201).json({
+      message: 'Producto publicado correctamente',
+      product,
+    });
+  } catch (error) {
+    logger.warn('Error al crear producto', { error: error.message, userId: req.user?.userId });
+    res.status(400).json({ error: error.message });
+  }
+};
+
+// ─── GET /api/v1/products ─────────────────────────────────────────────────────
+const getProducts = async (req, res) => {
+  try {
+    const products = await productsService.getProducts();
+    res.json({ products });
+  } catch (error) {
+    logger.error('Error al listar productos', { error: error.message });
+    res.status(500).json({ error: 'Error al obtener los productos' });
+  }
+};
+
+// ─── GET /api/v1/products/my ──────────────────────────────────────────────────
+const getMyProducts = async (req, res) => { // <-- NUEVO
+  try {
+    const sellerId = req.user.userId;
+    const products = await productsService.getMyProducts(sellerId);
+    res.json({ products });
+  } catch (error) {
+    logger.error('Error al listar productos del vendedor', { error: error.message });
+    res.status(500).json({ error: 'Error al obtener tus productos' });
+  }
+};
+
+// ─── GET /api/v1/products/:id ─────────────────────────────────────────────────
+const getProductById = async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (Number.isNaN(id)) {
+      logger.warn('ID de producto inválido al obtener', { id: req.params.id, userId: req.user?.userId });
+      return res.status(400).json({ error: 'ID de producto inválido' });
+    }
+    const product = await productsService.getProductById(id);
+    res.json({ product });
+  } catch (error) {
+    logger.warn('Error al obtener producto', { error: error.message });
+    res.status(404).json({ error: error.message });
+  }
+};
+
+// ─── PUT /api/v1/products/:id ─────────────────────────────────────────────────
+const updateProduct = async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (Number.isNaN(id)) {
+      logger.warn('ID de producto inválido al actualizar', { id: req.params.id, userId: req.user?.userId });
+      return res.status(400).json({ error: 'ID de producto inválido' });
+    }
+    const sellerId = req.user.userId;
+
+    const product = await productsService.updateProduct(id, sellerId, req.body);
+
+    logger.info('Producto actualizado', { productId: id, sellerId });
+
+    res.json({
+      message: 'Producto actualizado correctamente',
+      product,
+    });
+  } catch (error) {
+    logger.warn('Error al actualizar producto', { error: error.message });
+    const status = error.message.includes('permiso') ? 403 : 404;
+    res.status(status).json({ error: error.message });
+  }
+};
+
+// ─── DELETE /api/v1/products/:id ──────────────────────────────────────────────
+const deleteProduct = async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    if (Number.isNaN(id)) {
+      logger.warn('ID de producto inválido al eliminar', { id: req.params.id, userId: req.user?.userId });
+      return res.status(400).json({ error: 'ID de producto inválido' });
+    }
+    const sellerId = req.user.userId;
+
+    await productsService.deleteProduct(id, sellerId);
+
+    logger.info('Producto eliminado', { productId: id, sellerId });
+
+    res.json({ message: 'Producto eliminado correctamente' });
+  } catch (error) {
+    logger.warn('Error al eliminar producto', { error: error.message });
+    const status = error.message.includes('permiso') ? 403 : 404;
+    res.status(status).json({ error: error.message });
+  }
+};
+
+module.exports = {
+  createProduct,
+  getProducts,
+  getMyProducts, // <-- NUEVO
+  getProductById,
+  updateProduct,
+  deleteProduct,
+};
