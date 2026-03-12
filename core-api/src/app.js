@@ -4,6 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const logger = require('./shared/logger/logger');
+const path = require('path'); // <-- NUEVO
 require('./shared/cron/cleanup.cron');
 
 const { authMiddleware } = require('./shared/middleware/auth.middleware');
@@ -64,6 +65,9 @@ app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(apiLimiter);
 
+// ─── Servir imágenes estáticas ────────────────────────────────────────────────
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads'))); // <-- NUEVO
+
 // ─── Rutas públicas ─────────────────────────────────────────────────────────
 app.use('/api/v1/auth', authRoutes);
 
@@ -73,6 +77,7 @@ app.use('/api/v1/products', authMiddleware, productsRoutes);
 app.use('/api/v1/orders', authMiddleware, ordersRoutes);
 app.use('/api/v1/payments', authMiddleware, paymentsRoutes);
 app.use('/api/v1/notifications', authMiddleware, notificationsRoutes);
+
 
 // ─── Healthcheck ─────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => res.json({ status: 'ok', service: 'core-api' }));

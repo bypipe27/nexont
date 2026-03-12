@@ -6,6 +6,7 @@ const createProduct = async (req, res) => {
   try {
     const { name, description, price, stock } = req.body;
     const sellerId = req.user.userId;
+    const imageUrl = req.file ? `/uploads/products/${req.file.filename}` : null; // <-- NUEVO
 
     const product = await productsService.createProduct({
       name,
@@ -13,6 +14,7 @@ const createProduct = async (req, res) => {
       price,
       stock,
       sellerId,
+      imageUrl, // <-- NUEVO
     });
 
     logger.info('Producto creado', { productId: product.id, sellerId });
@@ -35,6 +37,18 @@ const getProducts = async (req, res) => {
   } catch (error) {
     logger.error('Error al listar productos', { error: error.message });
     res.status(500).json({ error: 'Error al obtener los productos' });
+  }
+};
+
+// ─── GET /api/v1/products/my ──────────────────────────────────────────────────
+const getMyProducts = async (req, res) => { // <-- NUEVO
+  try {
+    const sellerId = req.user.userId;
+    const products = await productsService.getMyProducts(sellerId);
+    res.json({ products });
+  } catch (error) {
+    logger.error('Error al listar productos del vendedor', { error: error.message });
+    res.status(500).json({ error: 'Error al obtener tus productos' });
   }
 };
 
@@ -104,6 +118,7 @@ const deleteProduct = async (req, res) => {
 module.exports = {
   createProduct,
   getProducts,
+  getMyProducts, // <-- NUEVO
   getProductById,
   updateProduct,
   deleteProduct,
