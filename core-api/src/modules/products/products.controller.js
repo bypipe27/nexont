@@ -41,10 +41,15 @@ const getProducts = async (req, res) => {
 // ─── GET /api/v1/products/:id ─────────────────────────────────────────────────
 const getProductById = async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const id = parseInt(req.params.id, 10);
+    if (Number.isNaN(id)) {
+      logger.warn('ID de producto inválido al obtener', { id: req.params.id, userId: req.user?.userId });
+      return res.status(400).json({ error: 'ID de producto inválido' });
+    }
     const product = await productsService.getProductById(id);
     res.json({ product });
   } catch (error) {
+    logger.warn('Error al obtener producto', { error: error.message });
     res.status(404).json({ error: error.message });
   }
 };
