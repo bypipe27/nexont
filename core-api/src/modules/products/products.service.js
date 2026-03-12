@@ -1,4 +1,5 @@
 const prisma = require('../../config/database');
+const AppError = require('../../shared/errors/AppError');
 
 // ─── Crear producto ───────────────────────────────────────────────────────────
 const createProduct = async ({ name, description, price, stock, sellerId }) => {
@@ -47,7 +48,7 @@ const getProductById = async (id) => {
   });
 
   if (!product) {
-    throw new Error('Producto no encontrado');
+    throw new AppError('Producto no encontrado', 404);
   }
 
   return product;
@@ -60,11 +61,11 @@ const updateProduct = async (id, sellerId, data) => {
   });
 
   if (!product) {
-    throw new Error('Producto no encontrado');
+    throw new AppError('Producto no encontrado', 404);
   }
 
   if (product.sellerId !== sellerId) {
-    throw new Error('No tienes permiso para modificar este producto');
+    throw new AppError('No tienes permiso para modificar este producto', 403);
   }
 
   const updateData = { ...data };
@@ -93,11 +94,11 @@ const deleteProduct = async (id, sellerId) => {
   });
 
   if (!product) {
-    throw new Error('Producto no encontrado');
+    throw new AppError('Producto no encontrado', 404);
   }
 
   if (product.sellerId !== sellerId) {
-    throw new Error('No tienes permiso para eliminar este producto');
+    throw new AppError('No tienes permiso para eliminar este producto', 403);
   }
 
   await prisma.product.update({

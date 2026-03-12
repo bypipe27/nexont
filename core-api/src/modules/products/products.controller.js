@@ -45,7 +45,7 @@ const getProductById = async (req, res) => {
     const product = await productsService.getProductById(id);
     res.json({ product });
   } catch (error) {
-    res.status(404).json({ error: error.message });
+    res.status(error.statusCode || 500).json({ error: error.message });
   }
 };
 
@@ -69,7 +69,7 @@ const updateProduct = async (req, res) => {
     });
   } catch (error) {
     logger.warn('Error al actualizar producto', { error: error.message });
-    const status = error.message.includes('permiso') ? 403 : 404;
+    const status = error.statusCode || 500;
     res.status(status).json({ error: error.message });
   }
 };
@@ -87,7 +87,7 @@ const deleteProduct = async (req, res) => {
     res.json({ message: 'Producto eliminado correctamente' });
   } catch (error) {
     logger.warn('Error al eliminar producto', { error: error.message });
-    const status = error.message.includes('permiso') ? 403 : 404;
+    const status = error.statusCode || 500;
     res.status(status).json({ error: error.message });
   }
 };
