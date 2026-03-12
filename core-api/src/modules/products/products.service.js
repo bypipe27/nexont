@@ -12,7 +12,7 @@ const createProduct = async ({ name, description, price, stock, sellerId }) => {
     },
     include: {
       seller: {
-        select: { id: true, firstName: true, lastName: true, email: true },
+        select: { id: true, firstName: true, lastName: true },
       },
     },
   });
