@@ -12,8 +12,9 @@ function Products() {
     try {
       const { data } = await api.get('/products');
       setProducts(data.products);
-    } catch {
-      // silencioso
+    } catch (err) {
+      console.error('Error al cargar los productos', err);
+      setError('Error al cargar los productos. Inténtalo de nuevo más tarde.');
     }
   };
 
