@@ -41,7 +41,7 @@ const getProductById = async (id) => {
     where: { id, isActive: true },
     include: {
       seller: {
-        select: { id: true, firstName: true, lastName: true, email: true },
+        select: { id: true, firstName: true, lastName: true },
       },
     },
   });
