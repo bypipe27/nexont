@@ -74,6 +74,11 @@ const updateProduct = async (req, res) => {
 const deleteProduct = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
+
+    if (isNaN(id)) {
+      return res.status(400).json({ error: 'El id del producto debe ser un número válido' });
+    }
+
     const sellerId = req.user.userId;
 
     await productsService.deleteProduct(id, sellerId);
