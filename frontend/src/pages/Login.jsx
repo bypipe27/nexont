@@ -41,7 +41,7 @@ function Login() {
       localStorage.setItem('user', JSON.stringify(user));
 
       // Redirigir al panel principal
-      navigate('/dashboard');
+      navigate('/products');
 
     } catch (err) {
 
