@@ -110,8 +110,9 @@ function Products() {
       const endpoint = (isSeller && !forceAll) ? '/products/my' : '/products'; // <-- MODIFICADO
       const { data } = await api.get(endpoint);
       setProducts(data.products);
-    } catch {
-      // silencioso
+    } catch (err) {
+      console.error('Error al cargar los productos', err);
+      setError('Error al cargar los productos. Inténtalo de nuevo más tarde.');
     }
   };
 
@@ -136,6 +137,16 @@ function Products() {
     setError('');
     setSuccess('');
     setLoading(true);
+
+    const numericPrice = Number(form.price);
+    const numericStock = Number(form.stock);
+
+    if (!Number.isInteger(numericStock)) {
+      setError('El stock debe ser un número entero.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const formData = new FormData();
       formData.append('name', form.name);
