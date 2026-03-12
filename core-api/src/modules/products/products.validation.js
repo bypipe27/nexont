@@ -32,7 +32,9 @@ const updateProductSchema = Joi.object({
   stock: Joi.number().integer().min(0).optional().messages({
     'number.min': 'La cantidad disponible no puede ser negativa',
   }),
-}).min(1);
+}).min(1).messages({
+  'object.min': 'Debe proporcionar al menos un campo para actualizar el producto',
+});
 
 module.exports = {
   validateCreateProduct: validate(createProductSchema),
