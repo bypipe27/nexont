@@ -12,8 +12,9 @@ function Products() {
     try {
       const { data } = await api.get('/products');
       setProducts(data.products);
-    } catch {
-      // silencioso
+    } catch (err) {
+      console.error('Error al cargar los productos', err);
+      setError('Error al cargar los productos. Inténtalo de nuevo más tarde.');
     }
   };
 
@@ -61,25 +62,25 @@ function Products() {
         {success && <p style={{ color: 'green' }}>{success}</p>}
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '0.75rem' }}>
-            <label>Nombre *</label><br />
-            <input name="name" value={form.name} onChange={handleChange} required
+            <label htmlFor="product-name">Nombre *</label><br />
+            <input id="product-name" name="name" value={form.name} onChange={handleChange} required
               style={{ width: '100%', padding: '0.4rem', boxSizing: 'border-box' }} />
           </div>
           <div style={{ marginBottom: '0.75rem' }}>
-            <label>Descripción</label><br />
-            <textarea name="description" value={form.description} onChange={handleChange} rows={3}
+            <label htmlFor="product-description">Descripción</label><br />
+            <textarea id="product-description" name="description" value={form.description} onChange={handleChange} rows={3}
               style={{ width: '100%', padding: '0.4rem', boxSizing: 'border-box' }} />
           </div>
           <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.75rem' }}>
             <div style={{ flex: 1 }}>
-              <label>Precio * (mayor a 0)</label><br />
-              <input type="number" name="price" value={form.price} onChange={handleChange}
+              <label htmlFor="product-price">Precio * (mayor a 0)</label><br />
+              <input id="product-price" type="number" name="price" value={form.price} onChange={handleChange}
                 step="0.01" min="0.01" required
                 style={{ width: '100%', padding: '0.4rem', boxSizing: 'border-box' }} />
             </div>
             <div style={{ flex: 1 }}>
-              <label>Cantidad disponible *</label><br />
-              <input type="number" name="stock" value={form.stock} onChange={handleChange}
+              <label htmlFor="product-stock">Cantidad disponible *</label><br />
+              <input id="product-stock" type="number" name="stock" value={form.stock} onChange={handleChange}
                 min="0" required
                 style={{ width: '100%', padding: '0.4rem', boxSizing: 'border-box' }} />
             </div>
@@ -127,4 +128,3 @@ const th = { textAlign: 'left', padding: '0.5rem', borderBottom: '2px solid #ddd
 const td = { padding: '0.5rem', borderBottom: '1px solid #eee' };
 
 export default Products;
-
