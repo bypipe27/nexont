@@ -42,6 +42,9 @@ const getProducts = async (req, res) => {
 const getProductById = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ error: 'El id del producto debe ser un número entero válido' });
+    }
     const product = await productsService.getProductById(id);
     res.json({ product });
   } catch (error) {
@@ -53,6 +56,9 @@ const getProductById = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ error: 'El id del producto debe ser un número entero válido' });
+    }
     const sellerId = req.user.userId;
 
     const product = await productsService.updateProduct(id, sellerId, req.body);
@@ -74,6 +80,9 @@ const updateProduct = async (req, res) => {
 const deleteProduct = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
+    if (!Number.isInteger(id)) {
+      return res.status(400).json({ error: 'El id del producto debe ser un número entero válido' });
+    }
     const sellerId = req.user.userId;
 
     await productsService.deleteProduct(id, sellerId);
