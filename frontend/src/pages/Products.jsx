@@ -36,7 +36,7 @@ function Products() {
         name: form.name,
         description: form.description,
         price: parseFloat(form.price),
-        stock: parseInt(form.stock),
+        stock: parseInt(form.stock, 10),
       });
       setSuccess('Producto publicado correctamente');
       setForm({ name: '', description: '', price: '', stock: '' });
