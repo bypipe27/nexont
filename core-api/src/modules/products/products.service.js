@@ -67,9 +67,15 @@ const updateProduct = async (id, sellerId, data) => {
     throw new Error('No tienes permiso para modificar este producto');
   }
 
+  const updateData = { ...data };
+
+  if (Object.prototype.hasOwnProperty.call(updateData, 'description') && updateData.description === '') {
+    updateData.description = null;
+  }
+
   const updated = await prisma.product.update({
     where: { id },
-    data,
+    data: updateData,
     include: {
       seller: {
         select: { id: true, firstName: true, lastName: true, email: true },
