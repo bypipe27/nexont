@@ -53,6 +53,10 @@ const getProductById = async (req, res) => {
 const updateProduct = async (req, res) => {
   try {
     const id = parseInt(req.params.id);
+    if (Number.isNaN(id)) {
+      logger.warn('ID de producto inválido al actualizar', { id: req.params.id, userId: req.user?.userId });
+      return res.status(400).json({ error: 'ID de producto inválido' });
+    }
     const sellerId = req.user.userId;
 
     const product = await productsService.updateProduct(id, sellerId, req.body);
