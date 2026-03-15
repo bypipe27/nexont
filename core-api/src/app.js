@@ -13,6 +13,7 @@ const { apiLimiter } = require('./shared/middleware/rateLimiter.middleware');
 const authRoutes = require('./modules/auth/auth.routes');
 const usersRoutes = require('./modules/users/users.routes');
 const productsRoutes = require('./modules/products/products.routes');
+const cartRoutes = require('./modules/cart/cart.routes');
 const ordersRoutes = require('./modules/orders/orders.routes');
 const paymentsRoutes = require('./modules/payments/payments.routes');
 const notificationsRoutes = require('./modules/notifications/notifications.routes');
@@ -74,6 +75,8 @@ app.use('/api/v1/auth', authRoutes);
 
 // ─── Rutas protegidas (requieren JWT válido) ─────────────────────────────────
 app.use('/api/v1/users', authMiddleware, usersRoutes);
+app.use('/api/v1/products', authMiddleware, productsRoutes);
+app.use('/api/v1/cart', authMiddleware, cartRoutes);
 app.use('/api/v1/products', productsRoutes); // Sin auth global, GET es público
 app.use('/api/v1/orders', authMiddleware, ordersRoutes);
 app.use('/api/v1/payments', authMiddleware, paymentsRoutes);
