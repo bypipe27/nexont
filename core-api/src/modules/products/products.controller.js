@@ -4,25 +4,17 @@ const logger = require('../../shared/logger/logger');
 // ─── POST /api/v1/products ────────────────────────────────────────────────────
 const createProduct = async (req, res) => {
   try {
-    const { name, description, price, stock } = req.body;
+    const { name, description, price, stock, condition, rating } = req.body;
     const sellerId = req.user.userId;
-    const imageUrl = req.file ? `/uploads/products/${req.file.filename}` : null; // <-- NUEVO
+    const imageUrl = req.file ? `/uploads/products/${req.file.filename}` : null;
 
     const product = await productsService.createProduct({
-      name,
-      description,
-      price,
-      stock,
-      sellerId,
-      imageUrl, // <-- NUEVO
+      name, description, price, stock, sellerId, imageUrl, condition, rating,
     });
 
     logger.info('Producto creado', { productId: product.id, sellerId });
 
-    res.status(201).json({
-      message: 'Producto publicado correctamente',
-      product,
-    });
+    res.status(201).json({ message: 'Producto publicado correctamente', product });
   } catch (error) {
     logger.warn('Error al crear producto', { error: error.message, userId: req.user?.userId });
     res.status(400).json({ error: error.message });
@@ -32,7 +24,8 @@ const createProduct = async (req, res) => {
 // ─── GET /api/v1/products ─────────────────────────────────────────────────────
 const getProducts = async (req, res) => {
   try {
-    const products = await productsService.getProducts();
+    const { search, condition, minPrice, maxPrice, minRating } = req.query;
+    const products = await productsService.getProducts({ search, condition, minPrice, maxPrice, minRating });
     res.json({ products });
   } catch (error) {
     logger.error('Error al listar productos', { error: error.message });
@@ -41,7 +34,7 @@ const getProducts = async (req, res) => {
 };
 
 // ─── GET /api/v1/products/my ──────────────────────────────────────────────────
-const getMyProducts = async (req, res) => { // <-- NUEVO
+const getMyProducts = async (req, res) => {
   try {
     const sellerId = req.user.userId;
     const products = await productsService.getMyProducts(sellerId);
@@ -79,13 +72,9 @@ const updateProduct = async (req, res) => {
     const sellerId = req.user.userId;
 
     const product = await productsService.updateProduct(id, sellerId, req.body);
-
+    
     logger.info('Producto actualizado', { productId: id, sellerId });
-
-    res.json({
-      message: 'Producto actualizado correctamente',
-      product,
-    });
+    res.json({ message: 'Producto actualizado correctamente', product });
   } catch (error) {
     logger.warn('Error al actualizar producto', { error: error.message });
     const status = error.message.includes('permiso') ? 403 : 404;
@@ -118,7 +107,7 @@ const deleteProduct = async (req, res) => {
 module.exports = {
   createProduct,
   getProducts,
-  getMyProducts, // <-- NUEVO
+  getMyProducts,
   getProductById,
   updateProduct,
   deleteProduct,

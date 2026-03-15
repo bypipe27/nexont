@@ -1,14 +1,16 @@
 const prisma = require('../../config/database');
 
 // ─── Crear producto ───────────────────────────────────────────────────────────
-const createProduct = async ({ name, description, price, stock, sellerId, imageUrl }) => { // <-- MODIFICADO
+const createProduct = async ({ name, description, price, stock, sellerId, imageUrl, condition, rating }) => {
   const product = await prisma.product.create({
     data: {
       name,
       description: description || null,
       price,
       stock,
-      imageUrl: imageUrl || null, // <-- NUEVO
+      imageUrl: imageUrl || null,
+      condition: condition || 'nuevo',
+      rating: rating ? parseFloat(rating) : 0,
       sellerId,
     },
     include: {
@@ -22,9 +24,30 @@ const createProduct = async ({ name, description, price, stock, sellerId, imageU
 };
 
 // ─── Listar todos los productos activos ───────────────────────────────────────
-const getProducts = async () => {
+const getProducts = async ({ search, condition, minPrice, maxPrice, minRating } = {}) => {
+  const where = { isActive: true };
+
+  if (search) {
+    where.OR = [
+      { name: { contains: search, mode: 'insensitive' } },
+      { description: { contains: search, mode: 'insensitive' } },
+    ];
+  }
+
+  if (condition) where.condition = condition;
+
+  if (minPrice !== undefined || maxPrice !== undefined) {
+    where.price = {};
+    if (minPrice !== undefined) where.price.gte = parseFloat(minPrice);
+    if (maxPrice !== undefined) where.price.lte = parseFloat(maxPrice);
+  }
+
+  if (minRating !== undefined && minRating > 0) {
+    where.rating = { gte: parseFloat(minRating) };
+  }
+
   const products = await prisma.product.findMany({
-    where: { isActive: true },
+    where,
     include: {
       seller: {
         select: { id: true, firstName: true, lastName: true },
@@ -35,6 +58,7 @@ const getProducts = async () => {
 
   return products;
 };
+
 
 // ─── Obtener producto por ID ──────────────────────────────────────────────────
 const getProductById = async (id) => {
