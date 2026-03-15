@@ -20,8 +20,13 @@ function NavBar() {
         alignItems: 'center',
         gap: '0.75rem',
         fontWeight: '700',
-        letterSpacing: '0.5px'
-      }}>
+        letterSpacing: '0.5px',
+        cursor: 'pointer',
+        transition: 'opacity 0.3s ease'
+      }}
+      onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+      onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+      >
         <img src="/resources/icone.png" alt="Nexont" style={{ height: '32px', width: 'auto' }} />
         <span style={{ fontSize: '1.3rem', margin: 0 }}>Nexont</span>
       </Link>
