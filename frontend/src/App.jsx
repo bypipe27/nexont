@@ -7,6 +7,7 @@ import Orders from './pages/Orders';
 import VerifyEmail from './pages/VerifyEmail';
 import Dashboard from './pages/Dashboard';
 import MyProducts from './pages/MyProducts';
+import Cart from './pages/Cart';
 import PrivateRoute from './components/PrivateRoute';
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
         <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
         <Route path="/orders" element={<PrivateRoute><Orders /></PrivateRoute>} />
         <Route path="/my-products" element={<PrivateRoute><MyProducts /></PrivateRoute>} />
+        <Route path="/cart" element={<PrivateRoute><Cart /></PrivateRoute>} />
         
       </Routes>
     </BrowserRouter>
