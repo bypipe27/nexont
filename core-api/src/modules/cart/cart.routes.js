@@ -1,9 +1,13 @@
 const router = require('express').Router();
 const cartController = require('./cart.controller');
+const { syncAnonymousCart } = require('./cart.sync.controller');
 const { validateAddToCart, validateUpdateCartItem } = require('./cart.validation');
 
 // GET /api/v1/cart
 router.get('/', cartController.getCart);
+
+// POST /api/v1/cart/sync - Sincronizar carrito anónimo
+router.post('/sync', syncAnonymousCart);
 
 // POST /api/v1/cart/items
 router.post('/items', validateAddToCart, cartController.addToCart);

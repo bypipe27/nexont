@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/api';
+import { useHybridCart } from '../hooks/useHybridCart';
 
-/* ─── Modal: Detalle de producto (N7) ─── */
 function ProductDetailModal({ productId, onClose }) {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -111,14 +111,30 @@ function Home() {
   const [viewMode, setViewMode] = useState('grid');
   const [currentPage, setCurrentPage] = useState(1);
   const [favorites, setFavorites] = useState([]);
-  const [selectedId, setSelectedId] = useState(null); // <-- NUEVO
-  const [filterCondition, setFilterCondition] = useState(''); // <-- NUEVO
-  const [filterMaxPrice, setFilterMaxPrice] = useState(1000); // <-- NUEVO
-  const [filterMinRating, setFilterMinRating] = useState(0); // <-- NUEVO
+  const [selectedId, setSelectedId] = useState(null);
+  const [filterCondition, setFilterCondition] = useState('');
+  const [filterMaxPrice, setFilterMaxPrice] = useState(1000);
+  const [filterMinRating, setFilterMinRating] = useState(0);
+  const [quantities, setQuantities] = useState({});
+  
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
   const user = JSON.parse(localStorage.getItem('user') || 'null');
   const productsPerPage = 12;
+
+  const {
+    cart,
+    loading: cartLoading,
+    error: cartError,
+    success: cartSuccess,
+    isAuthenticated,
+    addToCart,
+    updateCartQuantity,
+    removeCartItem,
+    clearCart,
+    setError: setCartError,
+    setSuccess: setCartSuccess,
+  } = useHybridCart();
 
   // <-- MODIFICADO: fetchProducts acepta parámetros de filtro
   const fetchProducts = async (params = {}) => {
@@ -157,6 +173,31 @@ function Home() {
       maxPrice: filterMaxPrice,
       minRating: filterMinRating > 0 ? filterMinRating : undefined,
     });
+  };
+
+  const handleQuantityInput = (productId, value) => {
+    setQuantities((prev) => ({ ...prev, [productId]: value }));
+  };
+
+  const handleAddToCart = (product) => {
+    const quantity = Number(quantities[product.id] || 1);
+    if (!Number.isInteger(quantity) || quantity < 1) {
+      setCartError('La cantidad debe ser un entero mayor o igual a 1');
+      return;
+    }
+    addToCart(product.id, quantity, {
+      name: product.name,
+      price: product.price,
+    });
+    setQuantities((prev) => ({ ...prev, [product.id]: 1 }));
+  };
+
+  const handleCheckout = () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+    } else {
+      navigate('/orders', { state: { fromCheckout: true } });
+    }
   };
 
   // Filtrar y ordenar productos (solo ordenamiento local)
@@ -227,10 +268,10 @@ function Home() {
                   </div>
                   {user.isVerifiedSeller && (
                     <>
-                      <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #e5e7eb', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => e.target.style.background = '#f3f4f6'} onMouseLeave={(e) => e.target.style.background = 'transparent'} onClick={() => navigate('/products/my')}>
+                      <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #e5e7eb', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => e.target.style.background = '#f3f4f6'} onMouseLeave={(e) => e.target.style.background = 'transparent'} onClick={() => { setDropdownOpen(false); navigate('/my-products'); }}>
                         <span style={{ color: '#374151', fontWeight: '500' }}>📦 Mis productos</span>
                       </div>
-                      <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #e5e7eb', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => e.target.style.background = '#f3f4f6'} onMouseLeave={(e) => e.target.style.background = 'transparent'} onClick={() => navigate('/products/add')}>
+                      <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #e5e7eb', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => e.target.style.background = '#f3f4f6'} onMouseLeave={(e) => e.target.style.background = 'transparent'} onClick={() => { setDropdownOpen(false); navigate('/my-products'); }}>
                         <span style={{ color: '#374151', fontWeight: '500' }}>➕ Agregar producto</span>
                       </div>
                     </>
@@ -360,6 +401,104 @@ function Home() {
                 Limpiar filtros
               </button>
             </div>
+
+            <div style={{ background: 'white', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)', marginTop: '1.5rem' }}>
+              <h3 style={{ marginTop: 0, fontSize: '1rem', marginBottom: '1rem' }}>Carrito</h3>
+
+              {cartLoading && <p style={{ fontSize: '0.85rem', color: '#666' }}>Cargando...</p>}
+              {cartError && <p style={{ color: 'red', fontSize: '0.85rem', marginBottom: '0.5rem' }}>{cartError}</p>}
+              {cartSuccess && <p style={{ color: 'green', fontSize: '0.85rem', marginBottom: '0.5rem' }}>{cartSuccess}</p>}
+
+              {cart.items.length === 0 ? (
+                <p style={{ fontSize: '0.85rem', color: '#888', margin: '0' }}>
+                  {isAuthenticated ? 'Tu carrito esta vacio' : 'Inicia sesion para guardar tu carrito'}
+                </p>
+              ) : (
+                <>
+                  <div style={{ maxHeight: 280, overflowY: 'auto', marginBottom: '0.75rem', background: '#f9f9f9', borderRadius: 6, padding: '0.5rem' }}>
+                    {cart.items.map((item) => (
+                      <div key={item.productId} style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        padding: '0.5rem 0',
+                        borderBottom: '1px solid #eee',
+                        fontSize: '0.82rem',
+                      }}>
+                        <div style={{ flex: 1, marginRight: '0.5rem' }}>
+                          <div style={{ fontWeight: 500, marginBottom: '0.2rem' }}>{item.product.name}</div>
+                          <div style={{ color: '#666' }}>${parseFloat(item.product.price).toFixed(2)} x {item.quantity}</div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.2rem', whiteSpace: 'nowrap' }}>
+                          <button
+                            onClick={() => updateCartQuantity(item.productId, Math.max(1, item.quantity - 1))}
+                            style={{ padding: '0.2rem 0.3rem', fontSize: '0.7rem', cursor: 'pointer', border: '1px solid #ddd', borderRadius: 3, background: '#f5f5f5' }}
+                          >
+                            -
+                          </button>
+                          <button
+                            onClick={() => updateCartQuantity(item.productId, item.quantity + 1)}
+                            style={{ padding: '0.2rem 0.3rem', fontSize: '0.7rem', cursor: 'pointer', border: '1px solid #ddd', borderRadius: 3, background: '#f5f5f5' }}
+                          >
+                            +
+                          </button>
+                          <button
+                            onClick={() => removeCartItem(item.productId)}
+                            style={{ padding: '0.2rem 0.3rem', fontSize: '0.7rem', cursor: 'pointer', background: '#dc3545', color: '#fff', border: 'none', borderRadius: 3 }}
+                          >
+                            X
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div style={{ borderTop: '2px solid #ddd', paddingTop: '0.75rem', marginBottom: '0.75rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
+                      <span>Items:</span>
+                      <strong>{cart.totalItems}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1rem', fontWeight: 600 }}>
+                      <span>Total:</span>
+                      <span style={{ color: '#667eea' }}>${cart.subtotal.toFixed(2)}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleCheckout}
+                    style={{
+                      width: '100%',
+                      padding: '0.65rem',
+                      background: '#667eea',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 6,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      marginBottom: '0.5rem',
+                    }}>
+                    {isAuthenticated ? 'Comprar ahora' : 'Iniciar sesion'}
+                  </button>
+
+                  {cart.items.length > 0 && (
+                    <button
+                      onClick={clearCart}
+                      style={{
+                        width: '100%',
+                        padding: '0.45rem',
+                        background: '#f5f5f5',
+                        color: '#666',
+                        border: '1px solid #ddd',
+                        borderRadius: 6,
+                        cursor: 'pointer',
+                        fontSize: '0.85rem',
+                      }}>
+                      Limpiar carrito
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
           </aside>
 
           {/* Main Content */}
@@ -449,6 +588,51 @@ function Home() {
                             {product.stock > 0 ? 'En stock' : 'Agotado'}
                           </span>
                         )}
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.75rem' }}>
+                        <input
+                          type="number"
+                          min="1"
+                          value={quantities[product.id] || 1}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            handleQuantityInput(product.id, e.target.value);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          style={{
+                            width: 60,
+                            padding: '0.3rem',
+                            borderRadius: 4,
+                            border: '1px solid #ddd',
+                            fontSize: '0.85rem'
+                          }}
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddToCart(product);
+                          }}
+                          disabled={product.stock === 0}
+                          style={{
+                            flex: 1,
+                            padding: '0.3rem 0.6rem',
+                            cursor: product.stock === 0 ? 'not-allowed' : 'pointer',
+                            background: product.stock === 0 ? '#ccc' : '#28a745',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: 4,
+                            fontSize: '0.85rem',
+                            fontWeight: 600
+                          }}
+                        >
+                          {product.stock === 0 ? 'Sin stock' : 'Agregar'}
+                        </button>
+                      </div>
+                      <div style={{ borderTop: '1px solid #eee', marginTop: '0.75rem', paddingTop: '0.75rem', fontSize: '0.82rem', color: '#555' }}>
+                        {product.seller?.firstName} {product.seller?.lastName}
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: '#aaa', marginTop: '0.4rem' }}>
+                        Ver detalle →
                       </div>
                     </div>
                   </div>

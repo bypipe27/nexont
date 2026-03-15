@@ -71,13 +71,12 @@ app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads'))); // <
 
 // ─── Rutas públicas ─────────────────────────────────────────────────────────
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/products', productsRoutes); // GET es público, POST/PUT/DELETE protegidos internamente
 
 
 // ─── Rutas protegidas (requieren JWT válido) ─────────────────────────────────
 app.use('/api/v1/users', authMiddleware, usersRoutes);
-app.use('/api/v1/products', authMiddleware, productsRoutes);
 app.use('/api/v1/cart', authMiddleware, cartRoutes);
-app.use('/api/v1/products', productsRoutes); // Sin auth global, GET es público
 app.use('/api/v1/orders', authMiddleware, ordersRoutes);
 app.use('/api/v1/payments', authMiddleware, paymentsRoutes);
 app.use('/api/v1/notifications', authMiddleware, notificationsRoutes);
