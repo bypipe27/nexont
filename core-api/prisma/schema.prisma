@@ -39,7 +39,9 @@ model Product {
   description String?
   price       Decimal  @db.Decimal(10, 2)
   stock       Int      @default(0)
-  imageUrl    String?  // <-- NUEVO
+  imageUrl    String?
+  condition   String?  @default("nuevo")    
+  rating      Float?   @default(0)          
   sellerId    Int
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())

@@ -1,7 +1,7 @@
 const Joi = require('joi');
 const { validate } = require('../../shared/validation/auth.validation');
 
-// ─── Crear producto ───────────────────────────────────────────────────────────
+
 const createProductSchema = Joi.object({
   name: Joi.string().trim().min(2).max(100).required().messages({
     'string.min': 'El nombre debe tener al menos 2 caracteres',
@@ -20,6 +20,8 @@ const createProductSchema = Joi.object({
     'number.integer': 'La cantidad debe ser un número entero',
     'any.required': 'La cantidad disponible es requerida',
   }),
+  condition: Joi.string().valid('nuevo', 'usado', 'reacondicionado').optional().default('nuevo'), // <-- NUEVO
+  rating: Joi.number().min(0).max(5).optional().default(0), // <-- NUEVO
 });
 
 // ─── Actualizar producto ──────────────────────────────────────────────────────
