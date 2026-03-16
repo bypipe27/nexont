@@ -28,6 +28,7 @@ model User {
 
   products         Product[]
   cartItems        CartItem[]
+  orders           Order[]
 
   @@map("users")
 }
@@ -41,15 +42,16 @@ model Product {
   price       Decimal  @db.Decimal(10, 2)
   stock       Int      @default(0)
   imageUrl    String?
-  condition   String?  @default("nuevo")    
-  rating      Float?   @default(0)          
+  condition   String?  @default("nuevo")
+  rating      Float?   @default(0)
   sellerId    Int
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  seller      User     @relation(fields: [sellerId], references: [id])
+  seller      User       @relation(fields: [sellerId], references: [id])
   cartItems   CartItem[]
+  orderItems  OrderItem[]
 
   @@map("products")
 }
@@ -69,4 +71,53 @@ model CartItem {
 
   @@unique([userId, productId])
   @@map("cart_items")
+}
+
+// ─── ORDERS ───────────────────────────────────────────────────────────────────
+
+model Order {
+  id            Int         @id @default(autoincrement())
+  userId        Int
+  status        String      @default("pendiente")  // pendiente | confirmada | cancelada | entregada
+  paymentMethod String      @default("efectivo")
+  total         Decimal     @db.Decimal(10, 2)
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  user          User        @relation(fields: [userId], references: [id])
+  items         OrderItem[]
+  invoice       Invoice?
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id         Int     @id @default(autoincrement())
+  orderId    Int
+  productId  Int
+  quantity   Int
+  unitPrice  Decimal @db.Decimal(10, 2)
+  lineTotal  Decimal @db.Decimal(10, 2)
+
+  order      Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product    Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+// ─── INVOICES ─────────────────────────────────────────────────────────────────
+
+model Invoice {
+  id            Int      @id @default(autoincrement())
+  invoiceNumber String   @unique  // INV-0001, INV-0002, ...
+  orderId       Int      @unique
+  userId        Int
+  total         Decimal  @db.Decimal(10, 2)
+  paymentMethod String
+  issuedAt      DateTime @default(now())
+
+  order         Order    @relation(fields: [orderId], references: [id])
+
+  @@map("invoices")
 }

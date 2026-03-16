@@ -267,7 +267,7 @@ function Home() {
                   <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #e5e7eb', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => e.target.style.background = '#f3f4f6'} onMouseLeave={(e) => e.target.style.background = 'transparent'}>
                     <span style={{ color: '#374151', fontWeight: '500' }}>👤 Mi perfil</span>
                   </div>
-                  <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #e5e7eb', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => e.target.style.background = '#f3f4f6'} onMouseLeave={(e) => e.target.style.background = 'transparent'}>
+                  <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #e5e7eb', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => e.target.style.background = '#f3f4f6'} onMouseLeave={(e) => e.target.style.background = 'transparent'} onClick={() => { setDropdownOpen(false); navigate('/orders'); }}>
                     <span style={{ color: '#374151', fontWeight: '500' }}>📦 Mis órdenes</span>
                   </div>
                   {user.isVerifiedSeller && (
@@ -495,7 +495,7 @@ function Home() {
                         </div>
                         {product.stock !== undefined && (
                           <span style={{ fontSize: '0.75rem', color: product.stock > 0 ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
-                            {product.stock > 0 ? 'En stock' : 'Agotado'}
+                            {product.stock > 0 ? `En stock: ${product.stock}` : 'Agotado'}
                           </span>
                         )}
                       </div>
