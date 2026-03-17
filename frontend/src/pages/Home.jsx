@@ -124,16 +124,10 @@ function Home() {
 
   const {
     cart,
-    loading: cartLoading,
     error: cartError,
     success: cartSuccess,
-    isAuthenticated,
     addToCart,
-    updateCartQuantity,
-    removeCartItem,
-    clearCart,
     setError: setCartError,
-    setSuccess: setCartSuccess,
   } = useHybridCart();
 
   // <-- MODIFICADO: fetchProducts acepta parámetros de filtro
@@ -192,14 +186,6 @@ function Home() {
     setQuantities((prev) => ({ ...prev, [product.id]: 1 }));
   };
 
-  const handleCheckout = () => {
-    if (!isAuthenticated) {
-      navigate('/login');
-    } else {
-      navigate('/orders', { state: { fromCheckout: true } });
-    }
-  };
-
   // Filtrar y ordenar productos (solo ordenamiento local)
   const filteredProducts = products
     .sort((a, b) => {
@@ -235,7 +221,25 @@ function Home() {
           <h1 style={{ color: 'white', margin: 0, fontSize: '1.3rem', cursor: 'pointer', fontWeight: '700', letterSpacing: '0.5px' }}>Nexont</h1>
         </Link>
 
-        <div style={{ position: 'relative' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {token && user && (
+            <button
+              onClick={() => navigate('/cart')}
+              style={{
+                background: 'rgba(102, 126, 234, 0.9)',
+                color: 'white',
+                border: '1px solid rgba(102, 126, 234, 1)',
+                padding: '0.6rem 0.9rem',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontWeight: 600,
+              }}
+            >
+              🛒 Carrito ({cart.totalItems || 0})
+            </button>
+          )}
+
+          <div style={{ position: 'relative' }}>
           {token && user ? (
             <>
               <button
@@ -263,7 +267,7 @@ function Home() {
                   <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #e5e7eb', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => e.target.style.background = '#f3f4f6'} onMouseLeave={(e) => e.target.style.background = 'transparent'}>
                     <span style={{ color: '#374151', fontWeight: '500' }}>👤 Mi perfil</span>
                   </div>
-                  <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #e5e7eb', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => e.target.style.background = '#f3f4f6'} onMouseLeave={(e) => e.target.style.background = 'transparent'}>
+                  <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #e5e7eb', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => e.target.style.background = '#f3f4f6'} onMouseLeave={(e) => e.target.style.background = 'transparent'} onClick={() => { setDropdownOpen(false); navigate('/orders'); }}>
                     <span style={{ color: '#374151', fontWeight: '500' }}>📦 Mis órdenes</span>
                   </div>
                   {user.isVerifiedSeller && (
@@ -297,6 +301,7 @@ function Home() {
               </Link>
             </div>
           )}
+          </div>
         </div>
       </nav>
 
@@ -306,6 +311,8 @@ function Home() {
         <div style={{ marginBottom: '2rem' }}>
           <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#1f2937', margin: '0 0 0.5rem 0' }}>Catálogo de Productos</h1>
           <p style={{ color: '#6b7280', margin: 0 }}>Explora nuestros productos de calidad</p>
+          {cartError && <p style={{ color: '#b91c1c', marginTop: '0.5rem', marginBottom: 0 }}>{cartError}</p>}
+          {cartSuccess && <p style={{ color: '#166534', marginTop: '0.5rem', marginBottom: 0 }}>{cartSuccess}</p>}
         </div>
 
         {/* Search Bar */}  
@@ -402,103 +409,6 @@ function Home() {
               </button>
             </div>
 
-            <div style={{ background: 'white', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)', marginTop: '1.5rem' }}>
-              <h3 style={{ marginTop: 0, fontSize: '1rem', marginBottom: '1rem' }}>Carrito</h3>
-
-              {cartLoading && <p style={{ fontSize: '0.85rem', color: '#666' }}>Cargando...</p>}
-              {cartError && <p style={{ color: 'red', fontSize: '0.85rem', marginBottom: '0.5rem' }}>{cartError}</p>}
-              {cartSuccess && <p style={{ color: 'green', fontSize: '0.85rem', marginBottom: '0.5rem' }}>{cartSuccess}</p>}
-
-              {cart.items.length === 0 ? (
-                <p style={{ fontSize: '0.85rem', color: '#888', margin: '0' }}>
-                  {isAuthenticated ? 'Tu carrito esta vacio' : 'Inicia sesion para guardar tu carrito'}
-                </p>
-              ) : (
-                <>
-                  <div style={{ maxHeight: 280, overflowY: 'auto', marginBottom: '0.75rem', background: '#f9f9f9', borderRadius: 6, padding: '0.5rem' }}>
-                    {cart.items.map((item) => (
-                      <div key={item.productId} style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'flex-start',
-                        padding: '0.5rem 0',
-                        borderBottom: '1px solid #eee',
-                        fontSize: '0.82rem',
-                      }}>
-                        <div style={{ flex: 1, marginRight: '0.5rem' }}>
-                          <div style={{ fontWeight: 500, marginBottom: '0.2rem' }}>{item.product.name}</div>
-                          <div style={{ color: '#666' }}>${parseFloat(item.product.price).toFixed(2)} x {item.quantity}</div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '0.2rem', whiteSpace: 'nowrap' }}>
-                          <button
-                            onClick={() => updateCartQuantity(item.productId, Math.max(1, item.quantity - 1))}
-                            style={{ padding: '0.2rem 0.3rem', fontSize: '0.7rem', cursor: 'pointer', border: '1px solid #ddd', borderRadius: 3, background: '#f5f5f5' }}
-                          >
-                            -
-                          </button>
-                          <button
-                            onClick={() => updateCartQuantity(item.productId, item.quantity + 1)}
-                            style={{ padding: '0.2rem 0.3rem', fontSize: '0.7rem', cursor: 'pointer', border: '1px solid #ddd', borderRadius: 3, background: '#f5f5f5' }}
-                          >
-                            +
-                          </button>
-                          <button
-                            onClick={() => removeCartItem(item.productId)}
-                            style={{ padding: '0.2rem 0.3rem', fontSize: '0.7rem', cursor: 'pointer', background: '#dc3545', color: '#fff', border: 'none', borderRadius: 3 }}
-                          >
-                            X
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div style={{ borderTop: '2px solid #ddd', paddingTop: '0.75rem', marginBottom: '0.75rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
-                      <span>Items:</span>
-                      <strong>{cart.totalItems}</strong>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.1rem', fontWeight: 600 }}>
-                      <span>Total:</span>
-                      <span style={{ color: '#667eea' }}>${cart.subtotal.toFixed(2)}</span>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={handleCheckout}
-                    style={{
-                      width: '100%',
-                      padding: '0.65rem',
-                      background: '#667eea',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 6,
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      marginBottom: '0.5rem',
-                    }}>
-                    {isAuthenticated ? 'Comprar ahora' : 'Iniciar sesion'}
-                  </button>
-
-                  {cart.items.length > 0 && (
-                    <button
-                      onClick={clearCart}
-                      style={{
-                        width: '100%',
-                        padding: '0.45rem',
-                        background: '#f5f5f5',
-                        color: '#666',
-                        border: '1px solid #ddd',
-                        borderRadius: 6,
-                        cursor: 'pointer',
-                        fontSize: '0.85rem',
-                      }}>
-                      Limpiar carrito
-                    </button>
-                  )}
-                </>
-              )}
-            </div>
           </aside>
 
           {/* Main Content */}
@@ -585,7 +495,7 @@ function Home() {
                         </div>
                         {product.stock !== undefined && (
                           <span style={{ fontSize: '0.75rem', color: product.stock > 0 ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
-                            {product.stock > 0 ? 'En stock' : 'Agotado'}
+                            {product.stock > 0 ? `En stock: ${product.stock}` : 'Agotado'}
                           </span>
                         )}
                       </div>

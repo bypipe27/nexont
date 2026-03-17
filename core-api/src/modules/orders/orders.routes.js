@@ -1,18 +1,19 @@
 const router = require('express').Router();
+const ordersController = require('./orders.controller');
 
-// GET /api/v1/orders
-router.get('/', (req, res) => res.json({ message: 'list orders - TODO' }));
+// POST /api/v1/orders → confirmar compra
+router.post('/', ordersController.confirm);
 
-// GET /api/v1/orders/:id
-router.get('/:id', (req, res) => res.json({ message: 'get order - TODO' }));
+// GET /api/v1/orders → listar mis órdenes
+router.get('/', ordersController.getMyOrders);
 
-// POST /api/v1/orders
-router.post('/', (req, res) => res.json({ message: 'create order - TODO' }));
+// GET /api/v1/orders/:id → detalle de una orden
+router.get('/:id', ordersController.getOrderDetail);
 
-// PATCH /api/v1/orders/:id/status
+// PATCH /api/v1/orders/:id/status → (reservado para futuro, ej: admin cambia estado)
 router.patch('/:id/status', (req, res) => res.json({ message: 'update order status - TODO' }));
 
-// DELETE /api/v1/orders/:id
+// DELETE /api/v1/orders/:id → (reservado para futuro cancelación)
 router.delete('/:id', (req, res) => res.json({ message: 'cancel order - TODO' }));
 
 module.exports = router;
