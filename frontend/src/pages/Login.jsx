@@ -37,8 +37,8 @@ function NavBar() {
 function Login() {
   
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+    correo: '',
+    contrasena: ''
   });
 
   const [error, setError] = useState(null);
@@ -112,46 +112,46 @@ function Login() {
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '1rem' }}>
             <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 500 }}>
-              Email
+                Correo
             </label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              placeholder="tu@email.com"
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                boxSizing: 'border-box',
-                fontSize: '1rem'
-              }}
-            />
+              <input
+                type="email"
+                name="correo"
+                value={formData.correo}
+                onChange={handleChange}
+                required
+                placeholder="tu@email.com"
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  boxSizing: 'border-box',
+                  fontSize: '1rem'
+                }}
+              />
           </div>
 
           <div style={{ marginBottom: '1.5rem' }}>
             <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 500 }}>
-              Contraseña
+                Contraseña
             </label>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              placeholder="••••••••"
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                boxSizing: 'border-box',
-                fontSize: '1rem'
-              }}
-            />
+              <input
+                type="password"
+                name="contrasena"
+                value={formData.contrasena}
+                onChange={handleChange}
+                required
+                placeholder="••••••••"
+                style={{
+                  width: '100%',
+                  padding: '0.75rem',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  boxSizing: 'border-box',
+                  fontSize: '1rem'
+                }}
+              />
           </div>
 
           {error && (

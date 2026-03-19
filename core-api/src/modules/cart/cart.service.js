@@ -14,34 +14,37 @@ const formatCart = (items) => {
 };
 
 const getCartByUser = async (userId) => {
-  const items = await prisma.cartItem.findMany({
+  const items = await prisma.itemCarrito.findMany({
     where: {
-      userId,
-      product: {
-        isActive: true,
+      usuarioId: userId,
+      producto: {
+        estaActivo: true,
       },
     },
     include: {
-      product: {
+      producto: {
         select: {
           id: true,
-          name: true,
-          price: true,
+          titulo: true,
+          precio: true,
           stock: true,
-          imageUrl: true,
-          isActive: true,
+          estaActivo: true,
+          imagenes: {
+            where: { esPrincipal: true },
+            select: { url: true }
+          },
         },
       },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { creadoEn: 'desc' },
   });
 
   return formatCart(items);
 };
 
 const addItemToCart = async ({ userId, productId, quantity }) => {
-  const product = await prisma.product.findFirst({
-    where: { id: productId, isActive: true },
+  const product = await prisma.producto.findFirst({
+    where: { id: productId, estaActivo: true },
     select: { id: true, stock: true },
   });
 
@@ -49,7 +52,7 @@ const addItemToCart = async ({ userId, productId, quantity }) => {
     throw new Error('Producto no encontrado');
   }
 
-  const existing = await prisma.cartItem.findUnique({
+  const existing = await prisma.itemCarrito.findUnique({
     where: {
       userId_productId: { userId, productId },
     },
@@ -63,7 +66,7 @@ const addItemToCart = async ({ userId, productId, quantity }) => {
     throw new Error('No puedes agregar más cantidad que el stock disponible');
   }
 
-  await prisma.cartItem.upsert({
+  await prisma.itemCarrito.upsert({
     where: {
       userId_productId: { userId, productId },
     },
@@ -81,7 +84,7 @@ const addItemToCart = async ({ userId, productId, quantity }) => {
 };
 
 const updateCartItemQuantity = async ({ userId, productId, quantity }) => {
-  const cartItem = await prisma.cartItem.findUnique({
+  const cartItem = await prisma.itemCarrito.findUnique({
     where: {
       userId_productId: { userId, productId },
     },
@@ -92,7 +95,7 @@ const updateCartItemQuantity = async ({ userId, productId, quantity }) => {
   }
 
   if (quantity === 0) {
-    await prisma.cartItem.delete({
+    await prisma.itemCarrito.delete({
       where: {
         userId_productId: { userId, productId },
       },
@@ -101,7 +104,7 @@ const updateCartItemQuantity = async ({ userId, productId, quantity }) => {
     return getCartByUser(userId);
   }
 
-  const product = await prisma.product.findFirst({
+  const product = await prisma.producto.findFirst({
     where: { id: productId, isActive: true },
     select: { id: true, stock: true },
   });
@@ -114,7 +117,7 @@ const updateCartItemQuantity = async ({ userId, productId, quantity }) => {
     throw new Error('No puedes guardar más cantidad que el stock disponible');
   }
 
-  await prisma.cartItem.update({
+  await prisma.itemCarrito.update({
     where: {
       userId_productId: { userId, productId },
     },
@@ -127,7 +130,7 @@ const updateCartItemQuantity = async ({ userId, productId, quantity }) => {
 };
 
 const removeCartItem = async ({ userId, productId }) => {
-  await prisma.cartItem.deleteMany({
+  await prisma.itemCarrito.deleteMany({
     where: { userId, productId },
   });
 
@@ -135,7 +138,7 @@ const removeCartItem = async ({ userId, productId }) => {
 };
 
 const clearCart = async (userId) => {
-  await prisma.cartItem.deleteMany({ where: { userId } });
+  await prisma.itemCarrito.deleteMany({ where: { userId } });
   return getCartByUser(userId);
 };
 

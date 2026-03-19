@@ -4,11 +4,11 @@ const logger = require('../../shared/logger/logger');
 // ─── REGISTER ────────────────────────────────────────────────────────────────
 const register = async (req, res) => {
   try {
-    const { email, password, firstName, lastName } = req.body;
+    const { correo, contrasena, nombres, apellidos } = req.body;
 
-    const { user } = await authService.register({ email, password, firstName, lastName });
+    const { user } = await authService.register({ correo, contrasena, nombres, apellidos });
 
-    logger.info('Nuevo registro de usuario', { email });
+    logger.info('Nuevo registro de usuario', { correo });
 
     res.status(201).json({
       message: 'Usuario registrado con éxito. Revisa tu correo electrónico para verificar tu cuenta.',
@@ -39,11 +39,11 @@ const verifyEmail = async (req, res) => {
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { correo, contrasena } = req.body;
 
-    const result = await authService.login({ email, password });
+    const result = await authService.login({ correo, contrasena });
 
-    logger.info('Login exitoso', { userId: result.user.id, email });
+    logger.info('Login exitoso', { userId: result.user.id, correo });
 
     res.json({
       message: 'Sesión iniciada correctamente',

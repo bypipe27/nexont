@@ -60,9 +60,22 @@ function Cart() {
                         borderBottom: '1px solid #f1f5f9',
                       }}
                     >
-                      <div>
-                        <div style={{ fontWeight: 600, color: '#1f2937' }}>{item.product?.name || 'Producto'}</div>
-                        <div style={{ color: '#6b7280', fontSize: '0.9rem' }}>${unitPrice.toFixed(2)} c/u</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        {item.product?.imagenes && item.product.imagenes.length > 0 && item.product.imagenes[0]?.url ? (
+                          <img
+                            src={item.product.imagenes[0].url}
+                            alt={item.product?.titulo || 'Producto'}
+                            style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 6, background: '#f3f4f6' }}
+                          />
+                        ) : (
+                          <div style={{ width: 60, height: 60, background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb', fontSize: '0.8rem', borderRadius: 6 }}>
+                            Sin imagen
+                          </div>
+                        )}
+                        <div>
+                          <div style={{ fontWeight: 600, color: '#1f2937' }}>{item.product?.titulo || 'Producto'}</div>
+                          <div style={{ color: '#6b7280', fontSize: '0.9rem' }}>${item.product?.precio ? Number(item.product.precio).toFixed(2) : '0.00'} c/u</div>
+                        </div>
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>

@@ -5,17 +5,8 @@ const productsController = require('./products.controller');
 const { validateCreateProduct, validateUpdateProduct } = require('./products.validation');
 const { authMiddleware } = require('../../shared/middleware/auth.middleware');
 
-// ─── Configuración de multer ──────────────────────────────────────────────────
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/products'); // carpeta donde se guardan las imágenes
-  },
-  filename: (req, file, cb) => {
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    cb(null, `${unique}${path.extname(file.originalname)}`);
-  },
-});
-
+// ─── Configuración de multer (solo validación, sin almacenamiento local) ──────
+const storage = multer.memoryStorage();
 const fileFilter = (req, file, cb) => {
   const allowed = ['image/jpeg', 'image/png', 'image/webp'];
   if (allowed.includes(file.mimetype)) {
@@ -24,7 +15,6 @@ const fileFilter = (req, file, cb) => {
     cb(new Error('Solo se permiten imágenes JPG, PNG o WEBP'));
   }
 };
-
 const upload = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB máx
 
 // ─── Rutas ────────────────────────────────────────────────────────────────────
@@ -40,7 +30,7 @@ router.get('/my', authMiddleware, productsController.getMyProducts);
 router.get('/:id', productsController.getProductById);
 
 // POST /api/v1/products — Publicar nuevo producto (solo autenticados)
-router.post('/', authMiddleware, upload.single('image'), validateCreateProduct, productsController.createProduct);
+router.post('/', authMiddleware, upload.single('imagen'), validateCreateProduct, productsController.createProduct);
 
 // PUT /api/v1/products/:id — Actualizar producto (solo el vendedor)
 router.put('/:id', authMiddleware, validateUpdateProduct, productsController.updateProduct);

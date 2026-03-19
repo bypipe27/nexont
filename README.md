@@ -49,8 +49,7 @@
         │                                         │
 ┌───────▼─────────────────────────────────────────▼──────┐
 │              Infraestructura (Docker)                   │
-│  PostgreSQL 5432 │ MongoDB 27017 │ Redis 6379           │
-│  RabbitMQ 5672 / UI 15672                               │
+│  PostgreSQL 5432 │ RabbitMQ 5672 / UI 15672             │
 └─────────────────────────────────────────────────────────┘
 ```
 
@@ -66,9 +65,8 @@
 | Chatbot Service | Python, FastAPI |
 | Search Service | Node.js, Express |
 | Mensajería | RabbitMQ |
-| Caché / Sesiones | Redis |
 | Base de datos principal | PostgreSQL 16 |
-| Base de datos de chat | MongoDB 7 |
+| Base de datos de chat | PostgreSQL 16 |
 | Contenedores | Docker, Docker Compose |
 
 ---
@@ -108,8 +106,6 @@ Para desarrollo local sin Docker:
 - Node.js >= 20
 - Python >= 3.11
 - PostgreSQL >= 16
-- MongoDB >= 7
-- Redis >= 7
 
 ---
 
@@ -181,7 +177,6 @@ uvicorn src.main:app --reload --port 8000
 PORT=3000
 DATABASE_URL=postgresql://nexont:nexont_pass@postgres:5432/nexont_db
 JWT_SECRET=tu_secreto_jwt
-REDIS_URL=redis://redis:6379
 RABBITMQ_URL=amqp://rabbitmq:5672
 ```
 
@@ -189,8 +184,7 @@ RABBITMQ_URL=amqp://rabbitmq:5672
 
 ```env
 PORT=3001
-MONGODB_URI=mongodb://mongodb:27017/nexont_chat
-REDIS_URL=redis://redis:6379
+DATABASE_URL=postgresql://nexont:nexont_pass@postgres:5432/nexont_chat
 RABBITMQ_URL=amqp://rabbitmq:5672
 ```
 
@@ -198,7 +192,6 @@ RABBITMQ_URL=amqp://rabbitmq:5672
 
 ```env
 PORT=8000
-REDIS_URL=redis://redis:6379
 RABBITMQ_URL=amqp://rabbitmq:5672
 OPENAI_API_KEY=tu_api_key   # o ANTHROPIC_API_KEY
 ```
@@ -207,7 +200,6 @@ OPENAI_API_KEY=tu_api_key   # o ANTHROPIC_API_KEY
 
 ```env
 PORT=3002
-REDIS_URL=redis://redis:6379
 ```
 
 ---

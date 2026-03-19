@@ -36,10 +36,10 @@ function NavBar() {
 
 function Register() {
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    password: '',
+    nombres: '',
+    apellidos: '',
+    correo: '',
+    contrasena: '',
   });
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
@@ -57,7 +57,7 @@ function Register() {
     try {
       const response = await api.post('/auth/register', formData);
       setSuccess(response.data.message);
-      setFormData({ firstName: '', lastName: '', email: '', password: '' });
+      setFormData({ nombres: '', apellidos: '', correo: '', contrasena: '' });
     } catch (err) {
       setError(err.response?.data?.error || 'Error al registrar. Inténtalo de nuevo.');
     } finally {
@@ -96,8 +96,8 @@ function Register() {
               </label>
               <input
                 type="text"
-                name="firstName"
-                value={formData.firstName}
+                name="nombres"
+                value={formData.nombres}
                 onChange={handleChange}
                 required
                 placeholder="Tu nombre"
@@ -118,8 +118,8 @@ function Register() {
               </label>
               <input
                 type="text"
-                name="lastName"
-                value={formData.lastName}
+                name="apellidos"
+                value={formData.apellidos}
                 onChange={handleChange}
                 required
                 placeholder="Tu apellido"
@@ -140,8 +140,8 @@ function Register() {
               </label>
               <input
                 type="email"
-                name="email"
-                value={formData.email}
+                name="correo"
+                value={formData.correo}
                 onChange={handleChange}
                 required
                 placeholder="tu@email.com"
@@ -162,8 +162,8 @@ function Register() {
               </label>
               <input
                 type="password"
-                name="password"
-                value={formData.password}
+                name="contrasena"
+                value={formData.contrasena}
                 onChange={handleChange}
                 required
                 placeholder="••••••••"
