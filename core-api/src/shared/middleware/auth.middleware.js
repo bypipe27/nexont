@@ -24,15 +24,15 @@ const authMiddleware = async (req, res, next) => {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
 
     // 2. Verificar que el usuario aún existe y está activo en BD
-    const user = await prisma.user.findUnique({
+    const user = await prisma.usuario.findUnique({
       where: { id: payload.userId },
       select: {
         id: true,
-        email: true,
-        isActive: true,
-        isAdmin: true,
-        isVerifiedSeller: true,
-        isEmailVerified: true,
+        correo: true,
+        esActivo: true,
+        esAdmin: true,
+        esVendedorVerificado: true,
+        esCorreoVerificado: true,
       },
     });
 
@@ -40,20 +40,20 @@ const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ error: 'Usuario no encontrado' });
     }
 
-    if (!user.isActive) {
+    if (!user.esActivo ) {
       return res.status(401).json({ error: 'Cuenta desactivada' });
     }
 
-    if (!user.isEmailVerified) {
+    if (!user.esCorreoVerificado) {
       return res.status(401).json({ error: 'Email no verificado' });
     }
 
     // 3. Adjuntar datos completos del usuario al request
     req.user = {
       userId: user.id,
-      email: user.email,
-      isAdmin: user.isAdmin,
-      isVerifiedSeller: user.isVerifiedSeller,
+      correo: user.correo,
+      esAdmin: user.esAdmin,
+      esVendedorVerificado: user.esVendedorVerificado,
     };
 
     next();
@@ -95,19 +95,19 @@ const optionalAuth = async (req, res, next) => {
 
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await prisma.user.findUnique({
+    const user = await prisma.usuario.findUnique({
       where: { id: payload.userId },
       select: {
         id: true,
-        email: true,
-        isActive: true,
-        isAdmin: true,
-        isVerifiedSeller: true,
+        correo: true,
+        esActivo: true,
+        esAdmin: true,
+        esVendedorVerificado: true,
       },
     });
 
-    req.user = user && user.isActive
-      ? { userId: user.id, email: user.email, isAdmin: user.isAdmin, isVerifiedSeller: user.isVerifiedSeller }
+    req.user = user && user.esActivo
+      ? { userId: user.id, correo: user.correo, esAdmin: user.esAdmin, esVendedorVerificado: user.esVendedorVerificado }
       : null;
   } catch {
     req.user = null;

@@ -53,19 +53,19 @@ function ProductDetailModal({ productId, onClose }) {
 
         {!loading && !error && product && (
           <>
-            {product.imageUrl ? (
-              <img src={product.imageUrl} alt={product.name}
+            {product.imagenes && product.imagenes.length > 0 && product.imagenes[0].url ? (
+              <img src={product.imagenes[0].url} alt={product.titulo}
                 style={{ width: '100%', height: 220, objectFit: 'cover', borderRadius: 6, marginBottom: '1rem' }} />
             ) : (
               <div style={{
                 width: '100%', height: 220, background: '#f5f5f5', borderRadius: 6,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#bbb', fontSize: '0.85rem', marginBottom: '1rem',
+                color: '#bbb', fontSize: '1rem', marginBottom: '1rem',
               }}>Sin imagen</div>
             )}
-            <h2 style={{ marginTop: 0, marginBottom: '0.5rem' }}>{product.name}</h2>
-            {product.description && (
-              <p style={{ color: '#555', marginBottom: '1rem', lineHeight: 1.6 }}>{product.description}</p>
+            <h2 style={{ marginTop: 0, marginBottom: '0.5rem' }}>{product.titulo}</h2>
+            {product.descripcion && (
+              <p style={{ color: '#555', marginBottom: '1rem', lineHeight: 1.6 }}>{product.descripcion}</p>
             )}
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
               <div style={{ flex: 1, background: '#f5f5f5', borderRadius: 6, padding: '0.75rem' }}>
@@ -90,8 +90,8 @@ function ProductDetailModal({ productId, onClose }) {
             {product.seller && (
               <div style={{ background: '#f5f5f5', borderRadius: 6, padding: '0.75rem' }}>
                 <div style={{ fontSize: '0.75rem', color: '#888' }}>Vendedor</div>
-                <div style={{ fontWeight: 500 }}>{product.seller.firstName} {product.seller.lastName}</div>
-                {product.seller.email && <div style={{ fontSize: '0.85rem', color: '#666' }}>{product.seller.email}</div>}
+                <div style={{ fontWeight: 500 }}>{product.seller.nombres} {product.seller.apellidos}</div>
+                {product.seller.correo && <div style={{ fontSize: '0.85rem', color: '#666' }}>{product.seller.correo}</div>}
               </div>
             )}
           </>
@@ -180,7 +180,7 @@ function Home() {
       return;
     }
     addToCart(product.id, quantity, {
-      name: product.name,
+      name: product.titulo,
       price: product.price,
     });
     setQuantities((prev) => ({ ...prev, [product.id]: 1 }));
@@ -254,7 +254,7 @@ function Home() {
                 onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.3)'}
                 onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.2)'}
               >
-                👤 {user.firstName}
+                👤 {user.nombres}
                 <span style={{ fontSize: '0.8rem' }}>▼</span>
               </button>
 
@@ -270,7 +270,7 @@ function Home() {
                   <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #e5e7eb', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => e.target.style.background = '#f3f4f6'} onMouseLeave={(e) => e.target.style.background = 'transparent'} onClick={() => { setDropdownOpen(false); navigate('/orders'); }}>
                     <span style={{ color: '#374151', fontWeight: '500' }}>📦 Mis órdenes</span>
                   </div>
-                  {user.isVerifiedSeller && (
+                  {user.esVendedorVerificado && (
                     <>
                       <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #e5e7eb', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={(e) => e.target.style.background = '#f3f4f6'} onMouseLeave={(e) => e.target.style.background = 'transparent'} onClick={() => { setDropdownOpen(false); navigate('/my-products'); }}>
                         <span style={{ color: '#374151', fontWeight: '500' }}>📦 Mis productos</span>
@@ -280,7 +280,7 @@ function Home() {
                       </div>
                     </>
                   )}
-                  {!user.isVerifiedSeller && (
+                  {!user.esVendedorVerificado && (
                     <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #e5e7eb', cursor: 'pointer', transition: 'background 0.2s', background: '#fef3c7' }} onMouseEnter={(e) => e.target.style.background = '#fed7aa'} onMouseLeave={(e) => e.target.style.background = '#fef3c7'}>
                       <span style={{ color: '#92400e', fontWeight: '600' }}>⭐ Verificarse como vendedor</span>
                     </div>
@@ -457,8 +457,8 @@ function Home() {
                   >
                     <div style={{ position: 'relative', aspectRatio: '1', background: '#f3f4f6', overflow: 'hidden' }}>
                       <img
-                        src={product.imageUrl || product.image || 'https://via.placeholder.com/300?text=' + encodeURIComponent(product.name)}
-                        alt={product.name}
+                        src={product.imagenes && product.imagenes.length > 0 && product.imagenes[0]?.url ? product.imagenes[0].url : 'https://via.placeholder.com/300?text=' + encodeURIComponent(product.titulo)}
+                        alt={product.titulo}
                         style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.3s' }}
                         onMouseEnter={(e) => e.target.style.transform = 'scale(1.1)'}
                         onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
@@ -482,12 +482,12 @@ function Home() {
                         {product.condition || 'nuevo'}
                       </p>
                       <h3 style={{ fontSize: '1rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '0.75rem', lineHeight: '1.3', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>
-                        {product.name}
+                        {product.titulo}
                       </h3>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem' }}>
                         <div>
                           <p style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
-                            ${(parseFloat(product.price) || 0).toFixed(2)}
+                            ${(parseFloat(product.precio) || 0).toFixed(2)}
                           </p>
                           <p style={{ fontSize: '0.78rem', color: '#f5a623', margin: 0 }}>
                             {'★'.repeat(Math.round(product.rating || 0))}{'☆'.repeat(5 - Math.round(product.rating || 0))}
@@ -539,7 +539,7 @@ function Home() {
                         </button>
                       </div>
                       <div style={{ borderTop: '1px solid #eee', marginTop: '0.75rem', paddingTop: '0.75rem', fontSize: '0.82rem', color: '#555' }}>
-                        {product.seller?.firstName} {product.seller?.lastName}
+                        {product.seller?.nombres} {product.seller?.apellidos}
                       </div>
                       <div style={{ fontSize: '0.78rem', color: '#aaa', marginTop: '0.4rem' }}>
                         Ver detalle →

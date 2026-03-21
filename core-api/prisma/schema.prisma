@@ -7,117 +7,283 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─── USERS ───────────────────────────────────────────────────────────────────
+// ─── ENUMERACIONES ───────────────────────────────────────────────────────────
 
-model User {
-  id               Int      @id @default(autoincrement())
-  email            String   @unique
-  password         String
-  firstName        String
-  lastName         String
-  phone            String?
-  address          String?
-  isEmailVerified      Boolean   @default(false)
-  emailVerifyToken     String?
-  emailVerifyExpires   DateTime?
-  isActive             Boolean   @default(true)
-  isVerifiedSeller Boolean  @default(false)
-  isAdmin          Boolean  @default(false)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  products         Product[]
-  cartItems        CartItem[]
-  orders           Order[]
-
-  @@map("users")
+enum EstadoPedido {
+  PENDIENTE
+  CONFIRMADO
+  CANCELADO
+  ENTREGADO
 }
 
-// ─── PRODUCTS ─────────────────────────────────────────────────────────────────
+enum MetodoPago {
+  EFECTIVO
+  TARJETA
+  TRANSFERENCIA
+  PAYPAL
+}
 
-model Product {
+enum CondicionProducto {
+  NUEVO
+  USADO
+  REACONDICIONADO
+}
+
+
+
+enum TipoEventoUsuario {
+  SESION_INICIADA
+  SESION_CERRADA
+  PRODUCTO_VISTO
+  PRODUCTO_AGREGADO_CARRITO
+  PEDIDO_REALIZADO
+  PEDIDO_CANCELADO
+  OTRO
+}
+
+enum CanalInteraccionIA {
+  CHATBOT
+  DASHBOARD
+  ASISTENTE_VENTAS
+  SOPORTE
+  OTRO
+}
+
+// ─── USUARIOS Y PERFIL ───────────────────────────────────────────────────────
+
+model Usuario {
+  id                   Int              @id @default(autoincrement())
+  correo               String           @unique
+  contrasena           String
+  nombres              String
+  apellidos            String
+  telefono             String?
+  direccionPrincipal   String?
+  esCorreoVerificado   Boolean          @default(false)
+  tokenVerificacion    String?
+  verificacionExpira   DateTime?
+  esActivo             Boolean          @default(true)
+  esVendedorVerificado Boolean          @default(false)
+  esAdmin              Boolean          @default(false)
+  creadoEn             DateTime         @default(now())
+  actualizadoEn        DateTime         @updatedAt
+
+  perfil               PerfilUsuario?
+  productos            Producto[]
+  itemsCarrito         ItemCarrito[]
+  pedidos              Pedido[]
+  // ...existing code...
+  resenas              Resena[]
+  eventos              EventoUsuario[]
+  interaccionesIA      InteraccionIA[]
+
+  @@map("usuarios")
+}
+
+model PerfilUsuario {
+  id                Int      @id @default(autoincrement())
+  usuarioId         Int      @unique
+  documentoIdentidad String?
+  fechaNacimiento   DateTime?
+  genero            String?
+  ciudad            String?
+  pais              String?
+  preferencias      Json?
+  notasAnalitica    String?  @db.Text
+  creadoEn          DateTime @default(now())
+  actualizadoEn     DateTime @updatedAt
+
+  usuario           Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("perfiles_usuarios")
+}
+
+// ─── PRODUCTOS Y CATALOGOS ───────────────────────────────────────────────────
+
+model Producto {
+  id                 Int                 @id @default(autoincrement())
+  titulo             String
+  descripcion        String?
+  precio             Decimal             @db.Decimal(10, 2)
+  stock              Int                 @default(0)
+  condicion          CondicionProducto   @default(NUEVO)
+  estaActivo         Boolean             @default(true)
+  vendedorId         Int
+  promedioCalificacion Float?            @default(0)
+  totalResenas       Int                 @default(0)
+  etiquetas          String[]
+  metadatos          Json?
+  embeddingTexto     String?             @db.Text
+  creadoEn           DateTime            @default(now())
+  actualizadoEn      DateTime            @updatedAt
+
+  vendedor           Usuario             @relation(fields: [vendedorId], references: [id])
+  categorias         ProductoCategoria[]
+  imagenes           ProductoImagen[]
+  // ...existing code...
+  itemsCarrito       ItemCarrito[]
+  detallesPedido     DetallePedido[]
+  resenas            Resena[]
+
+  @@map("productos")
+}
+
+model Categoria {
+  id          Int                 @id @default(autoincrement())
+  nombre      String              @unique
+  slug        String              @unique
+  descripcion String?
+  creadoEn    DateTime            @default(now())
+  actualizadoEn DateTime          @updatedAt
+
+  productos   ProductoCategoria[]
+
+  @@map("categorias")
+}
+
+model ProductoCategoria {
+  productoId Int
+  categoriaId Int
+  creadoEn   DateTime @default(now())
+
+  producto   Producto  @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  categoria  Categoria @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
+
+  @@id([productoId, categoriaId])
+  @@map("productos_categorias")
+}
+
+model ProductoImagen {
+  id         Int      @id @default(autoincrement())
+  productoId Int
+  url        String
+  esPrincipal Boolean @default(false)
+  orden      Int      @default(0)
+  creadoEn   DateTime @default(now())
+
+  producto   Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+
+  @@map("productos_imagenes")
+}
+
+
+// ─── CARRITO ────────────────────────────────────────────────────────────────
+
+model ItemCarrito {
   id          Int      @id @default(autoincrement())
-  name        String
-  description String?
-  price       Decimal  @db.Decimal(10, 2)
-  stock       Int      @default(0)
-  imageUrl    String?
-  condition   String?  @default("nuevo")
-  rating      Float?   @default(0)
-  sellerId    Int
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  usuarioId   Int
+  productoId  Int
+  cantidad    Int      @default(1)
+  creadoEn    DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
 
-  seller      User       @relation(fields: [sellerId], references: [id])
-  cartItems   CartItem[]
-  orderItems  OrderItem[]
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  producto    Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
 
-  @@map("products")
+  @@unique([usuarioId, productoId])
+  @@map("items_carrito")
 }
 
-// ─── CART ─────────────────────────────────────────────────────────────────────
+// ─── PEDIDOS, PAGOS Y ENVIOS ────────────────────────────────────────────────
 
-model CartItem {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  productId Int
-  quantity  Int      @default(1)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model Pedido {
+  id            Int           @id @default(autoincrement())
+  usuarioId     Int
+  estado        EstadoPedido  @default(PENDIENTE)
+  metodoPago    MetodoPago    @default(EFECTIVO)
+  total         Decimal       @db.Decimal(10, 2)
+  notas         String?
+  creadoEn      DateTime      @default(now())
+  actualizadoEn DateTime      @updatedAt
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  usuario       Usuario       @relation(fields: [usuarioId], references: [id])
+  detalles      DetallePedido[]
+  factura       Factura?
+  // ...existing code...
 
-  @@unique([userId, productId])
-  @@map("cart_items")
+  @@map("pedidos")
 }
 
-// ─── ORDERS ───────────────────────────────────────────────────────────────────
+model DetallePedido {
+  id             Int      @id @default(autoincrement())
+  pedidoId       Int
+  productoId     Int
+  cantidad       Int
+  precioUnitario Decimal  @db.Decimal(10, 2)
+  subtotal       Decimal  @db.Decimal(10, 2)
 
-model Order {
+  pedido         Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  producto       Producto @relation(fields: [productoId], references: [id])
+
+  @@map("pedidos_detalles")
+}
+
+model Factura {
   id            Int         @id @default(autoincrement())
-  userId        Int
-  status        String      @default("pendiente")  // pendiente | confirmada | cancelada | entregada
-  paymentMethod String      @default("efectivo")
+  numeroFactura String      @unique
+  pedidoId      Int         @unique
+  usuarioId     Int
   total         Decimal     @db.Decimal(10, 2)
-  notes         String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  metodoPago    MetodoPago
+  emitidaEn     DateTime    @default(now())
 
-  user          User        @relation(fields: [userId], references: [id])
-  items         OrderItem[]
-  invoice       Invoice?
+  pedido        Pedido      @relation(fields: [pedidoId], references: [id])
 
-  @@map("orders")
+  @@map("facturas")
 }
 
-model OrderItem {
-  id         Int     @id @default(autoincrement())
-  orderId    Int
-  productId  Int
-  quantity   Int
-  unitPrice  Decimal @db.Decimal(10, 2)
-  lineTotal  Decimal @db.Decimal(10, 2)
 
-  order      Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product    Product @relation(fields: [productId], references: [id])
 
-  @@map("order_items")
+// ─── EXPERIENCIA DEL CLIENTE E IA ───────────────────────────────────────────
+
+model Resena {
+  id          Int      @id @default(autoincrement())
+  usuarioId   Int
+  productoId  Int
+  calificacion Int     @default(5)
+  comentario  String?
+  sentimiento String?
+  metadatos   Json?
+  creadoEn    DateTime @default(now())
+
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  producto    Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, productoId])
+  @@map("resenas")
 }
 
-// ─── INVOICES ─────────────────────────────────────────────────────────────────
+model EventoUsuario {
+  id            Int               @id @default(autoincrement())
+  usuarioId     Int?
+  tipo          TipoEventoUsuario
+  descripcion   String?
+  referenciaId  Int?
+  referenciaTipo String?
+  origen        CanalInteraccionIA @default(DASHBOARD)
+  metadatos     Json?
+  registradoEn  DateTime          @default(now())
 
-model Invoice {
-  id            Int      @id @default(autoincrement())
-  invoiceNumber String   @unique  // INV-0001, INV-0002, ...
-  orderId       Int      @unique
-  userId        Int
-  total         Decimal  @db.Decimal(10, 2)
-  paymentMethod String
-  issuedAt      DateTime @default(now())
+  usuario       Usuario?          @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
 
-  order         Order    @relation(fields: [orderId], references: [id])
+  @@index([tipo, registradoEn])
+  @@map("eventos_usuario")
+}
 
-  @@map("invoices")
+model InteraccionIA {
+  id                Int               @id @default(autoincrement())
+  usuarioId         Int?
+  canal             CanalInteraccionIA @default(CHATBOT)
+  consulta          String            @db.Text
+  respuesta         String?           @db.Text
+  intencionDetectada String?
+  confianza         Float?
+  tokensConsumidos  Int?
+  metadatos         Json?
+  creadoEn          DateTime          @default(now())
+
+  usuario           Usuario?          @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+
+  @@index([canal, creadoEn])
+  @@map("interacciones_ia")
 }

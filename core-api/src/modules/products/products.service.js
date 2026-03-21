@@ -1,148 +1,207 @@
 const prisma = require('../../config/database');
 
 // ─── Crear producto ───────────────────────────────────────────────────────────
-const createProduct = async ({ name, description, price, stock, sellerId, imageUrl, condition, rating }) => {
-  const product = await prisma.product.create({
+const createProduct = async ({ titulo, descripcion, precio, stock, sellerId, imageUrl, condicion, promedioCalificacion }) => {
+  // Usar destructuring alineado al schema
+  // Mapear valores de condición del frontend a enum Prisma
+  const conditionMap = {
+    'NUEVO': 'NUEVO',
+    'USADO': 'USADO',
+    'REACONDICIONADO': 'REACONDICIONADO',
+  };
+  const prismaCondition = conditionMap[condicion] || 'NUEVO';
+
+  // Crear producto
+  const product = await prisma.producto.create({
     data: {
-      name,
-      description: description || null,
-      price,
+      titulo,
+      descripcion: descripcion || null,
+      precio,
       stock,
-      imageUrl: imageUrl || null,
-      condition: condition || 'nuevo',
-      rating: rating ? parseFloat(rating) : 0,
-      sellerId,
+      condicion: prismaCondition,
+      vendedorId: sellerId,
+      promedioCalificacion: promedioCalificacion ? parseFloat(promedioCalificacion) : 0,
     },
     include: {
-      seller: {
-        select: { id: true, firstName: true, lastName: true, email: true },
+      vendedor: {
+        select: { id: true, nombres: true, apellidos: true, correo: true },
       },
+      imagenes: true,
     },
   });
 
-  return product;
+  // Si hay imagen, crear ProductoImagen
+  if (imageUrl) {
+    await prisma.productoImagen.create({
+      data: {
+        productoId: product.id,
+        url: imageUrl,
+        esPrincipal: true,
+      },
+    });
+  }
+
+  // Volver a traer el producto con imágenes
+  const fullProduct = await prisma.producto.findUnique({
+    where: { id: product.id },
+    include: {
+      vendedor: { select: { id: true, nombres: true, apellidos: true, correo: true } },
+      imagenes: true,
+    },
+  });
+  return fullProduct;
 };
 
 // ─── Listar todos los productos activos ───────────────────────────────────────
 const getProducts = async ({ search, condition, minPrice, maxPrice, minRating } = {}) => {
-  const where = { isActive: true };
+  const where = { estaActivo: true };
 
   if (search) {
     where.OR = [
-      { name: { contains: search, mode: 'insensitive' } },
-      { description: { contains: search, mode: 'insensitive' } },
+      { titulo: { contains: search, mode: 'insensitive' } },
+      { descripcion: { contains: search, mode: 'insensitive' } },
     ];
   }
 
-  if (condition) where.condition = condition;
+  if (condition) {
+    const conditionMap = {
+      'nuevo': 'NUEVO',
+      'usado': 'USADO',
+      'reacondicionado': 'SEMINUEVO',
+      'seminuevo': 'SEMINUEVO',
+      'NUEVO': 'NUEVO',
+      'USADO': 'USADO',
+      'SEMINUEVO': 'SEMINUEVO',
+    };
+    where.condicion = conditionMap[condition.toLowerCase()] || 'NUEVO';
+  }
 
   if (minPrice !== undefined || maxPrice !== undefined) {
-    where.price = {};
-    if (minPrice !== undefined) where.price.gte = parseFloat(minPrice);
-    if (maxPrice !== undefined) where.price.lte = parseFloat(maxPrice);
+    where.precio = {};
+    if (minPrice !== undefined) where.precio.gte = parseFloat(minPrice);
+    if (maxPrice !== undefined) where.precio.lte = parseFloat(maxPrice);
   }
 
   if (minRating !== undefined && minRating > 0) {
-    where.rating = { gte: parseFloat(minRating) };
+    where.promedioCalificacion = { gte: parseFloat(minRating) };
   }
 
-  const products = await prisma.product.findMany({
+  const products = await prisma.producto.findMany({
     where,
     include: {
-      seller: {
-        select: { id: true, firstName: true, lastName: true },
+      vendedor: {
+        select: { id: true, nombres: true, apellidos: true, correo: true },
       },
+      imagenes: true,
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { creadoEn: 'desc' },
   });
-
   return products;
 };
 
 
 // ─── Obtener producto por ID ──────────────────────────────────────────────────
 const getProductById = async (id) => {
-  const product = await prisma.product.findFirst({
-    where: { id, isActive: true },
+  const product = await prisma.producto.findFirst({
+    where: { id, estaActivo: true },
     include: {
-      seller: {
-        select: { id: true, firstName: true, lastName: true },
-      },
+      vendedor: { select: { id: true, nombres: true, apellidos: true, correo: true } },
+      imagenes: true,
     },
   });
-
   if (!product) {
     throw new Error('Producto no encontrado');
   }
-
   return product;
 };
 
 // ─── Actualizar producto ──────────────────────────────────────────────────────
 const updateProduct = async (id, sellerId, data) => {
-  const product = await prisma.product.findFirst({
-    where: { id, isActive: true },
+  const product = await prisma.producto.findFirst({
+    where: { id, estaActivo: true },
   });
 
   if (!product) {
     throw new Error('Producto no encontrado');
   }
 
-  if (product.sellerId !== sellerId) {
+  if (product.vendedorId !== sellerId) {
     throw new Error('No tienes permiso para modificar este producto');
   }
 
   const updateData = { ...data };
-
-  if (Object.prototype.hasOwnProperty.call(updateData, 'description') && updateData.description === '') {
-    updateData.description = null;
+  if (Object.prototype.hasOwnProperty.call(updateData, 'descripcion') && updateData.descripcion === '') {
+    updateData.descripcion = null;
   }
-
-  const updated = await prisma.product.update({
+  // Mapear condición si viene del frontend
+  if (updateData.condicion) {
+    const conditionMap = {
+      'nuevo': 'NUEVO',
+      'usado': 'USADO',
+      'reacondicionado': 'SEMINUEVO',
+      'seminuevo': 'SEMINUEVO',
+      'NUEVO': 'NUEVO',
+      'USADO': 'USADO',
+      'SEMINUEVO': 'SEMINUEVO',
+    };
+    updateData.condicion = conditionMap[updateData.condicion.toLowerCase()] || 'NUEVO';
+  }
+  // Si hay nueva imagen, agregarla a ProductoImagen (Cloudinary)
+  if (updateData.imageUrl) {
+    await prisma.productoImagen.create({
+      data: {
+        productoId: id,
+        url: updateData.imageUrl,
+        esPrincipal: true,
+      },
+    });
+    delete updateData.imageUrl;
+  }
+  const updated = await prisma.producto.update({
     where: { id },
     data: updateData,
     include: {
-      seller: {
-        select: { id: true, firstName: true, lastName: true, email: true },
-      },
+      vendedor: { select: { id: true, nombres: true, apellidos: true, correo: true } },
+      imagenes: true,
     },
   });
-
   return updated;
 };
 
 // ─── Eliminar producto (soft delete) ─────────────────────────────────────────
 const deleteProduct = async (id, sellerId) => {
-  const product = await prisma.product.findFirst({
-    where: { id, isActive: true },
+  const product = await prisma.producto.findFirst({
+    where: { id, estaActivo: true },
   });
 
   if (!product) {
     throw new Error('Producto no encontrado');
   }
 
-  if (product.sellerId !== sellerId) {
+  if (product.vendedorId !== sellerId) {
     throw new Error('No tienes permiso para eliminar este producto');
   }
 
-  await prisma.product.update({
+  await prisma.producto.update({
     where: { id },
-    data: { isActive: false },
+    data: { estaActivo: false },
   });
+  // Opcional: eliminar imágenes de Cloudinary (no implementado aquí)
 };
 
 // ─── Listar productos del vendedor ────────────────────────────────────────────
 const getMyProducts = async (sellerId) => { // <-- NUEVO
-  const products = await prisma.product.findMany({
-    where: { sellerId, isActive: true },
+  const products = await prisma.producto.findMany({
+    where: { vendedorId: sellerId, estaActivo: true },
     include: {
-      seller: {
-        select: { id: true, firstName: true, lastName: true },
+      vendedor: {
+        select: { id: true, nombres: true, apellidos: true, correo: true },
       },
+      imagenes: true,
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { creadoEn: 'desc' },
   });
-
+  console.log('IMAGENES DE MIS PRODUCTOS:', products.map(p => ({ id: p.id, imagenes: p.imagenes })));
   return products;
 };
 

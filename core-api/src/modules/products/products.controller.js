@@ -1,15 +1,29 @@
 const productsService = require('./products.service');
 const logger = require('../../shared/logger/logger');
+const cloudinary = require('../../shared/image/cloudinary');
+const fs = require('fs');
 
 // ─── POST /api/v1/products ────────────────────────────────────────────────────
 const createProduct = async (req, res) => {
   try {
-    const { name, description, price, stock, condition, rating } = req.body;
+    console.log('BODY RECIBIDO:', req.body);
+    const { titulo, descripcion, precio, stock, condicion, promedioCalificacion } = req.body;
     const sellerId = req.user.userId;
-    const imageUrl = req.file ? `/uploads/products/${req.file.filename}` : null;
+    let imageUrl = null;
+
+    if (req.file) {
+      // Subir imagen a Cloudinary desde buffer usando promesa
+      imageUrl = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream({ folder: 'productos' }, (error, result) => {
+          if (error) return reject(new Error('Error al subir imagen a Cloudinary'));
+          resolve(result.secure_url);
+        });
+        stream.end(req.file.buffer);
+      });
+    }
 
     const product = await productsService.createProduct({
-      name, description, price, stock, sellerId, imageUrl, condition, rating,
+      titulo, descripcion, precio, stock, sellerId, imageUrl, condicion, promedioCalificacion,
     });
 
     logger.info('Producto creado', { productId: product.id, sellerId });
@@ -70,9 +84,17 @@ const updateProduct = async (req, res) => {
       return res.status(400).json({ error: 'ID de producto inválido' });
     }
     const sellerId = req.user.userId;
-
-    const product = await productsService.updateProduct(id, sellerId, req.body);
-    
+    let imageUrl = null;
+    // Si hay archivo, subir a Cloudinary
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, { folder: 'productos' });
+      imageUrl = result.secure_url;
+      fs.unlink(req.file.path, () => {});
+    }
+    // Pasar imageUrl en el body
+    const updateData = { ...req.body };
+    if (imageUrl) updateData.imageUrl = imageUrl;
+    const product = await productsService.updateProduct(id, sellerId, updateData);
     logger.info('Producto actualizado', { productId: id, sellerId });
     res.json({ message: 'Producto actualizado correctamente', product });
   } catch (error) {

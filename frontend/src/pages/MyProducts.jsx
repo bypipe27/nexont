@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/api';
 
 function PublishProductModal({ isOpen, onClose, onProductPublished }) {
-  const [form, setForm] = useState({ name: '', description: '', price: '', stock: '', condition: 'nuevo', rating: '0' });
+  const [form, setForm] = useState({ titulo: '', descripcion: '', precio: '', stock: '', condicion: 'NUEVO', promedioCalificacion: '0' });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState('');
@@ -12,7 +12,7 @@ function PublishProductModal({ isOpen, onClose, onProductPublished }) {
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  }
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -37,20 +37,20 @@ function PublishProductModal({ isOpen, onClose, onProductPublished }) {
 
     try {
       const formData = new FormData();
-      formData.append('name', form.name);
-      formData.append('description', form.description);
-      formData.append('price', parseFloat(form.price));
+      formData.append('titulo', form.titulo);
+      formData.append('descripcion', form.descripcion);
+      formData.append('precio', parseFloat(form.precio));
       formData.append('stock', parseInt(form.stock));
-      formData.append('condition', form.condition);
-      formData.append('rating', parseFloat(form.rating));
-      if (imageFile) formData.append('image', imageFile);
+      formData.append('condicion', form.condicion);
+      formData.append('promedioCalificacion', parseFloat(form.promedioCalificacion));
+      if (imageFile) formData.append('imagen', imageFile);
 
       await api.post('/products', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
       setSuccess('Producto publicado correctamente');
-      setForm({ name: '', description: '', price: '', stock: '', condition: 'nuevo', rating: '0' });
+      setForm({ titulo: '', descripcion: '', precio: '', stock: '', condicion: 'nuevo', promedioCalificacion: '0' });
       setImageFile(null);
       setImagePreview(null);
       if (onProductPublished) onProductPublished();
@@ -66,7 +66,7 @@ function PublishProductModal({ isOpen, onClose, onProductPublished }) {
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   if (!isOpen) return null;
 
@@ -107,18 +107,18 @@ function PublishProductModal({ isOpen, onClose, onProductPublished }) {
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '1rem' }}>
             <label style={{ fontWeight: 600, display: 'block', marginBottom: '0.3rem' }}>Nombre *</label>
-            <input name="name" value={form.name} onChange={handleChange} required
+            <input name="titulo" value={form.titulo} onChange={handleChange} required
               style={{ width: '100%', padding: '0.6rem', boxSizing: 'border-box', borderRadius: 4, border: '1px solid #ddd', fontSize: '1rem' }} />
           </div>
           <div style={{ marginBottom: '1rem' }}>
             <label style={{ fontWeight: 600, display: 'block', marginBottom: '0.3rem' }}>Descripcion</label>
-            <textarea name="description" value={form.description} onChange={handleChange} rows={3}
+            <textarea name="descripcion" value={form.descripcion} onChange={handleChange} rows={3}
               style={{ width: '100%', padding: '0.6rem', boxSizing: 'border-box', borderRadius: 4, border: '1px solid #ddd', fontFamily: 'sans-serif', fontSize: '1rem' }} />
           </div>
           <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
             <div style={{ flex: 1 }}>
               <label style={{ fontWeight: 600, display: 'block', marginBottom: '0.3rem' }}>Precio * (mayor a 0)</label>
-              <input type="number" name="price" value={form.price} onChange={handleChange}
+              <input type="number" name="precio" value={form.precio} onChange={handleChange}
                 step="0.01" min="0.01" required
                 style={{ width: '100%', padding: '0.6rem', boxSizing: 'border-box', borderRadius: 4, border: '1px solid #ddd', fontSize: '1rem' }} />
             </div>
@@ -132,16 +132,16 @@ function PublishProductModal({ isOpen, onClose, onProductPublished }) {
           <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
             <div style={{ flex: 1 }}>
               <label style={{ fontWeight: 600, display: 'block', marginBottom: '0.3rem' }}>Estado</label>
-              <select name="condition" value={form.condition} onChange={handleChange}
+              <select name="condicion" value={form.condicion} onChange={handleChange}
                 style={{ width: '100%', padding: '0.6rem', boxSizing: 'border-box', borderRadius: 4, border: '1px solid #ddd', fontSize: '1rem' }}>
-                <option value="nuevo">Nuevo</option>
-                <option value="usado">Usado</option>
-                <option value="reacondicionado">Reacondicionado</option>
+                <option value="NUEVO">Nuevo</option>
+                <option value="USADO">Usado</option>
+                <option value="REACONDICIONADO">Reacondicionado</option>
               </select>
             </div>
             <div style={{ flex: 1 }}>
               <label style={{ fontWeight: 600, display: 'block', marginBottom: '0.3rem' }}>Calificacion inicial 0-5</label>
-              <input type="number" name="rating" value={form.rating} onChange={handleChange}
+              <input type="number" name="promedioCalificacion" value={form.promedioCalificacion} onChange={handleChange}
                 min="0" max="5" step="0.1"
                 style={{ width: '100%', padding: '0.6rem', boxSizing: 'border-box', borderRadius: 4, border: '1px solid #ddd', fontSize: '1rem' }} />
             </div>
@@ -213,7 +213,7 @@ function MyProducts() {
   };
 
   useEffect(() => {
-    if (!token || !user?.isVerifiedSeller) {
+    if (!token || !user?.esVendedorVerificado) {
       navigate('/');
       return;
     }
@@ -428,31 +428,37 @@ function MyProducts() {
                     onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.1)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                   >
                     <div style={{ position: 'relative', aspectRatio: '1', background: '#f3f4f6', overflow: 'hidden' }}>
-                      <img
-                        src={product.imageUrl || product.image || 'https://via.placeholder.com/300?text=' + encodeURIComponent(product.name)}
-                        alt={product.name}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.3s' }}
-                        onMouseEnter={(e) => e.target.style.transform = 'scale(1.1)'}
-                        onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-                      />
+                      {product.imagenes && product.imagenes.length > 0 && product.imagenes[0]?.url ? (
+                        <img
+                          src={product.imagenes[0].url}
+                          alt={product.titulo || 'Producto'}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.3s' }}
+                          onMouseEnter={(e) => e.target.style.transform = 'scale(1.1)'}
+                          onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                        />
+                      ) : (
+                        <div style={{ width: '100%', height: '100%', background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#bbb', fontSize: '0.9rem' }}>
+                          Sin imagen
+                        </div>
+                      )}
                       <span style={{ position: 'absolute', top: '0.75rem', left: '0.75rem', background: '#667eea', color: 'white', fontSize: '0.75rem', fontWeight: 'bold', padding: '0.25rem 0.5rem', borderRadius: '4px' }}>
                         Stock: {product.stock}
                       </span>
                     </div>
                     <div style={{ padding: '1rem' }}>
                       <p style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#667eea', textTransform: 'uppercase', marginBottom: '0.25rem', margin: 0 }}>
-                        {product.condition || 'nuevo'}
+                        {product.condicion || 'NUEVO'}
                       </p>
                       <h3 style={{ fontSize: '1rem', fontWeight: 'bold', color: '#1f2937', marginBottom: '0.75rem', lineHeight: '1.3', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>
-                        {product.name}
+                        {product.titulo}
                       </h3>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
                           <p style={{ fontSize: '1.25rem', fontWeight: 'bold', color: '#1f2937', margin: 0 }}>
-                            ${(parseFloat(product.price) || 0).toFixed(2)}
+                            ${(parseFloat(product.precio) || 0).toFixed(2)}
                           </p>
                           <p style={{ fontSize: '0.78rem', color: '#f5a623', margin: 0 }}>
-                            {'*'.repeat(Math.round(product.rating || 0))}{'^'.repeat(5 - Math.round(product.rating || 0))}
+                            {'★'.repeat(Math.round(product.promedioCalificacion || 0))}{'☆'.repeat(5 - Math.round(product.promedioCalificacion || 0))}
                           </p>
                         </div>
                         <span style={{ fontSize: '0.75rem', color: product.stock > 0 ? '#10b981' : '#ef4444', fontWeight: 'bold' }}>
@@ -460,7 +466,7 @@ function MyProducts() {
                         </span>
                       </div>
                       <div style={{ borderTop: '1px solid #eee', marginTop: '0.75rem', paddingTop: '0.75rem', fontSize: '0.82rem', color: '#555' }}>
-                        {product.seller?.firstName} {product.seller?.lastName}
+                        {product.vendedor?.nombres} {product.vendedor?.apellidos}
                       </div>
                       <div style={{ fontSize: '0.78rem', color: '#aaa', marginTop: '0.4rem' }}>
                         Editar/Borrar →
