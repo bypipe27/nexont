@@ -29,11 +29,11 @@ router.get('/my', authMiddleware, productsController.getMyProducts);
 // GET /api/v1/products/:id — Obtener producto por ID (PÚBLICO)
 router.get('/:id', productsController.getProductById);
 
-// POST /api/v1/products — Publicar nuevo producto (solo autenticados)
+// POST /api/v1/products — Publicar nuevo producto (solo autenticados) // <-- NUEVO
 router.post('/', authMiddleware, upload.single('imagen'), validateCreateProduct, productsController.createProduct);
 
 // PUT /api/v1/products/:id — Actualizar producto (solo el vendedor)
-router.put('/:id', authMiddleware, validateUpdateProduct, productsController.updateProduct);
+router.put('/:id', authMiddleware, upload.single('imagen'), validateUpdateProduct, productsController.updateProduct);
 
 // DELETE /api/v1/products/:id — Eliminar producto (solo el vendedor)
 router.delete('/:id', authMiddleware, productsController.deleteProduct);
