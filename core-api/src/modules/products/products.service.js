@@ -1,4 +1,5 @@
 const prisma = require('../../config/database');
+const logger = require('../../shared/logger/logger');
 
 // ─── Mapa de condiciones ──────────────────────────────────────────────────────
 const conditionMap = {
@@ -105,42 +106,56 @@ const getProductById = async (id) => {
     },
   });
   if (!product) {
+    logger.warn('Producto no encontrado', { productId: id });
     throw new Error('Producto no encontrado');
   }
   return product;
 };
 
-// ─── PUT /api/v1/products/:id ─────────────────────────────────────────────────
-const updateProduct = async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'ID de producto inválido' });
-
-    const sellerId = req.user.userId;
-    let imageUrl = null;
-
-    // Si hay nueva imagen, subirla a Cloudinary desde buffer // <-- MODIFICADO
-    if (req.file) {
-      imageUrl = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream({ folder: 'productos' }, (error, result) => {
-          if (error) return reject(new Error('Error al subir imagen a Cloudinary'));
-          resolve(result.secure_url);
-        });
-        stream.end(req.file.buffer);
-      });
-    }
-
-    const updateData = { ...req.body };
-    if (imageUrl) updateData.imageUrl = imageUrl;
-
-    const product = await productsService.updateProduct(id, sellerId, updateData);
-    logger.info('Producto actualizado', { productId: id, sellerId });
-    res.json({ message: 'Producto actualizado correctamente', product });
-  } catch (error) {
-    logger.warn('Error al actualizar producto', { error: error.message });
-    const status = error.message.includes('permiso') ? 403 : 404;
-    res.status(status).json({ error: error.message });
+// ─── Actualizar producto ─────────────────────────────────────────────────────
+const updateProduct = async (id, sellerId, updateData) => {
+  if (Number.isNaN(id)) {
+    logger.warn('ID de producto inválido al actualizar', { productId: id, sellerId });
+    throw new Error('ID de producto inválido');
   }
+
+  // Buscar el producto
+  const product = await prisma.producto.findFirst({
+    where: { id, estaActivo: true },
+    include: { imagenes: true },
+  });
+  if (!product) {
+    logger.warn('Producto no encontrado al actualizar', { productId: id, sellerId });
+    throw new Error('Producto no encontrado');
+  }
+  if (product.vendedorId !== sellerId) {
+    logger.warn('Intento de actualizar producto sin permiso', { productId: id, sellerId });
+    throw new Error('No tienes permiso para actualizar este producto');
+  }
+
+  // Si hay nueva imagen, agregarla
+  if (updateData.imageUrl) {
+    await prisma.productoImagen.create({
+      data: {
+        productoId: id,
+        url: updateData.imageUrl,
+        esPrincipal: true,
+      },
+    });
+    delete updateData.imageUrl;
+  }
+
+  // Actualizar el producto
+  const updated = await prisma.producto.update({
+    where: { id },
+    data: updateData,
+    include: {
+      vendedor: { select: { id: true, nombres: true, apellidos: true, correo: true } },
+      imagenes: true,
+    },
+  });
+  logger.info('Producto actualizado', { productId: id, sellerId });
+  return updated;
 };
 
 // ─── Eliminar producto (soft delete) ─────────────────────────────────────────
