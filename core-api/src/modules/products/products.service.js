@@ -2,24 +2,33 @@ const prisma = require('../../config/database');
 
 // ─── Crear producto ───────────────────────────────────────────────────────────
 const createProduct = async ({ titulo, descripcion, precio, stock, sellerId, imageUrl, condicion, promedioCalificacion }) => {
-  // Usar destructuring alineado al schema
-  // Mapear valores de condición del frontend a enum Prisma
   const conditionMap = {
     'NUEVO': 'NUEVO',
     'USADO': 'USADO',
     'REACONDICIONADO': 'REACONDICIONADO',
+    'nuevo': 'NUEVO',
+    'usado': 'USADO',
+    'reacondicionado': 'REACONDICIONADO',
   };
   const prismaCondition = conditionMap[condicion] || 'NUEVO';
 
-  // Crear producto
+  // Garantizar tipos correctos para Prisma
+  const vendedorIdInt = parseInt(sellerId, 10);
+  if (isNaN(vendedorIdInt)) throw new Error('sellerId inválido');
+
+  const precioDecimal = parseFloat(precio);
+  if (isNaN(precioDecimal)) throw new Error('precio inválido');
+
+  const stockInt = parseInt(stock, 10) || 0;
+
   const product = await prisma.producto.create({
     data: {
       titulo,
       descripcion: descripcion || null,
-      precio,
-      stock,
+      precio: precioDecimal,
+      stock: stockInt,
       condicion: prismaCondition,
-      vendedorId: sellerId,
+      vendedorId: vendedorIdInt,
       promedioCalificacion: promedioCalificacion ? parseFloat(promedioCalificacion) : 0,
     },
     include: {
@@ -30,7 +39,6 @@ const createProduct = async ({ titulo, descripcion, precio, stock, sellerId, ima
     },
   });
 
-  // Si hay imagen, crear ProductoImagen
   if (imageUrl) {
     await prisma.productoImagen.create({
       data: {
@@ -41,7 +49,6 @@ const createProduct = async ({ titulo, descripcion, precio, stock, sellerId, ima
     });
   }
 
-  // Volver a traer el producto con imágenes
   const fullProduct = await prisma.producto.findUnique({
     where: { id: product.id },
     include: {
@@ -99,6 +106,21 @@ const getProducts = async ({ search, condition, minPrice, maxPrice, minRating } 
   return products;
 };
 
+// ─── Obtener las últimas N publicaciones (para la home) ───────────────────────
+const getRecentProducts = async (limit = 6) => {
+  const products = await prisma.producto.findMany({
+    where: { estaActivo: true },
+    include: {
+      vendedor: {
+        select: { id: true, nombres: true, apellidos: true, correo: true },
+      },
+      imagenes: true,
+    },
+    orderBy: { creadoEn: 'desc' },
+    take: limit,
+  });
+  return products;
+};
 
 // ─── Obtener producto por ID ──────────────────────────────────────────────────
 const getProductById = async (id) => {
@@ -133,7 +155,6 @@ const updateProduct = async (id, sellerId, data) => {
   if (Object.prototype.hasOwnProperty.call(updateData, 'descripcion') && updateData.descripcion === '') {
     updateData.descripcion = null;
   }
-  // Mapear condición si viene del frontend
   if (updateData.condicion) {
     const conditionMap = {
       'nuevo': 'NUEVO',
@@ -146,7 +167,6 @@ const updateProduct = async (id, sellerId, data) => {
     };
     updateData.condicion = conditionMap[updateData.condicion.toLowerCase()] || 'NUEVO';
   }
-  // Si hay nueva imagen, agregarla a ProductoImagen (Cloudinary)
   if (updateData.imageUrl) {
     await prisma.productoImagen.create({
       data: {
@@ -186,11 +206,10 @@ const deleteProduct = async (id, sellerId) => {
     where: { id },
     data: { estaActivo: false },
   });
-  // Opcional: eliminar imágenes de Cloudinary (no implementado aquí)
 };
 
 // ─── Listar productos del vendedor ────────────────────────────────────────────
-const getMyProducts = async (sellerId) => { // <-- NUEVO
+const getMyProducts = async (sellerId) => {
   const products = await prisma.producto.findMany({
     where: { vendedorId: sellerId, estaActivo: true },
     include: {
@@ -209,7 +228,8 @@ const getMyProducts = async (sellerId) => { // <-- NUEVO
 module.exports = {
   createProduct,
   getProducts,
-  getMyProducts, // <-- NUEVO
+  getRecentProducts,  // ← NUEVO
+  getMyProducts,
   getProductById,
   updateProduct,
   deleteProduct,
