@@ -73,28 +73,39 @@ export async function chat({ rol, historial = [], mensaje, contexto = {} }) {
     if (choice.finish_reason === 'tool_calls') {
       mensajes.push(message);
 
-      for (const toolCall of message.tool_calls) {
-        const nombre  = toolCall.function.name;
-        const handler = TOOL_HANDLERS[nombre];
-        let resultado;
+        for (const toolCall of message.tool_calls) {
+          const nombre  = toolCall.function.name;
+          const handler = TOOL_HANDLERS[nombre];
+          let resultado;
 
-        if (!handler) {
-          resultado = { error: `Tool '${nombre}' no encontrada` };
-        } else {
+          let args;
           try {
-            const args = JSON.parse(toolCall.function.arguments);
-            resultado  = await handler(args);
+            args = JSON.parse(toolCall.function.arguments);
           } catch (err) {
-            console.error(`Error en tool ${nombre}:`, err.message);
-            resultado = { error: `Error consultando Nexont: ${err.message}` };
+            console.error(`[CHATBOT] Error parseando argumentos para tool ${nombre}:`, err.message);
+            args = {};
           }
-        }
+          console.log(`[CHATBOT] Ejecutando tool: ${nombre} con args:`, args);
 
-        mensajes.push({
-          role:         'tool',
-          tool_call_id: toolCall.id,
-          content:      JSON.stringify(resultado),
-        });
+          if (!handler) {
+            resultado = { error: `Tool '${nombre}' no encontrada` };
+          } else {
+            try {
+              resultado  = await handler(args);
+            } catch (err) {
+              console.error(`Error en tool ${nombre}:`, err.message);
+              resultado = { error: `Error consultando Nexont: ${err.message}` };
+            }
+          }
+
+          console.log(`[CHATBOT] Resultado tool: ${nombre}:`, resultado);
+
+          mensajes.push({
+            role:         'tool',
+            tool_call_id: toolCall.id,
+            content:      JSON.stringify(resultado),
+          });
+        
       }
     }
   }
@@ -120,6 +131,9 @@ export async function chat({ rol, historial = [], mensaje, contexto = {} }) {
 
 // Endpoint avanzado usando el sistema de prompts y queries
 app.post('/chat', async (req, res) => {
+  // Log de la URL y método de la petición
+  console.log(`[CHATBOT] Petición recibida: ${req.method} ${req.originalUrl}`);
+  console.log('[CHATBOT] Body recibido:', JSON.stringify(req.body, null, 2));
   const { rol = 'comprador', historial = [], mensaje, contexto = {} } = req.body;
   if (!mensaje) return res.status(400).json({ error: 'Message is required' });
 

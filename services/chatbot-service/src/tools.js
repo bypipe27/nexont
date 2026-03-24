@@ -39,6 +39,7 @@ export const TOOLS_COMPRADOR = [
 ];
 
 export const TOOLS_VENDEDOR = [
+  ...TOOLS_COMPRADOR,
   {
     name: 'obtener_mis_productos',
     description: 'Lista todos los productos del vendedor con sus estadísticas de ventas y vistas.',
