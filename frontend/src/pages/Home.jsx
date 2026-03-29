@@ -21,6 +21,23 @@ const STYLES = `
     --border-soft: rgba(26,23,20,0.06);
   }
 
+  [data-theme="dark"] {
+    --cream: #0e0c0a;
+    --cream-dark: #161410;
+    --ink: #f0ece4;
+    --ink-mid: #c8c0b4;
+    --ink-soft: #8a8278;
+    --ink-ghost: #4a4540;
+    --amber: #d4a84a;
+    --amber-light: #e0b85a;
+    --white: #111111;
+    --border: rgba(240,236,228,0.08);
+    --border-soft: rgba(240,236,228,0.04);
+  }
+
+  .nx-root, .nxmp-root { transition: background-color 0.25s ease; }
+
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   .nx-root {

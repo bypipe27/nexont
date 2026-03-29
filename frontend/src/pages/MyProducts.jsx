@@ -7,6 +7,26 @@ import { useTheme } from '../context/ThemeContext';
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,200;0,300;0,400;0,600;1,200;1,300&family=DM+Sans:wght@300;400;500;600&display=swap');
   :root { --cream:#F5F0E8; --cream-dark:#EDE8DF; --ink:#1A1714; --ink-mid:#3D3830; --ink-soft:#7A7268; --ink-ghost:#B8B0A6; --amber:#C4973A; --white:#FDFBF8; --border:rgba(26,23,20,0.1); }
+  [data-theme="dark"] {
+    --cream: #0e0c0a;
+    --cream-dark: #161410;
+    --ink: #f0ece4;
+    --ink-mid: #c8c0b4;
+    --ink-soft: #8a8278;
+    --ink-ghost: #4a4540;
+    --amber: #d4a84a;
+    --white: #111111;
+    --border: rgba(240,236,228,0.08);
+  }
+
+  [data-theme="dark"] .nxmp-bar { background:rgba(14,12,10,0.97); }
+  [data-theme="dark"] .nxpm-modal { background:#161410; }
+  [data-theme="dark"] .nxpm-head { background:#0e0c0a; }
+  [data-theme="dark"] .nxmp-sidebar, [data-theme="dark"] .nxmp-dd { background:#111111; }
+  [data-theme="dark"] .nxmp-card { background:#111111; }
+  [data-theme="dark"] .nxmp-card:hover { background:#161410; }
+  [data-theme="dark"] .nxmp-stat { background:#111111; }
+
 
   .nxmp-root { min-height:100vh; background:var(--cream); font-family:'DM Sans',sans-serif; color:var(--ink); }
 
@@ -178,7 +198,7 @@ function Toast({ message, type, onClose }) {
 
 // ─── Modal Publicar ───────────────────────────────────────────────────────────
 function PublishModal({ isOpen, onClose, onPublished }) {
-  const [form, setForm] = useState({ titulo: '', descripcion: '', precio: '', stock: '', condicion: 'NUEVO', promedioCalificacion: '0' });
+  const [form, setForm] = useState({ titulo: '', descripcion: '', precio: '', stock: '', condicion: 'NUEVO' });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState('');
@@ -189,7 +209,7 @@ function PublishModal({ isOpen, onClose, onPublished }) {
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
   const handleImage  = e => { const f = e.target.files[0]; if (f) { setImageFile(f); setImagePreview(URL.createObjectURL(f)); } };
   const handleClose  = () => {
-    setForm({ titulo: '', descripcion: '', precio: '', stock: '', condicion: 'NUEVO', promedioCalificacion: '0' });
+    setForm({ titulo: '', descripcion: '', precio: '', stock: '', condicion: 'NUEVO' });
     setImageFile(null); setImagePreview(null); setError(''); setSuccess('');
     onClose();
   };
@@ -202,7 +222,7 @@ function PublishModal({ isOpen, onClose, onPublished }) {
       const fd = new FormData();
       fd.append('titulo', form.titulo); fd.append('descripcion', form.descripcion);
       fd.append('precio', parseFloat(form.precio)); fd.append('stock', parseInt(form.stock));
-      fd.append('condicion', form.condicion); fd.append('promedioCalificacion', parseFloat(form.promedioCalificacion));
+      fd.append('condicion', form.condicion); fd.append('promedioCalificacion', 0);
       if (imageFile) fd.append('imagen', imageFile);
       await api.post('/products', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       setSuccess('Producto publicado correctamente.');
@@ -237,13 +257,10 @@ function PublishModal({ isOpen, onClose, onPublished }) {
               <div className="nxpm-f"><label>Precio (USD) *</label><input type="number" name="precio" value={form.precio} onChange={handleChange} step="0.01" min="0.01" required placeholder="0.00" /></div>
               <div className="nxpm-f"><label>Stock *</label><input type="number" name="stock" value={form.stock} onChange={handleChange} min="0" required placeholder="0" /></div>
             </div>
-            <div className="nxpm-f-row">
-              <div className="nxpm-f"><label>Estado</label>
-                <select name="condicion" value={form.condicion} onChange={handleChange}>
-                  <option value="NUEVO">Nuevo</option><option value="USADO">Usado</option><option value="REACONDICIONADO">Reacondicionado</option>
-                </select>
-              </div>
-              <div className="nxpm-f"><label>Calificación inicial (0–5)</label><input type="number" name="promedioCalificacion" value={form.promedioCalificacion} onChange={handleChange} min="0" max="5" step="0.1" /></div>
+            <div className="nxpm-f"><label>Estado</label>
+              <select name="condicion" value={form.condicion} onChange={handleChange}>
+                <option value="NUEVO">Nuevo</option><option value="USADO">Usado</option><option value="REACONDICIONADO">Reacondicionado</option>
+              </select>
             </div>
             <div className="nxpm-f">
               <label>Imagen del producto</label>
@@ -267,7 +284,7 @@ function PublishModal({ isOpen, onClose, onPublished }) {
 
 // ─── Modal Editar ─────────────────────────────────────────────────────────────
 function EditProductModal({ isOpen, onClose, product, onProductUpdated }) {
-  const [form, setForm] = useState({ titulo: '', descripcion: '', precio: '', stock: '', condicion: 'NUEVO', promedioCalificacion: '0' });
+  const [form, setForm] = useState({ titulo: '', descripcion: '', precio: '', stock: '', condicion: 'NUEVO' });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState('');
@@ -276,7 +293,7 @@ function EditProductModal({ isOpen, onClose, product, onProductUpdated }) {
 
   useEffect(() => {
     if (product) {
-      setForm({ titulo: product.titulo || '', descripcion: product.descripcion || '', precio: product.precio || '', stock: product.stock || '', condicion: product.condicion || 'NUEVO', promedioCalificacion: product.promedioCalificacion || '0' });
+      setForm({ titulo: product.titulo || '', descripcion: product.descripcion || '', precio: product.precio || '', stock: product.stock || '', condicion: product.condicion || 'NUEVO' });
       setImagePreview(product.imagenes?.[0]?.url || null);
       setImageFile(null);
     }
@@ -292,7 +309,7 @@ function EditProductModal({ isOpen, onClose, product, onProductUpdated }) {
       const fd = new FormData();
       fd.append('titulo', form.titulo); fd.append('descripcion', form.descripcion);
       fd.append('precio', parseFloat(form.precio)); fd.append('stock', parseInt(form.stock));
-      fd.append('condicion', form.condicion); fd.append('promedioCalificacion', parseFloat(form.promedioCalificacion));
+      fd.append('condicion', form.condicion); fd.append('promedioCalificacion', product?.promedioCalificacion || 0);
       if (imageFile) fd.append('imagen', imageFile);
       await api.put(`/products/${product.id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       if (onProductUpdated) onProductUpdated();
@@ -325,13 +342,10 @@ function EditProductModal({ isOpen, onClose, product, onProductUpdated }) {
               <div className="nxpm-f"><label>Precio (USD) *</label><input type="number" name="precio" value={form.precio} onChange={handleChange} step="0.01" min="0.01" required /></div>
               <div className="nxpm-f"><label>Stock *</label><input type="number" name="stock" value={form.stock} onChange={handleChange} min="0" required /></div>
             </div>
-            <div className="nxpm-f-row">
-              <div className="nxpm-f"><label>Estado</label>
-                <select name="condicion" value={form.condicion} onChange={handleChange}>
-                  <option value="NUEVO">Nuevo</option><option value="USADO">Usado</option><option value="REACONDICIONADO">Reacondicionado</option>
-                </select>
-              </div>
-              <div className="nxpm-f"><label>Calificación (0–5)</label><input type="number" name="promedioCalificacion" value={form.promedioCalificacion} onChange={handleChange} min="0" max="5" step="0.1" /></div>
+            <div className="nxpm-f"><label>Estado</label>
+              <select name="condicion" value={form.condicion} onChange={handleChange}>
+                <option value="NUEVO">Nuevo</option><option value="USADO">Usado</option><option value="REACONDICIONADO">Reacondicionado</option>
+              </select>
             </div>
             <div className="nxpm-f">
               <label>Imagen del producto</label>

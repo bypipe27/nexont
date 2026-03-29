@@ -4,7 +4,7 @@
   box-sizing: border-box;
 }
 
-/* ─── Variables de tema ─────────────────────────────────────────────────── */
+/* ─── Variables tema claro (legacy) ─────────────────────────────────────── */
 :root {
   --bg-primary: #f9fafb;
   --bg-secondary: #ffffff;
@@ -19,27 +19,51 @@
   --navbar-bg: #1a1a1a;
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   --shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.15);
+
+  /* ─── Variables nxmp tema claro ── */
+  --cream: #F5F0E8;
+  --cream-dark: #EDE8DF;
+  --ink: #1A1714;
+  --ink-mid: #3D3830;
+  --ink-soft: #7A7268;
+  --ink-ghost: #B8B0A6;
+  --amber: #C4973A;
+  --white: #FDFBF8;
+  --border-nxmp: rgba(26,23,20,0.1);
 }
 
+/* ─── MODO OSCURO ────────────────────────────────────────────────────────── */
 [data-theme="dark"] {
-  --bg-primary: #111827;
-  --bg-secondary: #1f2937;
-  --bg-card: #1f2937;
-  --bg-sidebar: #1f2937;
-  --bg-input: #374151;
-  --text-primary: #f9fafb;
-  --text-secondary: #d1d5db;
-  --text-muted: #9ca3af;
-  --border: #374151;
-  --border-input: #4b5563;
-  --navbar-bg: #0f172a;
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  --shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.5);
+  /* Legacy */
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #111111;
+  --bg-card: #161616;
+  --bg-sidebar: #111111;
+  --bg-input: #1e1e1e;
+  --text-primary: #f0ece4;
+  --text-secondary: #a09890;
+  --text-muted: #6b6560;
+  --border: #2a2520;
+  --border-input: #3a3530;
+  --navbar-bg: #050505;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  --shadow-hover: 0 8px 24px rgba(0, 0, 0, 0.8);
+
+  /* ─── Variables nxmp modo oscuro ── */
+  --cream: #0e0c0a;
+  --cream-dark: #161410;
+  --ink: #f0ece4;
+  --ink-mid: #c8c0b4;
+  --ink-soft: #8a8278;
+  --ink-ghost: #4a4540;
+  --amber: #d4a84a;
+  --white: #111111;
+  --border-nxmp: rgba(240,236,228,0.08);
 }
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background-color: var(--bg-primary);
   color: var(--text-primary);
-  transition: background-color 0.2s, color 0.2s;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
