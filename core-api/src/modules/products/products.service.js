@@ -12,18 +12,25 @@ const conditionMap = {
 
 // ─── Crear producto ───────────────────────────────────────────────────────────
 const createProduct = async ({ titulo, descripcion, precio, stock, sellerId, imageUrl, condicion, promedioCalificacion }) => {
-
   const prismaCondition = conditionMap[condicion] || 'NUEVO';
 
+  // Garantizar tipos correctos para Prisma
+  const vendedorIdInt = parseInt(sellerId, 10);
+  if (isNaN(vendedorIdInt)) throw new Error('sellerId inválido');
+
+  const precioDecimal = parseFloat(precio);
+  if (isNaN(precioDecimal)) throw new Error('precio inválido');
+
+  const stockInt = parseInt(stock, 10) || 0;
 
   const product = await prisma.producto.create({
     data: {
       titulo,
       descripcion: descripcion || null,
-      precio,
-      stock,
+      precio: precioDecimal,
+      stock: stockInt,
       condicion: prismaCondition,
-      vendedorId: sellerId,
+      vendedorId: vendedorIdInt,
       promedioCalificacion: promedioCalificacion ? parseFloat(promedioCalificacion) : 0,
     },
     include: {
@@ -34,7 +41,6 @@ const createProduct = async ({ titulo, descripcion, precio, stock, sellerId, ima
     },
   });
 
-  
   if (imageUrl) {
     await prisma.productoImagen.create({
       data: {
@@ -44,7 +50,6 @@ const createProduct = async ({ titulo, descripcion, precio, stock, sellerId, ima
       },
     });
   }
-
 
   const fullProduct = await prisma.producto.findUnique({
     where: { id: product.id },
@@ -94,6 +99,21 @@ const getProducts = async ({ search, condition, minPrice, maxPrice, minRating } 
   return products;
 };
 
+// ─── Obtener las últimas N publicaciones (para la home) ───────────────────────
+const getRecentProducts = async (limit = 6) => {
+  const products = await prisma.producto.findMany({
+    where: { estaActivo: true },
+    include: {
+      vendedor: {
+        select: { id: true, nombres: true, apellidos: true, correo: true },
+      },
+      imagenes: true,
+    },
+    orderBy: { creadoEn: 'desc' },
+    take: limit,
+  });
+  return products;
+};
 
 // ─── Obtener producto por ID ──────────────────────────────────────────────────
 const getProductById = async (id) => {
@@ -110,56 +130,57 @@ const getProductById = async (id) => {
   return product;
 };
 
-// ─── PUT /api/v1/products/:id ─────────────────────────────────────────────────
-const updateProduct = async (req, res) => {
-  try {
-    const id = parseInt(req.params.id);
-    if (Number.isNaN(id)) return res.status(400).json({ error: 'ID de producto inválido' });
+// ─── Actualizar producto ──────────────────────────────────────────────────────
+const updateProduct = async (id, sellerId, updateData) => {
+  const product = await prisma.producto.findFirst({
+    where: { id, estaActivo: true },
+  });
 
-    const sellerId = req.user.userId;
-    let imageUrl = null;
+  if (!product) throw new Error('Producto no encontrado');
+  if (product.vendedorId !== sellerId) throw new Error('No tienes permiso para editar este producto');
 
-    // Si hay nueva imagen, subirla a Cloudinary desde buffer // <-- MODIFICADO
-    if (req.file) {
-      imageUrl = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream({ folder: 'productos' }, (error, result) => {
-          if (error) return reject(new Error('Error al subir imagen a Cloudinary'));
-          resolve(result.secure_url);
-        });
-        stream.end(req.file.buffer);
-      });
-    }
-
-    const updateData = { ...req.body };
-    if (imageUrl) updateData.imageUrl = imageUrl;
-
-    const product = await productsService.updateProduct(id, sellerId, updateData);
-    logger.info('Producto actualizado', { productId: id, sellerId });
-    res.json({ message: 'Producto actualizado correctamente', product });
-  } catch (error) {
-    logger.warn('Error al actualizar producto', { error: error.message });
-    const status = error.message.includes('permiso') ? 403 : 404;
-    res.status(status).json({ error: error.message });
+  if (updateData.condicion) {
+    updateData.condicion = conditionMap[updateData.condicion] || conditionMap[updateData.condicion?.toLowerCase()] || 'NUEVO';
   }
+
+  if (updateData.imageUrl) {
+    await prisma.productoImagen.create({
+      data: {
+        productoId: id,
+        url: updateData.imageUrl,
+        esPrincipal: true,
+      },
+    });
+    delete updateData.imageUrl;
+  }
+
+  const updated = await prisma.producto.update({
+    where: { id },
+    data: updateData,
+    include: {
+      vendedor: { select: { id: true, nombres: true, apellidos: true, correo: true } },
+      imagenes: true,
+    },
+  });
+  return updated;
 };
 
 // ─── Eliminar producto (soft delete) ─────────────────────────────────────────
 const deleteProduct = async (id, sellerId) => {
   const product = await prisma.producto.findFirst({
     where: { id, estaActivo: true },
-    include: { imagenes: true }, // <-- NUEVO: incluir imágenes
+    include: { imagenes: true },
   });
 
   if (!product) throw new Error('Producto no encontrado');
   if (product.vendedorId !== sellerId) throw new Error('No tienes permiso para eliminar este producto');
 
-  // Soft delete
   await prisma.producto.update({
     where: { id },
     data: { estaActivo: false },
   });
 
-  // Retornar URLs de imágenes para borrarlas de Cloudinary // <-- NUEVO
+  // Retornar URLs de imágenes para borrarlas de Cloudinary
   return product.imagenes.map(img => img.url);
 };
 
@@ -179,10 +200,10 @@ const getMyProducts = async (sellerId) => {
   return products;
 };
 
-
 module.exports = {
   createProduct,
   getProducts,
+  getRecentProducts,
   getMyProducts,
   getProductById,
   updateProduct,

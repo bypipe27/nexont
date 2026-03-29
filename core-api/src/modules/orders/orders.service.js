@@ -1,206 +1,211 @@
 const prisma = require('../../config/database');
 
-// ─── Generar número correlativo de factura ─────────────────────────────────
+// ─── Generar número correlativo de factura ────────────────────────────────────
 const generateInvoiceNumber = async () => {
-  const last = await prisma.invoice.findFirst({
+  const last = await prisma.factura.findFirst({
     orderBy: { id: 'desc' },
-    select: { invoiceNumber: true },
+    select: { numeroFactura: true },
   });
-
   if (!last) return 'INV-0001';
-
-  const lastNum = parseInt(last.invoiceNumber.replace('INV-', ''), 10);
-  const next = lastNum + 1;
-  return `INV-${String(next).padStart(4, '0')}`;
+  const lastNum = parseInt(last.numeroFactura.replace('INV-', ''), 10);
+  return `INV-${String(lastNum + 1).padStart(4, '0')}`;
 };
 
-// ─── Confirmar compra ──────────────────────────────────────────────────────
+// ─── Mapear método de pago al enum de Prisma ──────────────────────────────────
+const mapPaymentMethod = (method) => {
+  const map = {
+    'efectivo': 'EFECTIVO', 'tarjeta': 'TARJETA',
+    'transferencia': 'TRANSFERENCIA', 'paypal': 'PAYPAL',
+    'EFECTIVO': 'EFECTIVO', 'TARJETA': 'TARJETA',
+    'TRANSFERENCIA': 'TRANSFERENCIA', 'PAYPAL': 'PAYPAL',
+  };
+  return map[method] || 'EFECTIVO';
+};
+
+// ─── Confirmar compra ─────────────────────────────────────────────────────────
 const confirmOrder = async ({ userId, paymentMethod = 'efectivo', notes = '' }) => {
-  // 1. Obtener carrito del usuario
-  const cartItems = await prisma.cartItem.findMany({
-    where: { userId },
+  // 1. Obtener carrito
+  const cartItems = await prisma.itemCarrito.findMany({
+    where: { usuarioId: userId, producto: { estaActivo: true } },
     include: {
-      product: {
-        select: { id: true, name: true, price: true, stock: true, isActive: true },
+      producto: {
+        select: { id: true, titulo: true, precio: true, stock: true, estaActivo: true },
       },
     },
   });
 
-  if (cartItems.length === 0) {
-    throw new Error('El carrito está vacío');
-  }
+  if (cartItems.length === 0) throw new Error('El carrito está vacío');
 
-  // 2. Validar stock de todos los productos antes de hacer cualquier cambio
+  // 2. Validar stock antes de la transacción
   const stockErrors = [];
   for (const item of cartItems) {
-    if (!item.product.isActive) {
-      stockErrors.push(`El producto "${item.product.name}" ya no está disponible`);
-      continue;
-    }
-    if (item.product.stock < item.quantity) {
-      stockErrors.push(
-        `"${item.product.name}": stock disponible ${item.product.stock}, solicitado ${item.quantity}`
-      );
+    if (!item.producto.estaActivo) {
+      stockErrors.push(`El producto "${item.producto.titulo}" ya no está disponible`);
+    } else if (item.producto.stock < item.cantidad) {
+      stockErrors.push(`"${item.producto.titulo}": stock disponible ${item.producto.stock}, solicitado ${item.cantidad}`);
     }
   }
+  if (stockErrors.length > 0) throw new Error(`Stock insuficiente:\n${stockErrors.join('\n')}`);
 
-  if (stockErrors.length > 0) {
-    throw new Error(`Stock insuficiente:\n${stockErrors.join('\n')}`);
-  }
+  // 3. Calcular total y número de factura ANTES de la transacción
+  //    (menos queries dentro = menos tiempo = no timeout)
+  const total = cartItems.reduce((acc, item) => acc + Number(item.producto.precio) * item.cantidad, 0);
+  const metodoPago = mapPaymentMethod(paymentMethod);
+  const invoiceNumber = await generateInvoiceNumber();
 
-  // 3. Calcular total
-  const total = cartItems.reduce((acc, item) => {
-    return acc + Number(item.product.price) * item.quantity;
-  }, 0);
-
-  // 4. Ejecutar todo en una transacción atómica
-  //    (descuento de stock + creación de orden + factura + limpieza del carrito)
+  // 4. Transacción con timeout extendido (30s para Supabase remoto)
   const result = await prisma.$transaction(async (tx) => {
-    // 4a. Descontar stock de cada producto con verificación atómica
-    for (const item of cartItems) {
-      const updated = await tx.product.updateMany({
-        where: {
-          id: item.productId,
-          stock: { gte: item.quantity }, // condición atómica: solo actualiza si hay stock
-        },
-        data: {
-          stock: { decrement: item.quantity },
-        },
-      });
 
-      // Si no se actualizó ningún registro, el stock cambió entre la validación y la transacción
-      if (updated.count === 0) {
-        throw new Error(
-          `Stock insuficiente para "${item.product.name}" al momento de confirmar. Por favor recarga el carrito.`
-        );
+    // 4a. Descontar stock de todos los productos EN PARALELO
+    const stockUpdates = await Promise.all(
+      cartItems.map(item =>
+        tx.producto.updateMany({
+          where: { id: item.productoId, stock: { gte: item.cantidad } },
+          data: { stock: { decrement: item.cantidad } },
+        })
+      )
+    );
+
+    // Verificar que todos se actualizaron
+    for (let i = 0; i < stockUpdates.length; i++) {
+      if (stockUpdates[i].count === 0) {
+        throw new Error(`Stock insuficiente para "${cartItems[i].producto.titulo}" al confirmar.`);
       }
     }
 
-    // 4b. Crear la orden
-    const order = await tx.order.create({
+    // 4b. Crear pedido + detalles en una sola query
+    const order = await tx.pedido.create({
       data: {
-        userId,
-        status: 'confirmada',
-        paymentMethod,
+        usuarioId: userId,
+        estado: 'CONFIRMADO',
+        metodoPago,
         total: Number(total.toFixed(2)),
-        notes: notes || null,
-        items: {
+        notas: notes || null,
+        detalles: {
           create: cartItems.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-            unitPrice: Number(item.product.price),
-            lineTotal: Number(item.product.price) * item.quantity,
+            productoId: item.productoId,
+            cantidad: item.cantidad,
+            precioUnitario: Number(item.producto.precio),
+            subtotal: Number(item.producto.precio) * item.cantidad,
           })),
         },
       },
       include: {
-        items: {
+        detalles: {
           include: {
-            product: {
-              select: { id: true, name: true, imageUrl: true },
+            producto: {
+              select: {
+                id: true, titulo: true,
+                imagenes: { where: { esPrincipal: true }, select: { url: true } },
+              },
             },
           },
         },
       },
     });
 
-    // 4c. Generar factura con número correlativo
-    const invoiceNumber = await generateInvoiceNumber();
-    const invoice = await tx.invoice.create({
-      data: {
-        invoiceNumber,
-        orderId: order.id,
-        userId,
-        total: Number(total.toFixed(2)),
-        paymentMethod,
-      },
-    });
-
-    // 4d. Vaciar el carrito
-    await tx.cartItem.deleteMany({ where: { userId } });
+    // 4c. Crear factura y vaciar carrito EN PARALELO
+    const [invoice] = await Promise.all([
+      tx.factura.create({
+        data: {
+          numeroFactura: invoiceNumber,
+          pedidoId: order.id,
+          usuarioId: userId,
+          total: Number(total.toFixed(2)),
+          metodoPago,
+        },
+      }),
+      tx.itemCarrito.deleteMany({ where: { usuarioId: userId } }),
+    ]);
 
     return { order, invoice };
+  }, {
+    timeout: 30000, // 30 segundos para Supabase remoto
   });
 
   return {
     message: 'Compra confirmada exitosamente',
     order: {
       id: result.order.id,
-      status: result.order.status,
-      paymentMethod: result.order.paymentMethod,
+      status: result.order.estado,
+      paymentMethod: result.order.metodoPago,
       total: Number(result.order.total),
-      notes: result.order.notes,
-      createdAt: result.order.createdAt,
-      items: result.order.items.map((item) => ({
-        productId: item.productId,
-        productName: item.product.name,
-        imageUrl: item.product.imageUrl,
-        quantity: item.quantity,
-        unitPrice: Number(item.unitPrice),
-        lineTotal: Number(item.lineTotal),
+      notes: result.order.notas,
+      createdAt: result.order.creadoEn,
+      items: result.order.detalles.map((item) => ({
+        productId: item.productoId,
+        productName: item.producto?.titulo || 'Producto',
+        imageUrl: item.producto?.imagenes?.[0]?.url || null,
+        quantity: item.cantidad,
+        unitPrice: Number(item.precioUnitario),
+        lineTotal: Number(item.subtotal),
       })),
     },
     invoice: {
-      invoiceNumber: result.invoice.invoiceNumber,
+      invoiceNumber: result.invoice.numeroFactura,
       total: Number(result.invoice.total),
-      paymentMethod: result.invoice.paymentMethod,
-      issuedAt: result.invoice.issuedAt,
+      paymentMethod: result.invoice.metodoPago,
+      issuedAt: result.invoice.emitidaEn,
     },
   };
 };
 
-// ─── Obtener órdenes del usuario ───────────────────────────────────────────
+// ─── Obtener órdenes del usuario ──────────────────────────────────────────────
 const getOrdersByUser = async (userId) => {
-  const orders = await prisma.order.findMany({
-    where: { userId },
+  const orders = await prisma.pedido.findMany({
+    where: { usuarioId: userId },
     include: {
-      items: {
+      detalles: {
         include: {
-          product: {
-            select: { id: true, name: true, imageUrl: true },
+          producto: {
+            select: {
+              id: true, titulo: true,
+              imagenes: { where: { esPrincipal: true }, select: { url: true } },
+            },
           },
         },
       },
-      invoice: {
-        select: { invoiceNumber: true, issuedAt: true },
-      },
+      factura: { select: { numeroFactura: true, emitidaEn: true } },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { creadoEn: 'desc' },
   });
 
   return orders.map((order) => ({
     id: order.id,
-    status: order.status,
-    paymentMethod: order.paymentMethod,
+    status: order.estado,
+    paymentMethod: order.metodoPago,
     total: Number(order.total),
-    notes: order.notes,
-    createdAt: order.createdAt,
-    invoiceNumber: order.invoice?.invoiceNumber || null,
-    invoiceIssuedAt: order.invoice?.issuedAt || null,
-    items: order.items.map((item) => ({
-      productId: item.productId,
-      productName: item.product?.name || 'Producto eliminado',
-      imageUrl: item.product?.imageUrl || null,
-      quantity: item.quantity,
-      unitPrice: Number(item.unitPrice),
-      lineTotal: Number(item.lineTotal),
+    notes: order.notas,
+    createdAt: order.creadoEn,
+    invoiceNumber: order.factura?.numeroFactura || null,
+    invoiceIssuedAt: order.factura?.emitidaEn || null,
+    items: order.detalles.map((item) => ({
+      productId: item.productoId,
+      productName: item.producto?.titulo || 'Producto eliminado',
+      imageUrl: item.producto?.imagenes?.[0]?.url || null,
+      quantity: item.cantidad,
+      unitPrice: Number(item.precioUnitario),
+      lineTotal: Number(item.subtotal),
     })),
   }));
 };
 
-// ─── Obtener orden por ID ──────────────────────────────────────────────────
+// ─── Obtener orden por ID ─────────────────────────────────────────────────────
 const getOrderById = async (orderId, userId) => {
-  const order = await prisma.order.findFirst({
-    where: { id: orderId, userId },
+  const order = await prisma.pedido.findFirst({
+    where: { id: orderId, usuarioId: userId },
     include: {
-      items: {
+      detalles: {
         include: {
-          product: {
-            select: { id: true, name: true, imageUrl: true },
+          producto: {
+            select: {
+              id: true, titulo: true,
+              imagenes: { where: { esPrincipal: true }, select: { url: true } },
+            },
           },
         },
       },
-      invoice: true,
+      factura: true,
     },
   });
 
@@ -208,26 +213,24 @@ const getOrderById = async (orderId, userId) => {
 
   return {
     id: order.id,
-    status: order.status,
-    paymentMethod: order.paymentMethod,
+    status: order.estado,
+    paymentMethod: order.metodoPago,
     total: Number(order.total),
-    notes: order.notes,
-    createdAt: order.createdAt,
-    invoice: order.invoice
-      ? {
-          invoiceNumber: order.invoice.invoiceNumber,
-          total: Number(order.invoice.total),
-          paymentMethod: order.invoice.paymentMethod,
-          issuedAt: order.invoice.issuedAt,
-        }
-      : null,
-    items: order.items.map((item) => ({
-      productId: item.productId,
-      productName: item.product?.name || 'Producto eliminado',
-      imageUrl: item.product?.imageUrl || null,
-      quantity: item.quantity,
-      unitPrice: Number(item.unitPrice),
-      lineTotal: Number(item.lineTotal),
+    notes: order.notas,
+    createdAt: order.creadoEn,
+    invoice: order.factura ? {
+      invoiceNumber: order.factura.numeroFactura,
+      total: Number(order.factura.total),
+      paymentMethod: order.factura.metodoPago,
+      issuedAt: order.factura.emitidaEn,
+    } : null,
+    items: order.detalles.map((item) => ({
+      productId: item.productoId,
+      productName: item.producto?.titulo || 'Producto eliminado',
+      imageUrl: item.producto?.imagenes?.[0]?.url || null,
+      quantity: item.cantidad,
+      unitPrice: Number(item.precioUnitario),
+      lineTotal: Number(item.subtotal),
     })),
   };
 };

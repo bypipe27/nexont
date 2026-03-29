@@ -6,7 +6,6 @@ const { sendVerificationEmail } = require('../../shared/email/email.service');
 
 const prisma = new PrismaClient();
 
-// ─── Helpers para tokens ─────────────────────────────────────────────────────
 const generateAccessToken = (user) => {
   return jwt.sign(
     {
@@ -28,83 +27,59 @@ const generateRefreshToken = (user) => {
   );
 };
 
-// ─── REGISTER ────────────────────────────────────────────────────────────────
+// ─── REGISTER ─────────────────────────────────────────────────────────────────
 const register = async (userData) => {
   const { correo, contrasena, nombres, apellidos } = userData;
 
-  // 1. Verificar si el correo ya existe
   const existingUser = await prisma.usuario.findUnique({ where: { correo } });
 
   if (existingUser) {
-    // Si ya verificó su correo, no puede volver a registrarse
-      if (existingUser.esCorreoVerificado) {
+    if (existingUser.esCorreoVerificado) {
       throw new Error('El correo electrónico ya está registrado');
     }
 
-    // Si existe pero NO ha verificado, actualizar datos y reenviar verificación
-      const hashedContrasena = await bcrypt.hash(contrasena, 10);
+    const hashedContrasena = await bcrypt.hash(contrasena, 10);
     const emailVerifyToken = crypto.randomBytes(32).toString('hex');
     const emailVerifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     const user = await prisma.usuario.update({
       where: { id: existingUser.id },
       data: {
-          contrasena: hashedContrasena,
+        contrasena: hashedContrasena,
         nombres,
         apellidos,
         tokenVerificacion: emailVerifyToken,
-          verificacionExpira: emailVerifyExpires,
+        verificacionExpira: emailVerifyExpires,
       },
-      select: {
-        id: true,
-        correo: true,
-        nombres: true,
-        apellidos: true,
-        creadoEn: true,
-      },
+      select: { id: true, correo: true, nombres: true, apellidos: true, creadoEn: true },
     });
 
-    try {
-      await sendVerificationEmail(correo, nombres, emailVerifyToken);
-    } catch (emailError) {
-      console.error('Error al reenviar correo de verificación:', emailError.message);
-    }
+    // Fire and forget — no bloquea la respuesta
+    sendVerificationEmail(correo, nombres, emailVerifyToken)
+      .catch(err => console.error('Error al reenviar correo:', err.message));
 
     return { user };
   }
 
-  // 2. Encriptar la contraseña
-    const hashedContrasena = await bcrypt.hash(contrasena, 10);
-
-  // 3. Generar token de verificación de correo (expira en 24h)
+  const hashedContrasena = await bcrypt.hash(contrasena, 10);
   const emailVerifyToken = crypto.randomBytes(32).toString('hex');
-    const emailVerifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const emailVerifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-  // 4. Crear el usuario en la base de datos
   const user = await prisma.usuario.create({
     data: {
       correo,
-        contrasena: hashedContrasena,
+      contrasena: hashedContrasena,
       nombres,
       apellidos,
       tokenVerificacion: emailVerifyToken,
-        verificacionExpira: emailVerifyExpires,
+      verificacionExpira: emailVerifyExpires,
     },
-    select: {
-      id: true,
-      correo: true,
-      nombres: true,
-      apellidos: true,
-      creadoEn: true,
-    },
+    select: { id: true, correo: true, nombres: true, apellidos: true, creadoEn: true },
   });
 
-  // 5. Enviar correo de verificación (no bloquea el registro si falla)
-  try {
-    await sendVerificationEmail(correo, nombres, emailVerifyToken);
-  } catch (emailError) {
-    console.error('Error al enviar correo de verificación:', emailError.message);
-  }
+  // Fire and forget — responde al cliente inmediatamente
+  sendVerificationEmail(correo, nombres, emailVerifyToken)
+    .catch(err => console.error('Error al enviar correo:', err.message));
 
   return { user };
 };
@@ -114,7 +89,7 @@ const verifyEmail = async (token) => {
   const user = await prisma.usuario.findFirst({
     where: {
       tokenVerificacion: token,
-        verificacionExpira: { gt: new Date() },
+      verificacionExpira: { gt: new Date() },
     },
   });
 
@@ -125,9 +100,9 @@ const verifyEmail = async (token) => {
   await prisma.usuario.update({
     where: { id: user.id },
     data: {
-        esCorreoVerificado: true,
+      esCorreoVerificado: true,
       tokenVerificacion: null,
-        verificacionExpira: null,
+      verificacionExpira: null,
     },
   });
 
@@ -136,29 +111,20 @@ const verifyEmail = async (token) => {
 
 // ─── LOGIN ────────────────────────────────────────────────────────────────────
 const login = async ({ correo, contrasena }) => {
-  // 1. Buscar el usuario
   const user = await prisma.usuario.findUnique({ where: { correo } });
-  if (!user) {
-    throw new Error('Credenciales incorrectas');
-  }
+  if (!user) throw new Error('Credenciales incorrectas');
 
-  // 2. Verificar contraseña
-    const isPasswordValid = await bcrypt.compare(contrasena, user.contrasena);
-  if (!isPasswordValid) {
-    throw new Error('Credenciales incorrectas');
-  }
+  const isPasswordValid = await bcrypt.compare(contrasena, user.contrasena);
+  if (!isPasswordValid) throw new Error('Credenciales incorrectas');
 
-  // 3. Verificar que el correo esté verificado
-    if (!user.esCorreoVerificado) {
+  if (!user.esCorreoVerificado) {
     throw new Error('Debes verificar tu correo electrónico antes de iniciar sesión. Revisa tu bandeja de entrada.');
   }
 
-  // 4. Verificar que la cuenta esté activa
-    if (!user.esActivo) {
+  if (!user.esActivo) {
     throw new Error('Tu cuenta ha sido desactivada. Contacta con soporte.');
   }
 
-  // 5. Generar tokens
   const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken(user);
 
@@ -168,8 +134,8 @@ const login = async ({ correo, contrasena }) => {
       correo: user.correo,
       nombres: user.nombres,
       apellidos: user.apellidos,
-        esAdmin: user.esAdmin,
-        esVendedorVerificado: user.esVendedorVerificado,
+      esAdmin: user.esAdmin,
+      esVendedorVerificado: user.esVendedorVerificado,
     },
     token: accessToken,
     refreshToken,
@@ -178,9 +144,7 @@ const login = async ({ correo, contrasena }) => {
 
 // ─── REFRESH TOKEN ────────────────────────────────────────────────────────────
 const refreshAccessToken = async (refreshToken) => {
-  if (!refreshToken) {
-    throw new Error('Refresh token requerido');
-  }
+  if (!refreshToken) throw new Error('Refresh token requerido');
 
   let payload;
   try {
@@ -192,20 +156,17 @@ const refreshAccessToken = async (refreshToken) => {
     throw new Error('Refresh token inválido o expirado');
   }
 
-  if (payload.type !== 'refresh') {
-    throw new Error('Token de tipo incorrecto');
-  }
+  if (payload.type !== 'refresh') throw new Error('Token de tipo incorrecto');
 
   const user = await prisma.usuario.findUnique({ where: { id: payload.userId } });
-
   if (!user || !user.esActivo || !user.esCorreoVerificado) {
     throw new Error('Usuario no disponible');
   }
 
-  const newAccessToken = generateAccessToken(user);
-  const newRefreshToken = generateRefreshToken(user);
-
-  return { token: newAccessToken, refreshToken: newRefreshToken };
+  return {
+    token: generateAccessToken(user),
+    refreshToken: generateRefreshToken(user),
+  };
 };
 
 // ─── GET ME ───────────────────────────────────────────────────────────────────
@@ -213,24 +174,13 @@ const getMe = async (userId) => {
   const user = await prisma.usuario.findUnique({
     where: { id: userId },
     select: {
-      id: true,
-      correo: true,
-      nombres: true,
-      apellidos: true,
-      telefono: true,
-      direccionPrincipal: true,
-      esAdmin: true,
-      esVendedorVerificado: true,
-      esCorreoVerificado: true,
-      creadoEn: true,
-      actualizadoEn: true,
+      id: true, correo: true, nombres: true, apellidos: true,
+      telefono: true, direccionPrincipal: true, esAdmin: true,
+      esVendedorVerificado: true, esCorreoVerificado: true,
+      creadoEn: true, actualizadoEn: true,
     },
   });
-
-  if (!user) {
-    throw new Error('Usuario no encontrado');
-  }
-
+  if (!user) throw new Error('Usuario no encontrado');
   return user;
 };
 
