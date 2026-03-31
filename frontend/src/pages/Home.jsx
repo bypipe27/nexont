@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/api';
 import { useHybridCart } from '../hooks/useHybridCart';
+import { useTheme } from '../context/ThemeContext';
 
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,200;0,300;0,400;0,600;0,700;1,200;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap');
@@ -19,6 +20,23 @@ const STYLES = `
     --border: rgba(26,23,20,0.1);
     --border-soft: rgba(26,23,20,0.06);
   }
+
+  [data-theme="dark"] {
+    --cream: #0e0c0a;
+    --cream-dark: #161410;
+    --ink: #f0ece4;
+    --ink-mid: #c8c0b4;
+    --ink-soft: #8a8278;
+    --ink-ghost: #4a4540;
+    --amber: #d4a84a;
+    --amber-light: #e0b85a;
+    --white: #111111;
+    --border: rgba(240,236,228,0.08);
+    --border-soft: rgba(240,236,228,0.04);
+  }
+
+  .nx-root, .nxmp-root { transition: background-color 0.25s ease; }
+
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -162,8 +180,6 @@ const STYLES = `
   .nx-hero-season::before {
     content: ''; display: block; width: 36px; height: 1px; background: var(--ink-soft);
   }
-
-  /* ── HERO TITLE — THE BIG CHANGE ── */
   .nx-hero-h1 {
     font-family: 'Cormorant Garamond', serif;
     font-size: clamp(4.5rem, 7.5vw, 8.5rem);
@@ -179,7 +195,6 @@ const STYLES = `
     color: var(--amber);
     display: block;
   }
-
   .nx-hero-p {
     font-size: 0.95rem; line-height: 1.9;
     color: var(--ink-soft); font-weight: 300;
@@ -207,7 +222,6 @@ const STYLES = `
   }
   .nx-btn-outline:hover { border-color: var(--ink); background: var(--cream-dark); }
 
-  /* Hero stats */
   .nx-hero-stats {
     display: flex; gap: 0; margin-top: 4.5rem;
     border-top: 1px solid var(--border);
@@ -226,7 +240,7 @@ const STYLES = `
     text-transform: uppercase; letter-spacing: 0.15em; display: block;
   }
 
-  /* Hero right — live feed */
+  /* Hero right */
   .nx-hero-right {
     background: var(--cream-dark);
     display: flex; flex-direction: column;
@@ -303,11 +317,10 @@ const STYLES = `
     text-transform: uppercase; color: var(--ink-soft);
     text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
     transition: color 0.15s; padding-bottom: 4px; border-bottom: 1px solid currentColor;
-    white-space: nowrap;
+    white-space: nowrap; background: none; border-top: none; border-left: none; border-right: none; cursor: pointer; font-family: 'DM Sans', sans-serif;
   }
   .nx-section-link:hover { color: var(--ink); }
 
-  /* Recent grid */
   .nx-rgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; }
   .nx-rcard {
     border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
@@ -360,7 +373,6 @@ const STYLES = `
   }
   .nx-detail-link:hover { color: var(--ink); border-bottom-color: var(--ink); }
 
-  /* ── Empty state ── */
   .nx-empty {
     padding: 5rem 2rem; text-align: center;
     border: 1px solid var(--border);
@@ -372,7 +384,6 @@ const STYLES = `
   }
   .nx-empty-txt { font-size: 0.85rem; color: var(--ink-soft); max-width: 320px; margin: 0 auto 2rem; line-height: 1.8; }
 
-  /* ── CATALOG DIVIDER ── */
   .nx-divider { border: none; border-top: 1px solid var(--border); }
 
   /* ── CATALOG ── */
@@ -383,21 +394,10 @@ const STYLES = `
     padding: 2rem 0; position: sticky;
     top: 68px; height: calc(100vh - 68px); overflow-y: auto;
   }
-  .nx-sb-head {
-    padding: 0 1.5rem 1.25rem;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 0;
-  }
-  .nx-sb-title {
-    font-size: 0.6rem; font-weight: 600; letter-spacing: 0.2em;
-    text-transform: uppercase; color: var(--ink-soft);
-  }
+  .nx-sb-head { padding: 0 1.5rem 1.25rem; border-bottom: 1px solid var(--border); margin-bottom: 0; }
+  .nx-sb-title { font-size: 0.6rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-soft); }
   .nx-sb-sec { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-soft); }
-  .nx-sb-sec-title {
-    font-size: 0.58rem; font-weight: 600; letter-spacing: 0.18em;
-    text-transform: uppercase; color: var(--ink-ghost);
-    margin-bottom: 0.85rem; display: block;
-  }
+  .nx-sb-sec-title { font-size: 0.58rem; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-ghost); margin-bottom: 0.85rem; display: block; }
   .nx-sb-radio { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.55rem; cursor: pointer; }
   .nx-sb-radio input { accent-color: var(--ink); cursor: pointer; }
   .nx-sb-radio span { font-size: 0.82rem; color: var(--ink-mid); }
@@ -405,143 +405,60 @@ const STYLES = `
   .nx-sb-range-row { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--ink-ghost); }
   .nx-sb-range-val { font-weight: 600; color: var(--ink); }
   .nx-sb-btns { padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; }
-  .nx-sb-apply {
-    width: 100%; height: 36px; background: var(--ink); color: var(--cream);
-    font-family: 'DM Sans', sans-serif; font-size: 0.7rem; font-weight: 500;
-    letter-spacing: 0.12em; text-transform: uppercase; border: none; cursor: pointer; transition: background 0.18s;
-  }
+  .nx-sb-apply { width: 100%; height: 36px; background: var(--ink); color: var(--cream); font-family: 'DM Sans', sans-serif; font-size: 0.7rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; border: none; cursor: pointer; transition: background 0.18s; }
   .nx-sb-apply:hover { background: var(--ink-mid); }
-  .nx-sb-clear {
-    width: 100%; height: 36px; background: transparent; color: var(--ink-soft);
-    font-size: 0.7rem; border: 1px solid var(--border); cursor: pointer;
-    transition: all 0.18s; font-family: 'DM Sans', sans-serif;
-  }
+  .nx-sb-clear { width: 100%; height: 36px; background: transparent; color: var(--ink-soft); font-size: 0.7rem; border: 1px solid var(--border); cursor: pointer; transition: all 0.18s; font-family: 'DM Sans', sans-serif; }
   .nx-sb-clear:hover { border-color: var(--ink); color: var(--ink); }
 
-  /* Catalog main */
   .nx-cat-main { flex: 1; padding: 2.5rem 3rem; }
   .nx-cat-searchbar { display: flex; gap: 0; margin-bottom: 2rem; }
-  .nx-cat-searchbar input {
-    flex: 1; height: 42px; padding: 0 1rem;
-    background: var(--white); border: 1px solid var(--border);
-    border-right: none; color: var(--ink); font-size: 0.85rem;
-    outline: none; font-family: 'DM Sans', sans-serif;
-    transition: border-color 0.2s;
-  }
+  .nx-cat-searchbar input { flex: 1; height: 42px; padding: 0 1rem; background: var(--white); border: 1px solid var(--border); border-right: none; color: var(--ink); font-size: 0.85rem; outline: none; font-family: 'DM Sans', sans-serif; transition: border-color 0.2s; }
   .nx-cat-searchbar input:focus { border-color: var(--ink); }
   .nx-cat-searchbar input::placeholder { color: var(--ink-ghost); }
-  .nx-cat-searchbar button {
-    height: 42px; padding: 0 1.5rem; background: var(--ink); color: var(--cream);
-    border: none; cursor: pointer; font-size: 0.72rem; font-weight: 500;
-    letter-spacing: 0.12em; text-transform: uppercase; font-family: 'DM Sans', sans-serif;
-    transition: background 0.18s;
-  }
+  .nx-cat-searchbar button { height: 42px; padding: 0 1.5rem; background: var(--ink); color: var(--cream); border: none; cursor: pointer; font-size: 0.72rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; font-family: 'DM Sans', sans-serif; transition: background 0.18s; }
   .nx-cat-searchbar button:hover { background: var(--ink-mid); }
-  .nx-cat-toolbar {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-bottom: 1.5rem; padding-bottom: 1.25rem;
-    border-bottom: 1px solid var(--border);
-    flex-wrap: wrap; gap: 0.75rem;
-  }
+  .nx-cat-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 0.75rem; }
   .nx-cat-count { font-size: 0.78rem; color: var(--ink-soft); }
   .nx-cat-count b { color: var(--ink); }
-
-  /* Catalog section heading */
-  .nx-cat-heading {
-    padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 1.5rem;
-  }
-  .nx-cat-heading .nx-section-title {
-    font-size: clamp(1.8rem, 3vw, 2.8rem);
-  }
-
+  .nx-cat-heading { padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); margin-bottom: 1.5rem; }
+  .nx-cat-heading .nx-section-title { font-size: clamp(1.8rem, 3vw, 2.8rem); }
   .nx-toolbar-r { display: flex; align-items: center; gap: 0.5rem; }
   .nx-view-toggle { display: flex; border: 1px solid var(--border); }
-  .nx-vbtn {
-    width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
-    background: transparent; border: none; cursor: pointer;
-    color: var(--ink-ghost); font-size: 1rem; transition: all 0.15s;
-  }
+  .nx-vbtn { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; cursor: pointer; color: var(--ink-ghost); font-size: 1rem; transition: all 0.15s; }
   .nx-vbtn.on { background: var(--ink); color: var(--cream); }
-  .nx-sortsel {
-    height: 34px; padding: 0 0.75rem;
-    background: var(--white); border: 1px solid var(--border);
-    color: var(--ink-mid); font-size: 0.75rem;
-    cursor: pointer; font-family: 'DM Sans', sans-serif; outline: none;
-  }
+  .nx-sortsel { height: 34px; padding: 0 0.75rem; background: var(--white); border: 1px solid var(--border); color: var(--ink-mid); font-size: 0.75rem; cursor: pointer; font-family: 'DM Sans', sans-serif; outline: none; }
 
-  /* Product cards */
   .nx-pgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0; margin-bottom: 2rem; }
   .nx-pgrid.list { grid-template-columns: 1fr; }
-  .nx-pcard {
-    border: 1px solid var(--border); margin: -1px 0 0 -1px;
-    cursor: pointer; transition: background 0.15s; position: relative;
-    display: flex; flex-direction: column;
-  }
+  .nx-pcard { border: 1px solid var(--border); margin: -1px 0 0 -1px; cursor: pointer; transition: background 0.15s; position: relative; display: flex; flex-direction: column; }
   .nx-pcard:hover { background: var(--cream-dark); z-index: 1; }
   .nx-pcard-img { aspect-ratio: 1; overflow: hidden; background: var(--cream-dark); position: relative; }
   .nx-pcard-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
   .nx-pcard:hover .nx-pcard-img img { transform: scale(1.05); }
-  .nx-pcard-badge {
-    position: absolute; top: 0.6rem; left: 0.6rem;
-    background: var(--white); color: var(--ink);
-    font-size: 0.52rem; font-weight: 600; letter-spacing: 0.14em;
-    text-transform: uppercase; padding: 0.2rem 0.5rem; border: 1px solid var(--border);
-  }
-  .nx-fav {
-    position: absolute; top: 0.6rem; right: 0.6rem;
-    width: 28px; height: 28px; border: 1px solid var(--border);
-    background: var(--white); cursor: pointer; font-size: 0.85rem;
-    display: flex; align-items: center; justify-content: center; transition: all 0.15s;
-  }
+  .nx-pcard-badge { position: absolute; top: 0.6rem; left: 0.6rem; background: var(--white); color: var(--ink); font-size: 0.52rem; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; padding: 0.2rem 0.5rem; border: 1px solid var(--border); }
+  .nx-fav { position: absolute; top: 0.6rem; right: 0.6rem; width: 28px; height: 28px; border: 1px solid var(--border); background: var(--white); cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
   .nx-fav:hover { background: var(--ink); }
   .nx-pcard-body { padding: 1rem; flex: 1; display: flex; flex-direction: column; }
-  .nx-pcard-name {
-    font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; font-weight: 300;
-    color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    margin-bottom: 0.2rem; letter-spacing: -0.01em;
-  }
-  .nx-pcard-price {
-    font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; font-weight: 300;
-    color: var(--amber); margin-bottom: 0.3rem; letter-spacing: -0.01em;
-  }
+  .nx-pcard-name { font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; font-weight: 300; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 0.2rem; letter-spacing: -0.01em; }
+  .nx-pcard-price { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; font-weight: 300; color: var(--amber); margin-bottom: 0.3rem; letter-spacing: -0.01em; }
   .nx-pcard-stars { color: var(--amber); font-size: 0.65rem; margin-bottom: 0.5rem; }
   .nx-pcard-add-row { display: flex; gap: 0.3rem; }
-  .nx-qty {
-    width: 44px; height: 30px; text-align: center;
-    background: var(--white); border: 1px solid var(--border);
-    color: var(--ink); font-size: 0.78rem; outline: none;
-    font-family: 'DM Sans', sans-serif;
-  }
-  .nx-add-btn {
-    flex: 1; height: 30px; border: none;
-    font-size: 0.65rem; font-weight: 500; cursor: pointer;
-    letter-spacing: 0.1em; text-transform: uppercase;
-    font-family: 'DM Sans', sans-serif; transition: all 0.15s;
-  }
+  .nx-qty { width: 44px; height: 30px; text-align: center; background: var(--white); border: 1px solid var(--border); color: var(--ink); font-size: 0.78rem; outline: none; font-family: 'DM Sans', sans-serif; }
+  .nx-add-btn { flex: 1; height: 30px; border: none; font-size: 0.65rem; font-weight: 500; cursor: pointer; letter-spacing: 0.1em; text-transform: uppercase; font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
   .nx-add-btn.ok { background: var(--ink); color: var(--cream); }
   .nx-add-btn.ok:hover { background: var(--ink-mid); }
   .nx-add-btn.out { background: var(--cream-dark); color: var(--ink-ghost); cursor: not-allowed; }
   .nx-pcard-seller { font-size: 0.62rem; color: var(--ink-ghost); margin-top: 0.4rem; }
 
-  /* Alerts */
   .nx-alert-err { background: #FEF2F2; border: 1px solid #FCA5A5; padding: 0.7rem 1rem; margin-bottom: 1rem; color: #DC2626; font-size: 0.82rem; }
   .nx-alert-ok  { background: #F0FDF4; border: 1px solid #86EFAC; padding: 0.7rem 1rem; margin-bottom: 1rem; color: #16A34A; font-size: 0.82rem; }
 
-  /* Pagination */
   .nx-pages { display: flex; justify-content: center; gap: 0; margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 2rem; }
-  .nx-pg {
-    height: 36px; min-width: 36px; padding: 0 0.5rem;
-    background: transparent; border: 1px solid var(--border);
-    margin-left: -1px; color: var(--ink-soft); font-size: 0.78rem;
-    cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif;
-  }
+  .nx-pg { height: 36px; min-width: 36px; padding: 0 0.5rem; background: transparent; border: 1px solid var(--border); margin-left: -1px; color: var(--ink-soft); font-size: 0.78rem; cursor: pointer; transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
   .nx-pg:hover { background: var(--cream-dark); color: var(--ink); }
   .nx-pg.on { background: var(--ink); color: var(--cream); font-weight: 600; }
   .nx-pg:disabled { opacity: 0.3; cursor: not-allowed; }
 
-  /* Skeleton */
   .nx-skel-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 0; }
   .nx-skel-card { border: 1px solid var(--border); margin: -1px 0 0 -1px; }
   .nx-skel-img { aspect-ratio: 4/3; background: linear-gradient(90deg, var(--cream-dark) 25%, var(--cream) 50%, var(--cream-dark) 75%); background-size: 200% 100%; animation: nx-shim 1.4s infinite; }
@@ -549,28 +466,14 @@ const STYLES = `
   .nx-skel-ln { height: 10px; border-radius: 0; margin-bottom: 0.65rem; background: linear-gradient(90deg, var(--cream-dark) 25%, var(--cream) 50%, var(--cream-dark) 75%); background-size: 200% 100%; animation: nx-shim 1.4s infinite; }
   .nx-skel-ln.w60 { width: 60%; } .nx-skel-ln.w40 { width: 40%; }
 
-  /* Modal */
   .nx-overlay { position: fixed; inset: 0; background: rgba(26,23,20,0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 1rem; }
-  .nx-modal {
-    background: var(--white); border: 1px solid var(--border);
-    width: 100%; max-width: 480px; position: relative;
-    box-shadow: 0 24px 60px rgba(26,23,20,0.2); max-height: 90vh; overflow-y: auto;
-  }
-  .nx-modal-x {
-    position: absolute; top: 1rem; right: 1rem;
-    width: 30px; height: 30px; background: none; border: 1px solid var(--border);
-    color: var(--ink-soft); cursor: pointer; font-size: 0.8rem;
-    display: flex; align-items: center; justify-content: center; transition: all 0.15s;
-  }
+  .nx-modal { background: var(--white); border: 1px solid var(--border); width: 100%; max-width: 480px; position: relative; box-shadow: 0 24px 60px rgba(26,23,20,0.2); max-height: 90vh; overflow-y: auto; }
+  .nx-modal-x { position: absolute; top: 1rem; right: 1rem; width: 30px; height: 30px; background: none; border: 1px solid var(--border); color: var(--ink-soft); cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
   .nx-modal-x:hover { background: var(--ink); color: var(--cream); border-color: var(--ink); }
   .nx-modal-img { width: 100%; height: 240px; object-fit: cover; display: block; }
   .nx-modal-noimg { width: 100%; height: 240px; background: var(--cream-dark); display: flex; align-items: center; justify-content: center; color: var(--ink-ghost); font-size: 0.82rem; }
   .nx-modal-body { padding: 1.75rem; }
-  .nx-modal-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.85rem; font-weight: 200; color: var(--ink);
-    margin-bottom: 0.5rem; letter-spacing: -0.01em;
-  }
+  .nx-modal-title { font-family: 'Cormorant Garamond', serif; font-size: 1.85rem; font-weight: 200; color: var(--ink); margin-bottom: 0.5rem; letter-spacing: -0.01em; }
   .nx-modal-desc { font-size: 0.85rem; color: var(--ink-soft); line-height: 1.8; margin-bottom: 1.25rem; }
   .nx-modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; margin-bottom: 1rem; }
   .nx-modal-stat { border: 1px solid var(--border); padding: 0.85rem 1rem; margin: -1px 0 0 -1px; }
@@ -578,12 +481,10 @@ const STYLES = `
   .nx-ms-val { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 300; color: var(--ink); display: block; }
   .nx-modal-seller { border: 1px solid var(--border); padding: 0.85rem 1rem; margin-top: -1px; }
 
-  /* Keyframes */
   @keyframes nx-shim { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
   @keyframes nx-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
   @keyframes nx-up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 
-  /* Responsive */
   @media (max-width: 960px) {
     .nx-hero { grid-template-columns: 1fr; }
     .nx-hero-right { display: none; }
@@ -628,7 +529,7 @@ function ProductDetailModal({ productId, onClose }) {
     return () => window.removeEventListener('keydown', h);
   }, [onClose]);
 
-  const stars = n => '★'.repeat(Math.round(n||0)) + '☆'.repeat(5-Math.round(n||0));
+  const stars = n => '★'.repeat(Math.round(n || 0)) + '☆'.repeat(5 - Math.round(n || 0));
 
   return (
     <div className="nx-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -646,7 +547,7 @@ function ProductDetailModal({ productId, onClose }) {
             <div className="nx-modal-grid">
               <div className="nx-modal-stat">
                 <span className="nx-ms-lbl">Precio</span>
-                <span className="nx-ms-val" style={{ color: 'var(--amber)' }}>${parseFloat(product.price).toFixed(2)}</span>
+                <span className="nx-ms-val" style={{ color: 'var(--amber)' }}>${parseFloat(product.precio).toFixed(2)}</span>
               </div>
               <div className="nx-modal-stat">
                 <span className="nx-ms-lbl">Stock</span>
@@ -654,18 +555,18 @@ function ProductDetailModal({ productId, onClose }) {
               </div>
               <div className="nx-modal-stat">
                 <span className="nx-ms-lbl">Estado</span>
-                <span className="nx-ms-val" style={{ textTransform: 'capitalize' }}>{product.condition || 'nuevo'}</span>
+                <span className="nx-ms-val" style={{ textTransform: 'capitalize' }}>{product.condicion || 'nuevo'}</span>
               </div>
               <div className="nx-modal-stat">
                 <span className="nx-ms-lbl">Calificación</span>
-                <span className="nx-ms-val" style={{ fontSize: '0.85rem', color: 'var(--amber)' }}>{stars(product.rating)}</span>
+                <span className="nx-ms-val" style={{ fontSize: '0.85rem', color: 'var(--amber)' }}>{stars(product.promedioCalificacion)}</span>
               </div>
             </div>
-            {product.seller && (
+            {product.vendedor && (
               <div className="nx-modal-seller">
                 <span className="nx-ms-lbl" style={{ display: 'block', marginBottom: '0.3rem' }}>Vendedor</span>
-                <div style={{ fontSize: '0.88rem', color: 'var(--ink)', fontWeight: 500 }}>{product.seller.nombres} {product.seller.apellidos}</div>
-                {product.seller.correo && <div style={{ fontSize: '0.75rem', color: 'var(--ink-ghost)', marginTop: '0.15rem' }}>{product.seller.correo}</div>}
+                <div style={{ fontSize: '0.88rem', color: 'var(--ink)', fontWeight: 500 }}>{product.vendedor.nombres} {product.vendedor.apellidos}</div>
+                {product.vendedor.correo && <div style={{ fontSize: '0.75rem', color: 'var(--ink-ghost)', marginTop: '0.15rem' }}>{product.vendedor.correo}</div>}
               </div>
             )}
           </div>
@@ -677,28 +578,29 @@ function ProductDetailModal({ productId, onClose }) {
 
 // ── Home ──────────────────────────────────────────────────────────────────────
 function Home() {
-  const [products, setProducts]   = useState([]);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState('');
-  const [recentProducts, setRecent] = useState([]);
-  const [recentLoading, setRecentLoad] = useState(true);
-  const [ddOpen, setDdOpen]       = useState(false);
-  const [searchTerm, setSearch]   = useState('');
-  const [sortBy, setSortBy]       = useState('newest');
-  const [viewMode, setView]       = useState('grid');
-  const [currentPage, setPage]    = useState(1);
-  const [favorites, setFavs]      = useState([]);
-  const [selectedId, setSelectedId] = useState(null);
-  const [fCond, setFCond]         = useState('');
-  const [fMaxPrice, setFMaxPrice] = useState(1000);
-  const [fMinRating, setFMinRating] = useState(0);
-  const [qtys, setQtys]           = useState({});
+  const [products, setProducts]         = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState('');
+  const [recentProducts, setRecent]     = useState([]);
+  const [recentLoading, setRecentLoad]  = useState(true);
+  const [ddOpen, setDdOpen]             = useState(false);
+  const [searchTerm, setSearch]         = useState('');
+  const [sortBy, setSortBy]             = useState('newest');
+  const [viewMode, setView]             = useState('grid');
+  const [currentPage, setPage]          = useState(1);
+  const [favorites, setFavs]            = useState([]);
+  const [selectedId, setSelectedId]     = useState(null);
+  const [fCond, setFCond]               = useState('');
+  const [fMaxPrice, setFMaxPrice]       = useState(1000);
+  const [fMinRating, setFMinRating]     = useState(0);
+  const [qtys, setQtys]                 = useState({});
 
   const navigate  = useNavigate();
   const token     = localStorage.getItem('token');
   const user      = JSON.parse(localStorage.getItem('user') || 'null');
   const PER_PAGE  = 12;
-  const initials  = user ? `${(user.nombres||'')[0]||''}${(user.apellidos||'')[0]||''}`.toUpperCase() : '';
+  const initials  = user ? `${(user.nombres || '')[0] || ''}${(user.apellidos || '')[0] || ''}`.toUpperCase() : '';
+  const { theme, toggleTheme } = useTheme();
 
   const { cart, error: cartErr, success: cartOk, addToCart, setError: setCartErr } = useHybridCart();
 
@@ -723,15 +625,21 @@ function Home() {
     return () => document.removeEventListener('click', h);
   }, [ddOpen]);
 
-  const doSearch = () => { setPage(1); fetchProducts({ search: searchTerm||undefined, condition: fCond||undefined, maxPrice: fMaxPrice, minRating: fMinRating > 0 ? fMinRating : undefined }); };
-  const doAddToCart = (p, e) => { e.stopPropagation(); const qty = Number(qtys[p.id]||1); if (!Number.isInteger(qty)||qty<1) { setCartErr('Cantidad inválida'); return; } addToCart(p.id, qty, { name: p.titulo, price: p.price }); setQtys(prev => ({...prev, [p.id]: 1})); };
-  const sorted = [...products].sort((a,b) => { if (sortBy==='price-low') return (a.price||0)-(b.price||0); if (sortBy==='price-high') return (b.price||0)-(a.price||0); if (sortBy==='rating') return (b.rating||0)-(a.rating||0); return 0; });
+  const doSearch  = () => { setPage(1); fetchProducts({ search: searchTerm || undefined, condition: fCond || undefined, maxPrice: fMaxPrice, minRating: fMinRating > 0 ? fMinRating : undefined }); };
+  const doAddToCart = (p, e) => { e.stopPropagation(); const qty = Number(qtys[p.id] || 1); if (!Number.isInteger(qty) || qty < 1) { setCartErr('Cantidad inválida'); return; } addToCart(p.id, qty, { name: p.titulo, price: p.precio }); setQtys(prev => ({ ...prev, [p.id]: 1 })); };
+
+  const sorted   = [...products].sort((a, b) => {
+    if (sortBy === 'price-low')  return (a.precio || 0) - (b.precio || 0);
+    if (sortBy === 'price-high') return (b.precio || 0) - (a.precio || 0);
+    if (sortBy === 'rating')     return (b.promedioCalificacion || 0) - (a.promedioCalificacion || 0);
+    return 0;
+  });
   const totalPgs = Math.ceil(sorted.length / PER_PAGE);
   const start    = (currentPage - 1) * PER_PAGE;
   const shown    = sorted.slice(start, start + PER_PAGE);
-  const toggleFav = id => setFavs(f => f.includes(id) ? f.filter(x=>x!==id) : [...f,id]);
+  const toggleFav = id => setFavs(f => f.includes(id) ? f.filter(x => x !== id) : [...f, id]);
   const scrollTo  = id => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-  const stars     = n  => '★'.repeat(Math.round(n||0)) + '☆'.repeat(5-Math.round(n||0));
+  const stars     = n  => '★'.repeat(Math.round(n || 0)) + '☆'.repeat(5 - Math.round(n || 0));
 
   return (
     <div className="nx-root">
@@ -745,10 +653,19 @@ function Home() {
         <div className="nx-nav-sep" />
         <div className="nx-nav-search">
           <span style={{ color: 'var(--ink-ghost)', fontSize: '0.9rem' }}>⌕</span>
-          <input placeholder="Buscar productos…" value={searchTerm} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key==='Enter' && doSearch()} />
+          <input placeholder="Buscar productos…" value={searchTerm} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && doSearch()} />
         </div>
         <div className="nx-nav-gap" />
         <div className="nx-nav-actions">
+          {/* Toggle tema */}
+          <button
+            className="nx-icon-btn"
+            onClick={toggleTheme}
+            title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+          >
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </button>
+
           {token && user && (
             <button className="nx-icon-btn" onClick={() => navigate('/cart')} title="Carrito">
               🛒
@@ -758,9 +675,7 @@ function Home() {
           <button className="nx-icon-btn" onClick={() => scrollTo('catalogo')} title="Catálogo">⊞</button>
 
           {token && user?.esVendedorVerificado && (
-            <button className="nx-nav-cta" onClick={() => navigate('/my-products')}>
-              + Publicar
-            </button>
+            <button className="nx-nav-cta" onClick={() => navigate('/my-products')}>+ Publicar</button>
           )}
 
           {token && user ? (
@@ -820,9 +735,7 @@ function Home() {
             de compra más refinada de Colombia.
           </p>
           <div className="nx-hero-actions">
-            <button className="nx-btn-primary" onClick={() => scrollTo('catalogo')}>
-              Explorar catálogo →
-            </button>
+            <button className="nx-btn-primary" onClick={() => scrollTo('catalogo')}>Explorar catálogo →</button>
             {!token && <Link to="/register" className="nx-btn-outline">Vender aquí</Link>}
             {token && user?.esVendedorVerificado && (
               <button className="nx-btn-outline" onClick={() => navigate('/my-products')}>Publicar producto</button>
@@ -851,33 +764,31 @@ function Home() {
             <span className="nx-live-pill"><span className="nx-live-dot" /> En vivo</span>
           </div>
           <div className="nx-feed-list">
-            {recentLoading && Array.from({length:5}).map((_,i) => (
+            {recentLoading && Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="nx-feed-item">
                 <div className="nx-feed-thumb" style={{ background: 'var(--cream-dark)' }} />
-                <div style={{ flex:1 }}>
-                  <div style={{ height:10, width:'65%', background:'var(--cream-dark)', marginBottom:6 }} />
-                  <div style={{ height:8, width:'35%', background:'var(--cream-dark)' }} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ height: 10, width: '65%', background: 'var(--cream-dark)', marginBottom: 6 }} />
+                  <div style={{ height: 8, width: '35%', background: 'var(--cream-dark)' }} />
                 </div>
               </div>
             ))}
             {!recentLoading && recentProducts.length === 0 && (
-              <div className="nx-hero-right-empty">
-                Aún no hay publicaciones.<br />Sé el primero en publicar.
-              </div>
+              <div className="nx-hero-right-empty">Aún no hay publicaciones.<br />Sé el primero en publicar.</div>
             )}
-            {!recentLoading && recentProducts.slice(0,6).map(p => (
+            {!recentLoading && recentProducts.slice(0, 6).map(p => (
               <div key={p.id} className="nx-feed-item" onClick={() => setSelectedId(p.id)}>
                 <div className="nx-feed-thumb">
                   {p.imagenes?.[0]?.url
                     ? <img src={p.imagenes[0].url} alt={p.titulo} />
-                    : <div style={{ width:'100%', height:'100%', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.1rem', color:'var(--ink-ghost)' }}>📦</div>
+                    : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', color: 'var(--ink-ghost)' }}>📦</div>
                   }
                 </div>
                 <div className="nx-feed-info">
                   <div className="nx-feed-name">{p.titulo}</div>
-                  <div className="nx-feed-cond">{p.condition || 'nuevo'} · {stars(p.rating)}</div>
+                  <div className="nx-feed-cond">{p.condicion || 'NUEVO'} · {stars(p.promedioCalificacion)}</div>
                 </div>
-                <div className="nx-feed-price">${parseFloat(p.price).toFixed(2)}</div>
+                <div className="nx-feed-price">${parseFloat(p.precio || 0).toFixed(2)}</div>
               </div>
             ))}
           </div>
@@ -891,14 +802,12 @@ function Home() {
             <span className="nx-section-eyebrow">Últimas publicaciones</span>
             <h2 className="nx-section-title">Productos Recientes</h2>
           </div>
-          <button className="nx-section-link" onClick={() => scrollTo('catalogo')}>
-            Ver catálogo completo →
-          </button>
+          <button className="nx-section-link" onClick={() => scrollTo('catalogo')}>Ver catálogo completo →</button>
         </div>
 
         {recentLoading && (
           <div className="nx-skel-grid">
-            {Array.from({length:6}).map((_,i) => (
+            {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="nx-skel-card">
                 <div className="nx-skel-img" />
                 <div className="nx-skel-body">
@@ -931,14 +840,14 @@ function Home() {
                       alt={p.titulo}
                       onError={e => { e.target.src = `https://via.placeholder.com/480x360/EDE8DF/7A7268?text=${encodeURIComponent(p.titulo)}`; }}
                     />
-                    <span className="nx-rcard-badge">{p.condition || 'nuevo'}</span>
+                    <span className="nx-rcard-badge">{p.condicion || 'NUEVO'}</span>
                   </div>
                   <div className="nx-rcard-body">
                     <div className="nx-rcard-name">{p.titulo}</div>
-                    <div className="nx-rcard-seller">{p.seller?.nombres} {p.seller?.apellidos}</div>
-                    <div className="nx-rcard-stars">{stars(p.rating)}</div>
+                    <div className="nx-rcard-seller">{p.vendedor?.nombres} {p.vendedor?.apellidos}</div>
+                    <div className="nx-rcard-stars">{stars(p.promedioCalificacion)}</div>
                     <div className="nx-rcard-foot">
-                      <span className="nx-rcard-price">${(parseFloat(p.price)||0).toFixed(2)}</span>
+                      <span className="nx-rcard-price">${(parseFloat(p.precio) || 0).toFixed(2)}</span>
                       <button className="nx-detail-link" onClick={e => { e.stopPropagation(); setSelectedId(p.id); }}>Ver detalle</button>
                     </div>
                   </div>
@@ -956,15 +865,14 @@ function Home() {
 
       {/* ── CATÁLOGO COMPLETO ── */}
       <div id="catalogo" className="nx-catalog">
-        {/* Sidebar */}
         <aside className="nx-sidebar">
           <div className="nx-sb-head"><span className="nx-sb-title">Filtros</span></div>
           <div className="nx-sb-sec">
             <span className="nx-sb-sec-title">Estado</span>
-            {['','nuevo','usado','reacondicionado'].map(c => (
+            {['', 'NUEVO', 'USADO', 'REACONDICIONADO'].map(c => (
               <label key={c} className="nx-sb-radio">
-                <input type="radio" name="cond" value={c} checked={fCond===c} onChange={() => setFCond(c)} />
-                <span>{c==='' ? 'Todos' : c.charAt(0).toUpperCase()+c.slice(1)}</span>
+                <input type="radio" name="cond" value={c} checked={fCond === c} onChange={() => setFCond(c)} />
+                <span>{c === '' ? 'Todos' : c.charAt(0) + c.slice(1).toLowerCase()}</span>
               </label>
             ))}
           </div>
@@ -972,17 +880,15 @@ function Home() {
             <span className="nx-sb-sec-title">Precio máximo</span>
             <input type="range" min="0" max="1000" step="10" value={fMaxPrice} onChange={e => setFMaxPrice(Number(e.target.value))} className="nx-sb-range" />
             <div className="nx-sb-range-row">
-              <span>$0</span>
-              <span className="nx-sb-range-val">${fMaxPrice}</span>
-              <span>$1000+</span>
+              <span>$0</span><span className="nx-sb-range-val">${fMaxPrice}</span><span>$1000+</span>
             </div>
           </div>
           <div className="nx-sb-sec">
             <span className="nx-sb-sec-title">Calificación mín.</span>
-            {[0,1,2,3,4,5].map(r => (
+            {[0, 1, 2, 3, 4, 5].map(r => (
               <label key={r} className="nx-sb-radio">
-                <input type="radio" name="rat" value={r} checked={fMinRating===r} onChange={() => setFMinRating(r)} />
-                <span style={{ color: r===0 ? 'var(--ink-mid)' : 'var(--amber)' }}>{r===0 ? 'Todas' : stars(r)}</span>
+                <input type="radio" name="rat" value={r} checked={fMinRating === r} onChange={() => setFMinRating(r)} />
+                <span style={{ color: r === 0 ? 'var(--ink-mid)' : 'var(--amber)' }}>{r === 0 ? 'Todas' : stars(r)}</span>
               </label>
             ))}
           </div>
@@ -992,7 +898,6 @@ function Home() {
           </div>
         </aside>
 
-        {/* Main */}
         <div className="nx-cat-main">
           <div className="nx-cat-heading">
             <span className="nx-section-eyebrow">Catálogo completo</span>
@@ -1003,18 +908,18 @@ function Home() {
           {cartOk  && <div className="nx-alert-ok">{cartOk}</div>}
 
           <div className="nx-cat-searchbar">
-            <input placeholder="Buscar productos…" value={searchTerm} onChange={e => { setSearch(e.target.value); setPage(1); }} onKeyDown={e => e.key==='Enter' && doSearch()} />
+            <input placeholder="Buscar productos…" value={searchTerm} onChange={e => { setSearch(e.target.value); setPage(1); }} onKeyDown={e => e.key === 'Enter' && doSearch()} />
             <button onClick={doSearch}>Buscar</button>
           </div>
 
           <div className="nx-cat-toolbar">
             <div className="nx-cat-count">
-              <b>{start+1}–{Math.min(start+PER_PAGE, sorted.length)}</b> de <b>{sorted.length}</b> productos
+              <b>{start + 1}–{Math.min(start + PER_PAGE, sorted.length)}</b> de <b>{sorted.length}</b> productos
             </div>
             <div className="nx-toolbar-r">
               <div className="nx-view-toggle">
-                <button className={`nx-vbtn ${viewMode==='grid'?'on':''}`} onClick={() => setView('grid')}>⊞</button>
-                <button className={`nx-vbtn ${viewMode==='list'?'on':''}`} onClick={() => setView('list')}>≡</button>
+                <button className={`nx-vbtn ${viewMode === 'grid' ? 'on' : ''}`} onClick={() => setView('grid')}>⊞</button>
+                <button className={`nx-vbtn ${viewMode === 'list' ? 'on' : ''}`} onClick={() => setView('list')}>≡</button>
               </div>
               <select className="nx-sortsel" value={sortBy} onChange={e => setSortBy(e.target.value)}>
                 <option value="newest">Más reciente</option>
@@ -1026,9 +931,7 @@ function Home() {
           </div>
 
           {loading ? (
-            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--ink-ghost)', fontSize: '0.78rem', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-              Cargando productos…
-            </div>
+            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--ink-ghost)', fontSize: '0.78rem', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Cargando productos…</div>
           ) : error ? (
             <div className="nx-alert-err">{error}</div>
           ) : shown.length === 0 ? (
@@ -1037,7 +940,7 @@ function Home() {
               <p className="nx-empty-txt">No encontramos productos con esos criterios.</p>
             </div>
           ) : (
-            <div className={`nx-pgrid ${viewMode==='list'?'list':''}`} style={{ borderTop: '1px solid var(--border)', borderLeft: '1px solid var(--border)' }}>
+            <div className={`nx-pgrid ${viewMode === 'list' ? 'list' : ''}`} style={{ borderTop: '1px solid var(--border)', borderLeft: '1px solid var(--border)' }}>
               {shown.map(p => (
                 <div key={p.id} className="nx-pcard" onClick={() => setSelectedId(p.id)}>
                   <div className="nx-pcard-img">
@@ -1046,22 +949,22 @@ function Home() {
                       alt={p.titulo}
                       onError={e => { e.target.src = `https://via.placeholder.com/300/EDE8DF/7A7268?text=${encodeURIComponent(p.titulo)}`; }}
                     />
-                    <span className="nx-pcard-badge">{p.condition||'nuevo'}</span>
+                    <span className="nx-pcard-badge">{p.condicion || 'NUEVO'}</span>
                     <button className="nx-fav" onClick={e => { e.stopPropagation(); toggleFav(p.id); }}>
                       {favorites.includes(p.id) ? '❤️' : '♡'}
                     </button>
                   </div>
                   <div className="nx-pcard-body">
                     <div className="nx-pcard-name">{p.titulo}</div>
-                    <div className="nx-pcard-price">${(parseFloat(p.price)||0).toFixed(2)}</div>
-                    <div className="nx-pcard-stars">{stars(p.rating)}</div>
+                    <div className="nx-pcard-price">${(parseFloat(p.precio) || 0).toFixed(2)}</div>
+                    <div className="nx-pcard-stars">{stars(p.promedioCalificacion)}</div>
                     <div className="nx-pcard-add-row" onClick={e => e.stopPropagation()}>
-                      <input type="number" min="1" className="nx-qty" value={qtys[p.id]||1} onChange={e => setQtys(prev => ({...prev, [p.id]: e.target.value}))} />
-                      <button className={`nx-add-btn ${p.stock===0?'out':'ok'}`} disabled={p.stock===0} onClick={e => doAddToCart(p, e)}>
-                        {p.stock===0 ? 'Agotado' : '+ Agregar'}
+                      <input type="number" min="1" className="nx-qty" value={qtys[p.id] || 1} onChange={e => setQtys(prev => ({ ...prev, [p.id]: e.target.value }))} />
+                      <button className={`nx-add-btn ${p.stock === 0 ? 'out' : 'ok'}`} disabled={p.stock === 0} onClick={e => doAddToCart(p, e)}>
+                        {p.stock === 0 ? 'Agotado' : '+ Agregar'}
                       </button>
                     </div>
-                    <div className="nx-pcard-seller">{p.seller?.nombres} {p.seller?.apellidos}</div>
+                    <div className="nx-pcard-seller">{p.vendedor?.nombres} {p.vendedor?.apellidos}</div>
                   </div>
                 </div>
               ))}
@@ -1070,11 +973,11 @@ function Home() {
 
           {totalPgs > 1 && (
             <div className="nx-pages">
-              <button className="nx-pg" disabled={currentPage===1} onClick={() => setPage(p=>p-1)}>←</button>
-              {Array.from({length:totalPgs},(_,i)=>i+1).map(pg => (
-                <button key={pg} className={`nx-pg ${pg===currentPage?'on':''}`} onClick={() => setPage(pg)}>{pg}</button>
+              <button className="nx-pg" disabled={currentPage === 1} onClick={() => setPage(p => p - 1)}>←</button>
+              {Array.from({ length: totalPgs }, (_, i) => i + 1).map(pg => (
+                <button key={pg} className={`nx-pg ${pg === currentPage ? 'on' : ''}`} onClick={() => setPage(pg)}>{pg}</button>
               ))}
-              <button className="nx-pg" disabled={currentPage===totalPgs} onClick={() => setPage(p=>p+1)}>→</button>
+              <button className="nx-pg" disabled={currentPage === totalPgs} onClick={() => setPage(p => p + 1)}>→</button>
             </div>
           )}
         </div>

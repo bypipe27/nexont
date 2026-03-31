@@ -1,15 +1,17 @@
 const prisma = require('../../config/database');
 
+// ─── Mapa de condiciones ──────────────────────────────────────────────────────
+const conditionMap = {
+  'nuevo': 'NUEVO',
+  'usado': 'USADO',
+  'reacondicionado': 'REACONDICIONADO',
+  'NUEVO': 'NUEVO',
+  'USADO': 'USADO',
+  'REACONDICIONADO': 'REACONDICIONADO',
+};
+
 // ─── Crear producto ───────────────────────────────────────────────────────────
 const createProduct = async ({ titulo, descripcion, precio, stock, sellerId, imageUrl, condicion, promedioCalificacion }) => {
-  const conditionMap = {
-    'NUEVO': 'NUEVO',
-    'USADO': 'USADO',
-    'REACONDICIONADO': 'REACONDICIONADO',
-    'nuevo': 'NUEVO',
-    'usado': 'USADO',
-    'reacondicionado': 'REACONDICIONADO',
-  };
   const prismaCondition = conditionMap[condicion] || 'NUEVO';
 
   // Garantizar tipos correctos para Prisma
@@ -71,16 +73,7 @@ const getProducts = async ({ search, condition, minPrice, maxPrice, minRating } 
   }
 
   if (condition) {
-    const conditionMap = {
-      'nuevo': 'NUEVO',
-      'usado': 'USADO',
-      'reacondicionado': 'SEMINUEVO',
-      'seminuevo': 'SEMINUEVO',
-      'NUEVO': 'NUEVO',
-      'USADO': 'USADO',
-      'SEMINUEVO': 'SEMINUEVO',
-    };
-    where.condicion = conditionMap[condition.toLowerCase()] || 'NUEVO';
+    where.condicion = conditionMap[condition] || conditionMap[condition?.toLowerCase()] || 'NUEVO';
   }
 
   if (minPrice !== undefined || maxPrice !== undefined) {
@@ -97,7 +90,7 @@ const getProducts = async ({ search, condition, minPrice, maxPrice, minRating } 
     where,
     include: {
       vendedor: {
-        select: { id: true, nombres: true, apellidos: true, correo: true },
+        select: { id: true, nombres: true, apellidos: true },
       },
       imagenes: true,
     },
@@ -138,35 +131,18 @@ const getProductById = async (id) => {
 };
 
 // ─── Actualizar producto ──────────────────────────────────────────────────────
-const updateProduct = async (id, sellerId, data) => {
+const updateProduct = async (id, sellerId, updateData) => {
   const product = await prisma.producto.findFirst({
     where: { id, estaActivo: true },
   });
 
-  if (!product) {
-    throw new Error('Producto no encontrado');
-  }
+  if (!product) throw new Error('Producto no encontrado');
+  if (product.vendedorId !== sellerId) throw new Error('No tienes permiso para editar este producto');
 
-  if (product.vendedorId !== sellerId) {
-    throw new Error('No tienes permiso para modificar este producto');
-  }
-
-  const updateData = { ...data };
-  if (Object.prototype.hasOwnProperty.call(updateData, 'descripcion') && updateData.descripcion === '') {
-    updateData.descripcion = null;
-  }
   if (updateData.condicion) {
-    const conditionMap = {
-      'nuevo': 'NUEVO',
-      'usado': 'USADO',
-      'reacondicionado': 'SEMINUEVO',
-      'seminuevo': 'SEMINUEVO',
-      'NUEVO': 'NUEVO',
-      'USADO': 'USADO',
-      'SEMINUEVO': 'SEMINUEVO',
-    };
-    updateData.condicion = conditionMap[updateData.condicion.toLowerCase()] || 'NUEVO';
+    updateData.condicion = conditionMap[updateData.condicion] || conditionMap[updateData.condicion?.toLowerCase()] || 'NUEVO';
   }
+
   if (updateData.imageUrl) {
     await prisma.productoImagen.create({
       data: {
@@ -177,6 +153,7 @@ const updateProduct = async (id, sellerId, data) => {
     });
     delete updateData.imageUrl;
   }
+
   const updated = await prisma.producto.update({
     where: { id },
     data: updateData,
@@ -192,20 +169,19 @@ const updateProduct = async (id, sellerId, data) => {
 const deleteProduct = async (id, sellerId) => {
   const product = await prisma.producto.findFirst({
     where: { id, estaActivo: true },
+    include: { imagenes: true },
   });
 
-  if (!product) {
-    throw new Error('Producto no encontrado');
-  }
-
-  if (product.vendedorId !== sellerId) {
-    throw new Error('No tienes permiso para eliminar este producto');
-  }
+  if (!product) throw new Error('Producto no encontrado');
+  if (product.vendedorId !== sellerId) throw new Error('No tienes permiso para eliminar este producto');
 
   await prisma.producto.update({
     where: { id },
     data: { estaActivo: false },
   });
+
+  // Retornar URLs de imágenes para borrarlas de Cloudinary
+  return product.imagenes.map(img => img.url);
 };
 
 // ─── Listar productos del vendedor ────────────────────────────────────────────
@@ -214,21 +190,20 @@ const getMyProducts = async (sellerId) => {
     where: { vendedorId: sellerId, estaActivo: true },
     include: {
       vendedor: {
-        select: { id: true, nombres: true, apellidos: true, correo: true },
+        select: { id: true, nombres: true, apellidos: true },
       },
       imagenes: true,
     },
     orderBy: { creadoEn: 'desc' },
   });
-  console.log('IMAGENES DE MIS PRODUCTOS:', products.map(p => ({ id: p.id, imagenes: p.imagenes })));
+
   return products;
 };
-
 
 module.exports = {
   createProduct,
   getProducts,
-  getRecentProducts,  // ← NUEVO
+  getRecentProducts,
   getMyProducts,
   getProductById,
   updateProduct,
