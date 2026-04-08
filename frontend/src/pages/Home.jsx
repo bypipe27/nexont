@@ -321,6 +321,47 @@ const STYLES = `
   }
   .nx-section-link:hover { color: var(--ink); }
 
+  .nx-assist-wrap {
+    border: 1px solid var(--border);
+    background: var(--white);
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+  }
+  .nx-assist-head {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem; flex-wrap: wrap;
+  }
+  .nx-assist-meta {
+    font-size: 0.62rem; color: var(--ink-soft); letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .nx-assist-btn {
+    height: 38px; padding: 0 1.1rem;
+    border: 1px solid var(--border);
+    background: transparent; color: var(--ink);
+    font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase;
+    cursor: pointer; font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .nx-assist-btn:hover { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+  .nx-assist-form {
+    margin-top: 1rem;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.9rem 1rem;
+  }
+  .nx-assist-field { display: flex; flex-direction: column; gap: 0.35rem; }
+  .nx-assist-field.full { grid-column: 1 / -1; }
+  .nx-assist-field label {
+    font-size: 0.62rem; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-soft);
+  }
+  .nx-assist-field select {
+    height: 38px; border: 1px solid var(--border); background: var(--white);
+    color: var(--ink); font-size: 0.8rem; padding: 0 0.65rem; outline: none;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .nx-assist-actions { display: flex; justify-content: flex-end; margin-top: 0.3rem; }
+
   .nx-rgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; }
   .nx-rcard {
     border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
@@ -594,6 +635,18 @@ function Home() {
   const [fMaxPrice, setFMaxPrice]       = useState(1000);
   const [fMinRating, setFMinRating]     = useState(0);
   const [qtys, setQtys]                 = useState({});
+  const [assistOpen, setAssistOpen]     = useState(false);
+  const [assistLoading, setAssistLoad]  = useState(true);
+  const [assistErr, setAssistErr]       = useState('');
+  const [assistFallback, setAssistFallback] = useState(true);
+  const [recommendedProducts, setRecommendedProducts] = useState([]);
+  const [assistAnswers, setAssistAnswers] = useState({
+    objetivoCompra: '',
+    condicionPreferida: '',
+    presupuesto: '',
+    preferenciaClave: '',
+    prioridad: '',
+  });
 
   const navigate  = useNavigate();
   const token     = localStorage.getItem('token');
@@ -611,6 +664,22 @@ function Home() {
       .finally(() => setRecentLoad(false));
   }, []);
 
+  const fetchAssistedRecommendations = useCallback(async (answers = {}) => {
+    try {
+      setAssistLoad(true);
+      setAssistErr('');
+      const { data } = await api.post('/products/recommendations-assisted?limit=6', { answers });
+      setRecommendedProducts((data.products || []).slice(0, 6));
+      setAssistFallback(Boolean(data.usedFallback));
+    } catch {
+      setAssistErr('No se pudieron cargar recomendaciones en este momento');
+      setRecommendedProducts([]);
+      setAssistFallback(true);
+    } finally {
+      setAssistLoad(false);
+    }
+  }, []);
+
   const fetchProducts = useCallback(async (params = {}) => {
     try { setLoading(true); const { data } = await api.get('/products', { params }); setProducts(data.products || []); }
     catch { setError('Error al cargar productos'); }
@@ -618,6 +687,7 @@ function Home() {
   }, []);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
+  useEffect(() => { fetchAssistedRecommendations(); }, [fetchAssistedRecommendations]);
 
   useEffect(() => {
     const h = e => { if (ddOpen && !e.target.closest('.nx-user-wrap')) setDdOpen(false); };
@@ -627,6 +697,15 @@ function Home() {
 
   const doSearch  = () => { setPage(1); fetchProducts({ search: searchTerm || undefined, condition: fCond || undefined, maxPrice: fMaxPrice, minRating: fMinRating > 0 ? fMinRating : undefined }); };
   const doAddToCart = (p, e) => { e.stopPropagation(); const qty = Number(qtys[p.id] || 1); if (!Number.isInteger(qty) || qty < 1) { setCartErr('Cantidad inválida'); return; } addToCart(p.id, qty, { name: p.titulo, price: p.precio }); setQtys(prev => ({ ...prev, [p.id]: 1 })); };
+  const handleAssistChange = (field, value) => setAssistAnswers(prev => ({ ...prev, [field]: value }));
+  const runAssistedSurvey = async () => {
+    const isComplete = Object.values(assistAnswers).every(v => typeof v === 'string' && v.trim() !== '');
+    if (!isComplete) {
+      setAssistErr('Debes responder exactamente las 5 preguntas para personalizar recomendaciones');
+      return;
+    }
+    await fetchAssistedRecommendations(assistAnswers);
+  };
 
   const sorted   = [...products].sort((a, b) => {
     if (sortBy === 'price-low')  return (a.precio || 0) - (b.precio || 0);
@@ -793,6 +872,132 @@ function Home() {
             ))}
           </div>
         </div>
+      </section>
+
+      {/* ── RECOMENDADOS POR ENCUESTA ── */}
+      <section className="nx-section" style={{ borderTop: '1px solid var(--border)' }}>
+        <div className="nx-section-head">
+          <div>
+            <span className="nx-section-eyebrow">Prototipo beta</span>
+            <h2 className="nx-section-title">Recomendados para ti</h2>
+          </div>
+        </div>
+
+        <div className="nx-assist-wrap">
+          <div className="nx-assist-head">
+            <div className="nx-assist-meta">Recomendación independiente del historial</div>
+            <button className="nx-assist-btn" onClick={() => setAssistOpen(v => !v)}>
+              Encuesta para compra asistida
+            </button>
+          </div>
+
+          {assistOpen && (
+            <div className="nx-assist-form">
+              <div className="nx-assist-field">
+                <label>1. ¿Qué deseas comprar?</label>
+                <select value={assistAnswers.objetivoCompra} onChange={e => handleAssistChange('objetivoCompra', e.target.value)}>
+                  <option value="">Selecciona</option>
+                  <option value="tecnologia">Tecnología</option>
+                  <option value="hogar">Hogar</option>
+                  <option value="moda">Moda</option>
+                  <option value="deportes">Deportes</option>
+                  <option value="gaming">Gaming</option>
+                  <option value="otro">Otro</option>
+                </select>
+              </div>
+              <div className="nx-assist-field">
+                <label>2. ¿Qué condición prefieres?</label>
+                <select value={assistAnswers.condicionPreferida} onChange={e => handleAssistChange('condicionPreferida', e.target.value)}>
+                  <option value="">Selecciona</option>
+                  <option value="NUEVO">Nuevo</option>
+                  <option value="USADO">Usado</option>
+                  <option value="REACONDICIONADO">Reacondicionado</option>
+                  <option value="CUALQUIERA">Cualquiera</option>
+                </select>
+              </div>
+              <div className="nx-assist-field">
+                <label>3. ¿Cuál es tu presupuesto?</label>
+                <select value={assistAnswers.presupuesto} onChange={e => handleAssistChange('presupuesto', e.target.value)}>
+                  <option value="">Selecciona</option>
+                  <option value="0-100">$0 - $100</option>
+                  <option value="100-300">$100 - $300</option>
+                  <option value="300-700">$300 - $700</option>
+                  <option value="700+">$700+</option>
+                </select>
+              </div>
+              <div className="nx-assist-field">
+                <label>4. ¿Qué valoras más del producto?</label>
+                <select value={assistAnswers.preferenciaClave} onChange={e => handleAssistChange('preferenciaClave', e.target.value)}>
+                  <option value="">Selecciona</option>
+                  <option value="rendimiento">Rendimiento</option>
+                  <option value="durabilidad">Durabilidad</option>
+                  <option value="portabilidad">Portabilidad</option>
+                  <option value="estetica">Estética</option>
+                  <option value="ahorro">Ahorro</option>
+                </select>
+              </div>
+              <div className="nx-assist-field full">
+                <label>5. Si debes priorizar, ¿qué prefieres?</label>
+                <select value={assistAnswers.prioridad} onChange={e => handleAssistChange('prioridad', e.target.value)}>
+                  <option value="">Selecciona</option>
+                  <option value="ahorro">Menor precio</option>
+                  <option value="calidad">Mayor calidad</option>
+                  <option value="disponibilidad">Mayor disponibilidad</option>
+                  <option value="novedad">Publicaciones más recientes</option>
+                </select>
+              </div>
+              <div className="nx-assist-actions">
+                <button className="nx-btn-primary" onClick={runAssistedSurvey}>Obtener recomendación →</button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {assistErr && <div className="nx-alert-err" style={{ marginBottom: '1rem' }}>{assistErr}</div>}
+
+        {assistLoading ? (
+          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--ink-ghost)', fontSize: '0.78rem', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Calculando recomendaciones…</div>
+        ) : recommendedProducts.length === 0 ? (
+          <div className="nx-empty">
+            <div className="nx-empty-title">Sin recomendaciones por ahora</div>
+            <p className="nx-empty-txt">Intenta responder la encuesta para personalizar mejor los resultados.</p>
+          </div>
+        ) : (
+          <>
+            <div style={{ fontSize: '0.72rem', color: 'var(--ink-soft)', marginBottom: '1rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              {assistFallback ? 'Mostrando fallback: productos con mayor stock y más recientes' : 'Mostrando resultados según tus respuestas de encuesta'}
+            </div>
+            <div className="nx-pgrid" style={{ borderTop: '1px solid var(--border)', borderLeft: '1px solid var(--border)' }}>
+              {recommendedProducts.slice(0, 6).map(p => (
+                <div key={p.id} className="nx-pcard" onClick={() => setSelectedId(p.id)}>
+                  <div className="nx-pcard-img">
+                    <img
+                      src={p.imagenes?.[0]?.url || `https://via.placeholder.com/300/EDE8DF/7A7268?text=${encodeURIComponent(p.titulo)}`}
+                      alt={p.titulo}
+                      onError={e => { e.target.src = `https://via.placeholder.com/300/EDE8DF/7A7268?text=${encodeURIComponent(p.titulo)}`; }}
+                    />
+                    <span className="nx-pcard-badge">{p.condicion || p.condition || 'NUEVO'}</span>
+                    <button className="nx-fav" onClick={e => { e.stopPropagation(); toggleFav(p.id); }}>
+                      {favorites.includes(p.id) ? '❤️' : '♡'}
+                    </button>
+                  </div>
+                  <div className="nx-pcard-body">
+                    <div className="nx-pcard-name">{p.titulo}</div>
+                    <div className="nx-pcard-price">${(parseFloat(p.precio ?? p.price) || 0).toFixed(2)}</div>
+                    <div className="nx-pcard-stars">{stars(p.promedioCalificacion ?? p.rating)}</div>
+                    <div className="nx-pcard-add-row" onClick={e => e.stopPropagation()}>
+                      <input type="number" min="1" className="nx-qty" value={qtys[p.id] || 1} onChange={e => setQtys(prev => ({ ...prev, [p.id]: e.target.value }))} />
+                      <button className={`nx-add-btn ${p.stock === 0 ? 'out' : 'ok'}`} disabled={p.stock === 0} onClick={e => doAddToCart(p, e)}>
+                        {p.stock === 0 ? 'Agotado' : '+ Agregar'}
+                      </button>
+                    </div>
+                    <div className="nx-pcard-seller">{p.vendedor?.nombres || p.seller?.nombres} {p.vendedor?.apellidos || p.seller?.apellidos}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </section>
 
       {/* ── PRODUCTOS RECIENTES ── */}

@@ -25,6 +25,9 @@ router.get('/', productsController.getProducts);
 // DEBE ir ANTES de /:id para no ser capturado por el param
 router.get('/recent', productsController.getRecentProducts);
 
+// POST /api/v1/products/recommendations-assisted — Recomendación por encuesta (PÚBLICO)
+router.post('/recommendations-assisted', productsController.getAssistedRecommendations);
+
 // GET /api/v1/products/my — Productos del vendedor autenticado
 router.get('/my', authMiddleware, productsController.getMyProducts);
 
