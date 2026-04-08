@@ -28,10 +28,7 @@ const formatCart = (items) => {
 // ─── Obtener carrito del usuario ─────────────────────────────────────────────
 const getCartByUser = async (userId) => {
   const items = await prisma.itemCarrito.findMany({
-    where: {
-      usuarioId: userId,
-      producto: { estaActivo: true },
-    },
+    where: { usuarioId: userId },
     include: {
       producto: {
         select: {

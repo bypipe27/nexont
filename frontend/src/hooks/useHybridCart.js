@@ -1,8 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../api/api';
 
+const EMPTY_CART = { items: [], totalItems: 0, subtotal: 0 };
+const CART_UPDATED_EVENT = 'nexont:cart-updated';
+
 export const useHybridCart = () => {
-  const [cart, setCart] = useState({ items: [], totalItems: 0, subtotal: 0 });
+  const [cart, setCart] = useState(EMPTY_CART);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -11,15 +14,30 @@ export const useHybridCart = () => {
   const getLocalCart = useCallback(() => {
     try {
       const stored = localStorage.getItem('anonCart');
-      return stored ? JSON.parse(stored) : { items: [], totalItems: 0, subtotal: 0 };
+      return stored ? JSON.parse(stored) : EMPTY_CART;
     } catch {
-      return { items: [], totalItems: 0, subtotal: 0 };
+      return EMPTY_CART;
     }
   }, []);
 
   const saveLocalCart = useCallback((cartData) => {
     try { localStorage.setItem('anonCart', JSON.stringify(cartData)); } catch {}
   }, []);
+
+  const emitCartUpdated = useCallback((cartData) => {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(new CustomEvent(CART_UPDATED_EVENT, { detail: cartData }));
+  }, []);
+
+  const setCartState = useCallback((cartData, options = {}) => {
+    const { persistLocal = false, clearLocal = false } = options;
+    if (persistLocal) saveLocalCart(cartData);
+    if (clearLocal) {
+      try { localStorage.removeItem('anonCart'); } catch {}
+    }
+    setCart(cartData);
+    emitCartUpdated(cartData);
+  }, [emitCartUpdated, saveLocalCart]);
 
   const calculateCartTotals = useCallback((items) => {
     const subtotal = items.reduce((acc, item) => {
@@ -49,25 +67,24 @@ export const useHybridCart = () => {
   // ─── Cargar carrito ───────────────────────────────────────────────────────────
   const fetchCart = useCallback(async () => {
     if (!token) {
-      setCart(getLocalCart());
+      setCartState(getLocalCart());
       return;
     }
     try {
       setLoading(true);
       setError('');
       const { data } = await api.get('/cart');
-      setCart(normalizeBackendCart(data));
-      localStorage.removeItem('anonCart');
+      setCartState(normalizeBackendCart(data), { clearLocal: true });
     } catch (err) {
       if (err.response?.status === 401) {
-        setCart(getLocalCart());
+        setCartState(getLocalCart());
       } else {
         setError(err.response?.data?.error || 'No se pudo cargar el carrito');
       }
     } finally {
       setLoading(false);
     }
-  }, [token, getLocalCart]);
+  }, [token, getLocalCart, setCartState]);
 
   // ─── Agregar al carrito ───────────────────────────────────────────────────────
   const addToCart = useCallback(async (productId, quantity = 1, productData = {}) => {
@@ -90,18 +107,17 @@ export const useHybridCart = () => {
           });
         }
         const updated = calculateCartTotals(localCart.items);
-        saveLocalCart(updated);
-        setCart(updated);
+        setCartState(updated, { persistLocal: true });
         setSuccess('Producto agregado al carrito');
         return;
       }
       const { data } = await api.post('/cart/items', { productId, quantity });
-      setCart(normalizeBackendCart(data));
+      setCartState(normalizeBackendCart(data));
       setSuccess('Producto agregado al carrito');
     } catch (err) {
       setError(err.response?.data?.error || 'No se pudo agregar al carrito');
     }
-  }, [token, getLocalCart, calculateCartTotals, saveLocalCart]);
+  }, [token, getLocalCart, calculateCartTotals, setCartState]);
 
   // ─── Actualizar cantidad ──────────────────────────────────────────────────────
   const updateCartQuantity = useCallback(async (productId, quantity) => {
@@ -130,19 +146,18 @@ export const useHybridCart = () => {
           item.quantity = quantity;
         }
         const updated = calculateCartTotals(localCart.items);
-        saveLocalCart(updated);
-        setCart(updated);
+        setCartState(updated, { persistLocal: true });
         setSuccess('Cantidad actualizada');
         return;
       }
 
       const { data } = await api.patch(`/cart/items/${pid}`, { quantity });
-      setCart(normalizeBackendCart(data));
+      setCartState(normalizeBackendCart(data));
       setSuccess('Cantidad actualizada');
     } catch (err) {
       setError(err.response?.data?.error || 'No se pudo actualizar la cantidad');
     }
-  }, [token, getLocalCart, calculateCartTotals, saveLocalCart]);
+  }, [token, getLocalCart, calculateCartTotals, setCartState]);
 
   // ─── Remover item ─────────────────────────────────────────────────────────────
   const removeCartItem = useCallback(async (productId) => {
@@ -155,36 +170,34 @@ export const useHybridCart = () => {
         const localCart = getLocalCart();
         localCart.items = localCart.items.filter(i => i.productId !== pid);
         const updated = calculateCartTotals(localCart.items);
-        saveLocalCart(updated);
-        setCart(updated);
+        setCartState(updated, { persistLocal: true });
         setSuccess('Producto removido del carrito');
         return;
       }
       const { data } = await api.delete(`/cart/items/${pid}`);
-      setCart(normalizeBackendCart(data));
+      setCartState(normalizeBackendCart(data));
       setSuccess('Producto removido del carrito');
     } catch (err) {
       setError(err.response?.data?.error || 'No se pudo remover el producto');
     }
-  }, [token, getLocalCart, calculateCartTotals, saveLocalCart]);
+  }, [token, getLocalCart, calculateCartTotals, setCartState]);
 
   // ─── Limpiar carrito ──────────────────────────────────────────────────────────
   const clearCart = useCallback(async () => {
     try {
       setError(''); setSuccess('');
       if (!token) {
-        localStorage.removeItem('anonCart');
-        setCart({ items: [], totalItems: 0, subtotal: 0 });
+        setCartState(EMPTY_CART, { clearLocal: true });
         setSuccess('Carrito limpiado');
         return;
       }
       const { data } = await api.delete('/cart');
-      setCart(normalizeBackendCart(data));
+      setCartState(normalizeBackendCart(data));
       setSuccess('Carrito limpiado');
     } catch (err) {
       setError(err.response?.data?.error || 'No se pudo limpiar el carrito');
     }
-  }, [token]);
+  }, [token, setCartState]);
 
   // ─── Sincronizar carrito al autenticar ────────────────────────────────────────
   const syncCartOnLogin = useCallback(async (authToken) => {
@@ -192,14 +205,12 @@ export const useHybridCart = () => {
       const localCart = getLocalCart();
       if (localCart.items.length === 0) {
         const { data } = await api.get('/cart', { headers: { Authorization: `Bearer ${authToken}` } });
-        setCart(normalizeBackendCart(data));
-        localStorage.removeItem('anonCart');
+        setCartState(normalizeBackendCart(data), { clearLocal: true });
         return;
       }
       try {
         const { data } = await api.post('/cart/sync', { items: localCart.items }, { headers: { Authorization: `Bearer ${authToken}` } });
-        setCart(normalizeBackendCart(data));
-        localStorage.removeItem('anonCart');
+        setCartState(normalizeBackendCart(data), { clearLocal: true });
       } catch {
         for (const item of localCart.items) {
           try {
@@ -207,17 +218,39 @@ export const useHybridCart = () => {
           } catch {}
         }
         const { data } = await api.get('/cart', { headers: { Authorization: `Bearer ${authToken}` } });
-        setCart(normalizeBackendCart(data));
-        localStorage.removeItem('anonCart');
+        setCartState(normalizeBackendCart(data), { clearLocal: true });
       }
     } catch {}
-  }, [getLocalCart]);
+  }, [getLocalCart, setCartState]);
 
-  useEffect(() => { fetchCart(); }, [token]);
+  useEffect(() => { fetchCart(); }, [fetchCart]);
 
   useEffect(() => {
     if (token && getLocalCart().items.length > 0) syncCartOnLogin(token);
-  }, [token]);
+  }, [token, getLocalCart, syncCartOnLogin]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const onCartUpdated = (event) => {
+      if (!event?.detail) return;
+      setCart(event.detail);
+    };
+
+    const onStorage = (event) => {
+      if (event.key === 'anonCart' && !token) {
+        setCart(getLocalCart());
+      }
+    };
+
+    window.addEventListener(CART_UPDATED_EVENT, onCartUpdated);
+    window.addEventListener('storage', onStorage);
+
+    return () => {
+      window.removeEventListener(CART_UPDATED_EVENT, onCartUpdated);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, [token, getLocalCart]);
 
   return {
     cart, loading, error, success,
