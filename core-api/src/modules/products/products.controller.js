@@ -1,136 +1,267 @@
 const productsService = require('./products.service');
-const logger = require('../../shared/logger/logger');
-const cloudinary = require('../../shared/image/cloudinary');
-const fs = require('fs');
+const cloudinary = require('cloudinary').v2;
 
-// ─── POST /api/v1/products ────────────────────────────────────────────────────
-const createProduct = async (req, res) => {
-  try {
-    console.log('BODY RECIBIDO:', req.body);
-    const { titulo, descripcion, precio, stock, condicion, promedioCalificacion } = req.body;
-    const sellerId = req.user.userId;
-    let imageUrl = null;
+// ─── Configuración de Cloudinary ──────────────────────────────────────────────
+cloudinary.config({ cloudinary_url: process.env.CLOUDINARY_URL });
 
-    if (req.file) {
-      // Subir imagen a Cloudinary desde buffer usando promesa
-      imageUrl = await new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream({ folder: 'productos' }, (error, result) => {
-          if (error) return reject(new Error('Error al subir imagen a Cloudinary'));
-          resolve(result.secure_url);
-        });
-        stream.end(req.file.buffer);
-      });
-    }
+// ─── Helper: authMiddleware expone req.user.userId (no .id) ───────────────────
+const getSellerIdFromReq = (req) => parseInt(req.user.userId, 10);
 
-    const product = await productsService.createProduct({
-      titulo, descripcion, precio, stock, sellerId, imageUrl, condicion, promedioCalificacion,
-    });
-
-    logger.info('Producto creado', { productId: product.id, sellerId });
-
-    res.status(201).json({ message: 'Producto publicado correctamente', product });
-  } catch (error) {
-    logger.warn('Error al crear producto', { error: error.message, userId: req.user?.userId });
-    res.status(400).json({ error: error.message });
-  }
-};
-
-// ─── GET /api/v1/products ─────────────────────────────────────────────────────
+// ─── Listar todos los productos activos ───────────────────────────────────────
 const getProducts = async (req, res) => {
   try {
     const { search, condition, minPrice, maxPrice, minRating } = req.query;
     const products = await productsService.getProducts({ search, condition, minPrice, maxPrice, minRating });
-    res.json({ products });
-  } catch (error) {
-    logger.error('Error al listar productos', { error: error.message });
-    res.status(500).json({ error: 'Error al obtener los productos' });
+
+    const mapped = products.map((p) => ({
+      id: p.id,
+      titulo: p.titulo,
+      descripcion: p.descripcion,
+      price: parseFloat(p.precio),
+      stock: p.stock,
+      condition: p.condicion?.toLowerCase() || 'nuevo',
+      rating: p.promedioCalificacion || 0,
+      imagenes: p.imagenes || [],
+      seller: p.vendedor,
+      creadoEn: p.creadoEn,
+    }));
+
+    res.json({ products: mapped });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };
 
-// ─── GET /api/v1/products/my ──────────────────────────────────────────────────
-const getMyProducts = async (req, res) => {
+// ─── Obtener las últimas N publicaciones (Hero / Home) ────────────────────────
+const getRecentProducts = async (req, res) => {
   try {
-    const sellerId = req.user.userId;
-    const products = await productsService.getMyProducts(sellerId);
-    res.json({ products });
-  } catch (error) {
-    logger.error('Error al listar productos del vendedor', { error: error.message });
-    res.status(500).json({ error: 'Error al obtener tus productos' });
+    const limit = parseInt(req.query.limit, 10) || 6;
+    const products = await productsService.getRecentProducts(limit);
+
+    const mapped = products.map((p) => ({
+      id: p.id,
+      titulo: p.titulo,
+      descripcion: p.descripcion,
+      price: parseFloat(p.precio),
+      stock: p.stock,
+      condition: p.condicion?.toLowerCase() || 'nuevo',
+      rating: p.promedioCalificacion || 0,
+      imagenes: p.imagenes || [],
+      seller: p.vendedor,
+      creadoEn: p.creadoEn,
+    }));
+
+    res.json({ products: mapped });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };
 
-// ─── GET /api/v1/products/:id ─────────────────────────────────────────────────
+// ─── Recomendaciones por encuesta asistida (prototipo) ───────────────────────
+const getAssistedRecommendations = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit, 10) || 6;
+    const answers = req.body?.answers || {};
+
+    const result = await productsService.getAssistedRecommendations({ answers, limit });
+
+    const mapped = result.products.map((p) => ({
+      id: p.id,
+      titulo: p.titulo,
+      descripcion: p.descripcion,
+      precio: parseFloat(p.precio),
+      price: parseFloat(p.precio),
+      stock: p.stock,
+      condicion: p.condicion,
+      condition: p.condicion?.toLowerCase() || 'nuevo',
+      promedioCalificacion: p.promedioCalificacion || 0,
+      rating: p.promedioCalificacion || 0,
+      imagenes: p.imagenes || [],
+      vendedor: p.vendedor,
+      seller: p.vendedor,
+      creadoEn: p.creadoEn,
+    }));
+
+    res.json({
+      products: mapped,
+      usedFallback: result.usedFallback,
+      mode: result.usedFallback ? 'fallback' : 'assisted',
+      prototype: true,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ─── Obtener producto por ID ──────────────────────────────────────────────────
 const getProductById = async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    if (Number.isNaN(id)) {
-      logger.warn('ID de producto inválido al obtener', { id: req.params.id, userId: req.user?.userId });
-      return res.status(400).json({ error: 'ID de producto inválido' });
-    }
+    if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+
     const product = await productsService.getProductById(id);
-    res.json({ product });
-  } catch (error) {
-    logger.warn('Error al obtener producto', { error: error.message });
-    res.status(404).json({ error: error.message });
+
+    res.json({
+      product: {
+        id: product.id,
+        titulo: product.titulo,
+        descripcion: product.descripcion,
+        price: parseFloat(product.precio),
+        stock: product.stock,
+        condition: product.condicion?.toLowerCase() || 'nuevo',
+        rating: product.promedioCalificacion || 0,
+        imagenes: product.imagenes || [],
+        seller: product.vendedor,
+        creadoEn: product.creadoEn,
+      },
+    });
+  } catch (err) {
+    if (err.message === 'Producto no encontrado') return res.status(404).json({ error: err.message });
+    res.status(500).json({ error: err.message });
   }
 };
 
-// ─── PUT /api/v1/products/:id ─────────────────────────────────────────────────
+// ─── Publicar nuevo producto ──────────────────────────────────────────────────
+const createProduct = async (req, res) => {
+  try {
+    const { titulo, descripcion, precio, stock, condicion } = req.body;
+
+    const sellerId = getSellerIdFromReq(req);
+    if (isNaN(sellerId)) {
+      return res.status(401).json({ error: 'Usuario no válido en el token' });
+    }
+
+    if (!titulo || precio === undefined || precio === null || precio === '') {
+      return res.status(400).json({ error: 'titulo y precio son requeridos' });
+    }
+
+    const precioNum = parseFloat(precio);
+    if (isNaN(precioNum) || precioNum < 0) {
+      return res.status(400).json({ error: 'precio debe ser un número positivo' });
+    }
+
+    let imageUrl = null;
+
+    if (req.file) {
+      const uploadResult = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: 'nexont/products', resource_type: 'image' },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        stream.end(req.file.buffer);
+      });
+      imageUrl = uploadResult.secure_url;
+    }
+
+    const product = await productsService.createProduct({
+      titulo,
+      descripcion,
+      precio: precioNum,
+      stock: parseInt(stock, 10) || 0,
+      sellerId,
+      imageUrl,
+      condicion: condicion || 'NUEVO',
+    });
+
+    res.status(201).json({
+      message: 'Producto creado exitosamente',
+      product: {
+        id: product.id,
+        titulo: product.titulo,
+        descripcion: product.descripcion,
+        price: parseFloat(product.precio),
+        stock: product.stock,
+        condition: product.condicion?.toLowerCase() || 'nuevo',
+        imagenes: product.imagenes || [],
+        seller: product.vendedor,
+      },
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// ─── Actualizar producto ──────────────────────────────────────────────────────
 const updateProduct = async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-    if (Number.isNaN(id)) {
-      logger.warn('ID de producto inválido al actualizar', { id: req.params.id, userId: req.user?.userId });
-      return res.status(400).json({ error: 'ID de producto inválido' });
-    }
-    const sellerId = req.user.userId;
-    let imageUrl = null;
-    // Si hay archivo, subir a Cloudinary
-    if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path, { folder: 'productos' });
-      imageUrl = result.secure_url;
-      fs.unlink(req.file.path, () => {});
-    }
-    // Pasar imageUrl en el body
-    const updateData = { ...req.body };
-    if (imageUrl) updateData.imageUrl = imageUrl;
-    const product = await productsService.updateProduct(id, sellerId, updateData);
-    logger.info('Producto actualizado', { productId: id, sellerId });
-    res.json({ message: 'Producto actualizado correctamente', product });
-  } catch (error) {
-    logger.warn('Error al actualizar producto', { error: error.message });
-    const status = error.message.includes('permiso') ? 403 : 404;
-    res.status(status).json({ error: error.message });
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+
+    const sellerId = getSellerIdFromReq(req);
+    const updated = await productsService.updateProduct(id, sellerId, req.body);
+
+    res.json({
+      message: 'Producto actualizado',
+      product: {
+        id: updated.id,
+        titulo: updated.titulo,
+        descripcion: updated.descripcion,
+        price: parseFloat(updated.precio),
+        stock: updated.stock,
+        condition: updated.condicion?.toLowerCase() || 'nuevo',
+        imagenes: updated.imagenes || [],
+        seller: updated.vendedor,
+      },
+    });
+  } catch (err) {
+    if (err.message === 'Producto no encontrado') return res.status(404).json({ error: err.message });
+    if (err.message.includes('permiso')) return res.status(403).json({ error: err.message });
+    res.status(500).json({ error: err.message });
   }
 };
 
-// ─── DELETE /api/v1/products/:id ──────────────────────────────────────────────
+// ─── Eliminar producto ────────────────────────────────────────────────────────
 const deleteProduct = async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
-    if (Number.isNaN(id)) {
-      logger.warn('ID de producto inválido al eliminar', { id: req.params.id, userId: req.user?.userId });
-      return res.status(400).json({ error: 'ID de producto inválido' });
-    }
-    const sellerId = req.user.userId;
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
 
+    const sellerId = getSellerIdFromReq(req);
     await productsService.deleteProduct(id, sellerId);
 
-    logger.info('Producto eliminado', { productId: id, sellerId });
+    res.json({ message: 'Producto eliminado exitosamente' });
+  } catch (err) {
+    if (err.message === 'Producto no encontrado') return res.status(404).json({ error: err.message });
+    if (err.message.includes('permiso')) return res.status(403).json({ error: err.message });
+    res.status(500).json({ error: err.message });
+  }
+};
 
-    res.json({ message: 'Producto eliminado correctamente' });
-  } catch (error) {
-    logger.warn('Error al eliminar producto', { error: error.message });
-    const status = error.message.includes('permiso') ? 403 : 404;
-    res.status(status).json({ error: error.message });
+// ─── Listar productos del vendedor autenticado ────────────────────────────────
+const getMyProducts = async (req, res) => {
+  try {
+    const sellerId = getSellerIdFromReq(req);
+    const products = await productsService.getMyProducts(sellerId);
+
+    const mapped = products.map((p) => ({
+      id: p.id,
+      titulo: p.titulo,
+      descripcion: p.descripcion,
+      price: parseFloat(p.precio),
+      stock: p.stock,
+      condition: p.condicion?.toLowerCase() || 'nuevo',
+      rating: p.promedioCalificacion || 0,
+      imagenes: p.imagenes || [],
+      seller: p.vendedor,
+      creadoEn: p.creadoEn,
+    }));
+
+    res.json({ products: mapped });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };
 
 module.exports = {
-  createProduct,
   getProducts,
-  getMyProducts,
+  getRecentProducts,
+  getAssistedRecommendations,
   getProductById,
+  createProduct,
   updateProduct,
   deleteProduct,
+  getMyProducts,
 };
