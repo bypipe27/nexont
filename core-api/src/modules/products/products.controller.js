@@ -57,6 +57,42 @@ const getRecentProducts = async (req, res) => {
   }
 };
 
+// ─── Recomendaciones por encuesta asistida (prototipo) ───────────────────────
+const getAssistedRecommendations = async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit, 10) || 6;
+    const answers = req.body?.answers || {};
+
+    const result = await productsService.getAssistedRecommendations({ answers, limit });
+
+    const mapped = result.products.map((p) => ({
+      id: p.id,
+      titulo: p.titulo,
+      descripcion: p.descripcion,
+      precio: parseFloat(p.precio),
+      price: parseFloat(p.precio),
+      stock: p.stock,
+      condicion: p.condicion,
+      condition: p.condicion?.toLowerCase() || 'nuevo',
+      promedioCalificacion: p.promedioCalificacion || 0,
+      rating: p.promedioCalificacion || 0,
+      imagenes: p.imagenes || [],
+      vendedor: p.vendedor,
+      seller: p.vendedor,
+      creadoEn: p.creadoEn,
+    }));
+
+    res.json({
+      products: mapped,
+      usedFallback: result.usedFallback,
+      mode: result.usedFallback ? 'fallback' : 'assisted',
+      prototype: true,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // ─── Obtener producto por ID ──────────────────────────────────────────────────
 const getProductById = async (req, res) => {
   try {
@@ -222,6 +258,7 @@ const getMyProducts = async (req, res) => {
 module.exports = {
   getProducts,
   getRecentProducts,
+  getAssistedRecommendations,
   getProductById,
   createProduct,
   updateProduct,

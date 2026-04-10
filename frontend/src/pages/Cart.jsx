@@ -51,6 +51,8 @@ const STYLES = `
   .nxc-item-name { font-family:'Cormorant Garamond',serif; font-size:1.15rem; font-weight:300; color:var(--ink); margin-bottom:0.2rem; letter-spacing:-0.01em; }
   .nxc-item-price { font-size:0.75rem; color:var(--ink-soft); }
   .nxc-item-stock { font-size:0.68rem; color:var(--ink-ghost); margin-top:0.1rem; }
+  .nxc-item-unavailable { font-size:0.68rem; color:#DC2626; margin-top:0.25rem; text-transform:uppercase; letter-spacing:0.08em; font-weight:600; }
+  .nxc-item-warning { font-size:0.68rem; color:#B45309; margin-top:0.25rem; }
 
   .nxc-qty { display:flex; align-items:center; gap:0.5rem; }
   .nxc-qty-btn { width:30px; height:30px; background:var(--white); border:1px solid var(--border); color:var(--ink-soft); cursor:pointer; font-size:0.9rem; font-weight:500; display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
@@ -111,6 +113,8 @@ function Cart() {
                 const lineTotal = unitPrice * item.quantity;
                 const imageUrl = item.product?.imagenes?.[0]?.url || null;
                 const stock = item.product?.stock;
+                const isUnavailable = item.product?.estaActivo === false;
+                const isStockReduced = Number.isFinite(stock) && item.quantity > stock;
                 return (
                   <div key={pid} className="nxc-item">
                     <div className="nxc-item-info">
@@ -119,12 +123,14 @@ function Cart() {
                         <div className="nxc-item-name">{titulo}</div>
                         <div className="nxc-item-price">${unitPrice.toFixed(2)} c/u</div>
                         {stock !== undefined && <div className="nxc-item-stock">Stock: {stock}</div>}
+                        {isUnavailable && <div className="nxc-item-unavailable">No disponible</div>}
+                        {!isUnavailable && isStockReduced && <div className="nxc-item-warning">La cantidad agregada supera el stock actual. Máximo disponible: {stock}</div>}
                       </div>
                     </div>
                     <div className="nxc-qty">
-                      <button className="nxc-qty-btn" onClick={() => updateCartQuantity(pid, Math.max(1, item.quantity-1))}>−</button>
+                      <button className="nxc-qty-btn" disabled={isUnavailable} onClick={() => updateCartQuantity(pid, Math.max(1, item.quantity-1))}>−</button>
                       <span className="nxc-qty-val">{item.quantity}</span>
-                      <button className="nxc-qty-btn" disabled={stock !== undefined && item.quantity >= stock} onClick={() => updateCartQuantity(pid, item.quantity+1)}>+</button>
+                      <button className="nxc-qty-btn" disabled={isUnavailable || (stock !== undefined && item.quantity >= stock)} onClick={() => updateCartQuantity(pid, item.quantity+1)}>+</button>
                     </div>
                     <div className="nxc-line-total">${lineTotal.toFixed(2)}</div>
                     <button className="nxc-remove" onClick={() => removeCartItem(pid)}>Quitar</button>
