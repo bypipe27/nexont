@@ -726,7 +726,7 @@ function Home() {
       {/* ── NAV ── */}
       <nav className="nx-nav">
         <Link to="/" className="nx-nav-brand">
-          <img src="/resources/icone.png" alt="Nexont" />
+          <img src="/resources/icon.png" alt="Nexont" />
           <span className="nx-nav-wordmark">Nexont</span>
         </Link>
         <div className="nx-nav-sep" />
