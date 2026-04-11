@@ -55,6 +55,7 @@ model Usuario {
   id                   Int              @id @default(autoincrement())
   correo               String           @unique
   contrasena           String
+  fotoPerfil           String?
   nombres              String
   apellidos            String
   telefono             String?

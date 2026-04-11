@@ -37,7 +37,6 @@ const STYLES = `
 
   .nx-root, .nxmp-root { transition: background-color 0.25s ease; }
 
-
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
   .nx-root {
@@ -47,7 +46,6 @@ const STYLES = `
     color: var(--ink);
   }
 
-  /* ── TOPBAR ── */
   .nx-nav {
     position: sticky; top: 0; z-index: 200;
     height: 68px;
@@ -115,7 +113,6 @@ const STYLES = `
   }
   .nx-nav-cta:hover { background: var(--ink-mid); }
 
-  /* ── User pill ── */
   .nx-user-wrap { position: relative; }
   .nx-user-pill {
     display: flex; align-items: center; gap: 0.5rem;
@@ -160,7 +157,6 @@ const STYLES = `
   .nx-dd-item.danger:hover { background: #FEF2F2; color: #DC2626; }
   .nx-dd-item.highlight { color: var(--amber); font-weight: 500; }
 
-  /* ── HERO ── */
   .nx-hero {
     min-height: calc(100vh - 68px);
     display: grid; grid-template-columns: 1fr 1fr;
@@ -183,23 +179,13 @@ const STYLES = `
   .nx-hero-h1 {
     font-family: 'Cormorant Garamond', serif;
     font-size: clamp(4.5rem, 7.5vw, 8.5rem);
-    font-weight: 200;
-    line-height: 0.92;
-    color: var(--ink);
-    margin-bottom: 2.5rem;
-    letter-spacing: -0.025em;
+    font-weight: 200; line-height: 0.92; color: var(--ink);
+    margin-bottom: 2.5rem; letter-spacing: -0.025em;
   }
-  .nx-hero-h1 em {
-    font-style: italic;
-    font-weight: 200;
-    color: var(--amber);
-    display: block;
-  }
+  .nx-hero-h1 em { font-style: italic; font-weight: 200; color: var(--amber); display: block; }
   .nx-hero-p {
-    font-size: 0.95rem; line-height: 1.9;
-    color: var(--ink-soft); font-weight: 300;
-    max-width: 380px; margin-bottom: 3rem;
-    letter-spacing: 0.025em;
+    font-size: 0.95rem; line-height: 1.9; color: var(--ink-soft); font-weight: 300;
+    max-width: 380px; margin-bottom: 3rem; letter-spacing: 0.025em;
   }
   .nx-hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
   .nx-btn-primary {
@@ -224,44 +210,25 @@ const STYLES = `
 
   .nx-hero-stats {
     display: flex; gap: 0; margin-top: 4.5rem;
-    border-top: 1px solid var(--border);
-    padding-top: 2.5rem;
+    border-top: 1px solid var(--border); padding-top: 2.5rem;
   }
   .nx-hstat { flex: 1; padding-right: 2rem; }
   .nx-hstat:not(:last-child) { border-right: 1px solid var(--border); margin-right: 2rem; }
   .nx-hstat-val {
     font-family: 'Cormorant Garamond', serif;
     font-size: 3rem; font-weight: 200; color: var(--ink);
-    display: block; line-height: 1; margin-bottom: 0.35rem;
-    letter-spacing: -0.02em;
+    display: block; line-height: 1; margin-bottom: 0.35rem; letter-spacing: -0.02em;
   }
-  .nx-hstat-lbl {
-    font-size: 0.62rem; color: var(--ink-ghost);
-    text-transform: uppercase; letter-spacing: 0.15em; display: block;
-  }
+  .nx-hstat-lbl { font-size: 0.62rem; color: var(--ink-ghost); text-transform: uppercase; letter-spacing: 0.15em; display: block; }
 
-  /* Hero right */
-  .nx-hero-right {
-    background: var(--cream-dark);
-    display: flex; flex-direction: column;
-  }
+  .nx-hero-right { background: var(--cream-dark); display: flex; flex-direction: column; }
   .nx-hero-right-head {
-    padding: 1.5rem 2rem;
-    border-bottom: 1px solid var(--border);
+    padding: 1.5rem 2rem; border-bottom: 1px solid var(--border);
     display: flex; align-items: center; justify-content: space-between;
   }
-  .nx-hero-right-title {
-    font-size: 0.62rem; font-weight: 600; letter-spacing: 0.2em;
-    text-transform: uppercase; color: var(--ink-soft);
-  }
-  .nx-live-pill {
-    display: flex; align-items: center; gap: 0.4rem;
-    font-size: 0.62rem; color: #16A34A; font-weight: 600; letter-spacing: 0.08em;
-  }
-  .nx-live-dot {
-    width: 6px; height: 6px; border-radius: 50%; background: #16A34A;
-    animation: nx-pulse 2s ease infinite;
-  }
+  .nx-hero-right-title { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-soft); }
+  .nx-live-pill { display: flex; align-items: center; gap: 0.4rem; font-size: 0.62rem; color: #16A34A; font-weight: 600; letter-spacing: 0.08em; }
+  .nx-live-dot { width: 6px; height: 6px; border-radius: 50%; background: #16A34A; animation: nx-pulse 2s ease infinite; }
   .nx-feed-list { flex: 1; overflow-y: auto; }
   .nx-feed-item {
     display: flex; align-items: center; gap: 1rem;
@@ -269,172 +236,61 @@ const STYLES = `
     cursor: pointer; transition: background 0.12s;
   }
   .nx-feed-item:hover { background: rgba(26,23,20,0.03); }
-  .nx-feed-thumb {
-    width: 50px; height: 50px; flex-shrink: 0; overflow: hidden;
-    background: var(--cream); border: 1px solid var(--border);
-  }
+  .nx-feed-thumb { width: 50px; height: 50px; flex-shrink: 0; overflow: hidden; background: var(--cream); border: 1px solid var(--border); }
   .nx-feed-thumb img { width: 100%; height: 100%; object-fit: cover; }
   .nx-feed-info { flex: 1; overflow: hidden; }
-  .nx-feed-name {
-    font-size: 0.85rem; font-weight: 500; color: var(--ink);
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    margin-bottom: 0.2rem;
-  }
-  .nx-feed-cond {
-    font-size: 0.65rem; color: var(--ink-ghost);
-    text-transform: uppercase; letter-spacing: 0.1em;
-  }
-  .nx-feed-price {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.05rem; font-weight: 600; color: var(--ink); flex-shrink: 0;
-  }
-  .nx-hero-right-empty {
-    flex: 1; display: flex; align-items: center; justify-content: center;
-    font-size: 0.82rem; color: var(--ink-ghost); padding: 3rem;
-    text-align: center; line-height: 1.8;
-  }
+  .nx-feed-name { font-size: 0.85rem; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 0.2rem; }
+  .nx-feed-cond { font-size: 0.65rem; color: var(--ink-ghost); text-transform: uppercase; letter-spacing: 0.1em; }
+  .nx-feed-price { font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; font-weight: 600; color: var(--ink); flex-shrink: 0; }
+  .nx-hero-right-empty { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 0.82rem; color: var(--ink-ghost); padding: 3rem; text-align: center; line-height: 1.8; }
 
-  /* ── RECENT SECTION ── */
   .nx-section { padding: 5.5rem 3rem; }
   .nx-section-head {
     display: flex; align-items: flex-end; justify-content: space-between;
-    margin-bottom: 3.5rem; padding-bottom: 1.5rem;
-    border-bottom: 1px solid var(--border);
+    margin-bottom: 3.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border);
   }
-  .nx-section-eyebrow {
-    font-size: 0.62rem; font-weight: 600; letter-spacing: 0.25em;
-    text-transform: uppercase; color: var(--ink-soft);
-    margin-bottom: 0.75rem; display: block;
-  }
-  .nx-section-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: clamp(2.2rem, 4vw, 3.5rem);
-    font-weight: 200; color: var(--ink); line-height: 1.0;
-    letter-spacing: -0.02em;
-  }
-  .nx-section-link {
-    font-size: 0.72rem; font-weight: 500; letter-spacing: 0.1em;
-    text-transform: uppercase; color: var(--ink-soft);
-    text-decoration: none; display: flex; align-items: center; gap: 0.4rem;
-    transition: color 0.15s; padding-bottom: 4px; border-bottom: 1px solid currentColor;
-    white-space: nowrap; background: none; border-top: none; border-left: none; border-right: none; cursor: pointer; font-family: 'DM Sans', sans-serif;
-  }
+  .nx-section-eyebrow { font-size: 0.62rem; font-weight: 600; letter-spacing: 0.25em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 0.75rem; display: block; }
+  .nx-section-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(2.2rem, 4vw, 3.5rem); font-weight: 200; color: var(--ink); line-height: 1.0; letter-spacing: -0.02em; }
+  .nx-section-link { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); text-decoration: none; display: flex; align-items: center; gap: 0.4rem; transition: color 0.15s; padding-bottom: 4px; border-bottom: 1px solid currentColor; white-space: nowrap; background: none; border-top: none; border-left: none; border-right: none; cursor: pointer; font-family: 'DM Sans', sans-serif; }
   .nx-section-link:hover { color: var(--ink); }
 
-  .nx-assist-wrap {
-    border: 1px solid var(--border);
-    background: var(--white);
-    padding: 1.25rem;
-    margin-bottom: 2rem;
-  }
-  .nx-assist-head {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 1rem; flex-wrap: wrap;
-  }
-  .nx-assist-meta {
-    font-size: 0.62rem; color: var(--ink-soft); letter-spacing: 0.14em;
-    text-transform: uppercase;
-  }
-  .nx-assist-btn {
-    height: 38px; padding: 0 1.1rem;
-    border: 1px solid var(--border);
-    background: transparent; color: var(--ink);
-    font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase;
-    cursor: pointer; font-family: 'DM Sans', sans-serif;
-    transition: all 0.15s;
-  }
+  .nx-assist-wrap { border: 1px solid var(--border); background: var(--white); padding: 1.25rem; margin-bottom: 2rem; }
+  .nx-assist-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+  .nx-assist-meta { font-size: 0.62rem; color: var(--ink-soft); letter-spacing: 0.14em; text-transform: uppercase; }
+  .nx-assist-btn { height: 38px; padding: 0 1.1rem; border: 1px solid var(--border); background: transparent; color: var(--ink); font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s; }
   .nx-assist-btn:hover { background: var(--ink); color: var(--cream); border-color: var(--ink); }
-  .nx-assist-form {
-    margin-top: 1rem;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.9rem 1rem;
-  }
+  .nx-assist-form { margin-top: 1rem; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem 1rem; }
   .nx-assist-field { display: flex; flex-direction: column; gap: 0.35rem; }
   .nx-assist-field.full { grid-column: 1 / -1; }
-  .nx-assist-field label {
-    font-size: 0.62rem; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-soft);
-  }
-  .nx-assist-field select {
-    height: 38px; border: 1px solid var(--border); background: var(--white);
-    color: var(--ink); font-size: 0.8rem; padding: 0 0.65rem; outline: none;
-    font-family: 'DM Sans', sans-serif;
-  }
+  .nx-assist-field label { font-size: 0.62rem; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-soft); }
+  .nx-assist-field select { height: 38px; border: 1px solid var(--border); background: var(--white); color: var(--ink); font-size: 0.8rem; padding: 0 0.65rem; outline: none; font-family: 'DM Sans', sans-serif; }
   .nx-assist-actions { display: flex; justify-content: flex-end; margin-top: 0.3rem; }
 
   .nx-rgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; }
-  .nx-rcard {
-    border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);
-    cursor: pointer; transition: background 0.2s; position: relative;
-    display: flex; flex-direction: column;
-  }
+  .nx-rcard { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s; position: relative; display: flex; flex-direction: column; }
   .nx-rcard:nth-child(3n) { border-right: none; }
   .nx-rcard:hover { background: var(--cream-dark); }
-  .nx-rcard-img {
-    aspect-ratio: 4/3; overflow: hidden;
-    background: var(--cream-dark); position: relative;
-  }
-  .nx-rcard-img img {
-    width: 100%; height: 100%; object-fit: cover;
-    transition: transform 0.6s ease;
-  }
+  .nx-rcard-img { aspect-ratio: 4/3; overflow: hidden; background: var(--cream-dark); position: relative; }
+  .nx-rcard-img img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s ease; }
   .nx-rcard:hover .nx-rcard-img img { transform: scale(1.04); }
-  .nx-rcard-badge {
-    position: absolute; top: 1rem; left: 1rem;
-    background: var(--white); color: var(--ink);
-    font-size: 0.56rem; font-weight: 600; letter-spacing: 0.16em;
-    text-transform: uppercase; padding: 0.3rem 0.65rem;
-    border: 1px solid var(--border);
-  }
+  .nx-rcard-badge { position: absolute; top: 1rem; left: 1rem; background: var(--white); color: var(--ink); font-size: 0.56rem; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; padding: 0.3rem 0.65rem; border: 1px solid var(--border); }
   .nx-rcard-body { padding: 1.6rem; flex: 1; display: flex; flex-direction: column; }
-  .nx-rcard-name {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.35rem; font-weight: 300; color: var(--ink);
-    margin-bottom: 0.35rem; line-height: 1.2;
-    letter-spacing: -0.01em;
-  }
+  .nx-rcard-name { font-family: 'Cormorant Garamond', serif; font-size: 1.35rem; font-weight: 300; color: var(--ink); margin-bottom: 0.35rem; line-height: 1.2; letter-spacing: -0.01em; }
   .nx-rcard-seller { font-size: 0.7rem; color: var(--ink-ghost); margin-bottom: 0.75rem; letter-spacing: 0.04em; }
   .nx-rcard-stars { color: var(--amber); font-size: 0.7rem; letter-spacing: 0.05em; margin-bottom: auto; }
-  .nx-rcard-foot {
-    display: flex; align-items: center; justify-content: space-between;
-    margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border-soft);
-  }
-  .nx-rcard-price {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.5rem; font-weight: 300; color: var(--ink);
-    letter-spacing: -0.01em;
-  }
-  .nx-detail-link {
-    font-size: 0.65rem; font-weight: 500; letter-spacing: 0.12em;
-    text-transform: uppercase; color: var(--ink-ghost);
-    background: none; border: none; cursor: pointer;
-    transition: color 0.15s; padding-bottom: 2px;
-    border-bottom: 1px solid transparent;
-    font-family: 'DM Sans', sans-serif;
-  }
+  .nx-rcard-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid var(--border-soft); }
+  .nx-rcard-price { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 300; color: var(--ink); letter-spacing: -0.01em; }
+  .nx-detail-link { font-size: 0.65rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-ghost); background: none; border: none; cursor: pointer; transition: color 0.15s; padding-bottom: 2px; border-bottom: 1px solid transparent; font-family: 'DM Sans', sans-serif; }
   .nx-detail-link:hover { color: var(--ink); border-bottom-color: var(--ink); }
 
-  .nx-empty {
-    padding: 5rem 2rem; text-align: center;
-    border: 1px solid var(--border);
-  }
-  .nx-empty-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 2rem; font-weight: 200; color: var(--ink);
-    margin-bottom: 0.75rem; letter-spacing: -0.01em;
-  }
+  .nx-empty { padding: 5rem 2rem; text-align: center; border: 1px solid var(--border); }
+  .nx-empty-title { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 200; color: var(--ink); margin-bottom: 0.75rem; letter-spacing: -0.01em; }
   .nx-empty-txt { font-size: 0.85rem; color: var(--ink-soft); max-width: 320px; margin: 0 auto 2rem; line-height: 1.8; }
 
   .nx-divider { border: none; border-top: 1px solid var(--border); }
 
-  /* ── CATALOG ── */
   .nx-catalog { display: flex; min-height: 100vh; }
-  .nx-sidebar {
-    width: 240px; flex-shrink: 0;
-    border-right: 1px solid var(--border);
-    padding: 2rem 0; position: sticky;
-    top: 68px; height: calc(100vh - 68px); overflow-y: auto;
-  }
+  .nx-sidebar { width: 240px; flex-shrink: 0; border-right: 1px solid var(--border); padding: 2rem 0; position: sticky; top: 68px; height: calc(100vh - 68px); overflow-y: auto; }
   .nx-sb-head { padding: 0 1.5rem 1.25rem; border-bottom: 1px solid var(--border); margin-bottom: 0; }
   .nx-sb-title { font-size: 0.6rem; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ink-soft); }
   .nx-sb-sec { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border-soft); }
@@ -520,7 +376,45 @@ const STYLES = `
   .nx-modal-stat { border: 1px solid var(--border); padding: 0.85rem 1rem; margin: -1px 0 0 -1px; }
   .nx-ms-lbl { font-size: 0.58rem; color: var(--ink-ghost); text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 0.35rem; display: block; }
   .nx-ms-val { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 300; color: var(--ink); display: block; }
-  .nx-modal-seller { border: 1px solid var(--border); padding: 0.85rem 1rem; margin-top: -1px; }
+
+  /* ── SELLER CARD en modal (N14) ── */
+  .nx-seller-card {
+    border: 1px solid var(--amber);
+    background: var(--cream-dark);
+    padding: 1.1rem 1.25rem;
+    margin-top: 1rem;
+  }
+  .nx-seller-card-head {
+    font-size: 0.58rem; color: var(--ink-ghost);
+    text-transform: uppercase; letter-spacing: 0.14em;
+    margin-bottom: 0.85rem; display: block;
+  }
+  .nx-seller-card-body { display: flex; align-items: center; gap: 0.85rem; }
+  .nx-seller-av {
+    width: 42px; height: 42px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.05rem; font-weight: 400;
+    flex-shrink: 0; border: 1px solid rgba(0,0,0,0.08); overflow: hidden;
+  }
+  .nx-seller-av img { width: 100%; height: 100%; object-fit: cover; }
+  .nx-seller-info { flex: 1; }
+  .nx-seller-name {
+    font-size: 0.92rem; color: var(--ink); font-weight: 500;
+    cursor: pointer; display: inline-block;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.15s, color 0.15s;
+    text-decoration: none;
+  }
+  .nx-seller-name:hover { border-bottom-color: var(--amber); color: var(--amber); }
+  .nx-seller-date { font-size: 0.7rem; color: var(--ink-ghost); margin-top: 0.15rem; }
+  .nx-seller-link {
+    font-size: 0.62rem; color: var(--ink-ghost); letter-spacing: 0.1em; cursor: pointer;
+    text-transform: uppercase; font-weight: 500;
+    background: none; border: none; font-family: 'DM Sans', sans-serif;
+    transition: color 0.15s; padding: 0;
+  }
+  .nx-seller-link:hover { color: var(--amber); }
 
   @keyframes nx-shim { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
   @keyframes nx-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
@@ -551,11 +445,26 @@ if (!document.getElementById('nx-main-styles')) {
   document.head.appendChild(el);
 }
 
-// ── Modal detalle ─────────────────────────────────────────────────────────────
+const AVATAR_COLORS = [
+  { bg: '#F0F4FF', color: '#3B5BDB' },
+  { bg: '#FFF0F6', color: '#C2255C' },
+  { bg: '#F3FCF0', color: '#2F9E44' },
+  { bg: '#FFF9DB', color: '#E67700' },
+  { bg: '#F8F0FC', color: '#7950F2' },
+  { bg: '#E8FAF0', color: '#0CA678' },
+];
+
+function getAvatarColor(name = '') {
+  const idx = (name.charCodeAt(0) || 0) % AVATAR_COLORS.length;
+  return AVATAR_COLORS[idx];
+}
+
+// ── Modal detalle (N14: card del vendedor) ────────────────────────────────────
 function ProductDetailModal({ productId, onClose }) {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     api.get(`/products/${productId}`)
@@ -572,46 +481,109 @@ function ProductDetailModal({ productId, onClose }) {
 
   const stars = n => '★'.repeat(Math.round(n || 0)) + '☆'.repeat(5 - Math.round(n || 0));
 
+  const goToSeller = (sellerId) => {
+    onClose();
+    navigate(`/seller/${sellerId}`);
+  };
+
   return (
     <div className="nx-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="nx-modal">
         <button className="nx-modal-x" onClick={onClose}>✕</button>
-        {loading && <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--ink-ghost)', fontSize: '0.85rem' }}>Cargando…</div>}
-        {error   && <div style={{ padding: '2rem', textAlign: 'center', color: '#DC2626', fontSize: '0.85rem' }}>{error}</div>}
-        {!loading && !error && product && <>
-          {product.imagenes?.[0]?.url
-            ? <img src={product.imagenes[0].url} alt={product.titulo} className="nx-modal-img" />
-            : <div className="nx-modal-noimg">Sin imagen</div>}
-          <div className="nx-modal-body">
-            <div className="nx-modal-title">{product.titulo}</div>
-            {product.descripcion && <div className="nx-modal-desc">{product.descripcion}</div>}
-            <div className="nx-modal-grid">
-              <div className="nx-modal-stat">
-                <span className="nx-ms-lbl">Precio</span>
-                <span className="nx-ms-val" style={{ color: 'var(--amber)' }}>${parseFloat(product.precio).toFixed(2)}</span>
-              </div>
-              <div className="nx-modal-stat">
-                <span className="nx-ms-lbl">Stock</span>
-                <span className="nx-ms-val">{product.stock} uds.</span>
-              </div>
-              <div className="nx-modal-stat">
-                <span className="nx-ms-lbl">Estado</span>
-                <span className="nx-ms-val" style={{ textTransform: 'capitalize' }}>{product.condicion || 'nuevo'}</span>
-              </div>
-              <div className="nx-modal-stat">
-                <span className="nx-ms-lbl">Calificación</span>
-                <span className="nx-ms-val" style={{ fontSize: '0.85rem', color: 'var(--amber)' }}>{stars(product.promedioCalificacion)}</span>
-              </div>
-            </div>
-            {product.vendedor && (
-              <div className="nx-modal-seller">
-                <span className="nx-ms-lbl" style={{ display: 'block', marginBottom: '0.3rem' }}>Vendedor</span>
-                <div style={{ fontSize: '0.88rem', color: 'var(--ink)', fontWeight: 500 }}>{product.vendedor.nombres} {product.vendedor.apellidos}</div>
-                {product.vendedor.correo && <div style={{ fontSize: '0.75rem', color: 'var(--ink-ghost)', marginTop: '0.15rem' }}>{product.vendedor.correo}</div>}
-              </div>
-            )}
+
+        {loading && (
+          <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--ink-ghost)', fontSize: '0.85rem' }}>
+            Cargando…
           </div>
-        </>}
+        )}
+        {error && (
+          <div style={{ padding: '2rem', textAlign: 'center', color: '#DC2626', fontSize: '0.85rem' }}>
+            {error}
+          </div>
+        )}
+
+        {!loading && !error && product && (
+          <>
+            {product.imagenes?.[0]?.url
+              ? <img src={product.imagenes[0].url} alt={product.titulo} className="nx-modal-img" />
+              : <div className="nx-modal-noimg">Sin imagen</div>
+            }
+
+            <div className="nx-modal-body">
+              <div className="nx-modal-title">{product.titulo}</div>
+              {product.descripcion && (
+                <div className="nx-modal-desc">{product.descripcion}</div>
+              )}
+
+              <div className="nx-modal-grid">
+                <div className="nx-modal-stat">
+                  <span className="nx-ms-lbl">Precio</span>
+                  <span className="nx-ms-val" style={{ color: 'var(--amber)' }}>
+                    ${parseFloat(product.precio).toFixed(2)}
+                  </span>
+                </div>
+                <div className="nx-modal-stat">
+                  <span className="nx-ms-lbl">Stock</span>
+                  <span className="nx-ms-val">{product.stock} uds.</span>
+                </div>
+                <div className="nx-modal-stat">
+                  <span className="nx-ms-lbl">Estado</span>
+                  <span className="nx-ms-val" style={{ textTransform: 'capitalize' }}>
+                    {product.condition || 'nuevo'}
+                  </span>
+                </div>
+                <div className="nx-modal-stat">
+                  <span className="nx-ms-lbl">Calificación</span>
+                  <span className="nx-ms-val" style={{ fontSize: '0.85rem', color: 'var(--amber)' }}>
+                    {stars(product.rating)}
+                  </span>
+                </div>
+              </div>
+
+              {/* ── N14: Card del vendedor ── */}
+              {product.seller && (() => {
+                const v = product.seller;
+                const initials = `${(v.nombres?.[0] || '').toUpperCase()}${(v.apellidos?.[0] || '').toUpperCase()}`;
+                const avatarColor = getAvatarColor(v.nombres || '');
+                const memberSince = v.creadoEn
+                  ? new Date(v.creadoEn).toLocaleDateString('es-CO', { year: 'numeric', month: 'long' })
+                  : null;
+
+                return (
+                  <div className="nx-seller-card">
+                    <span className="nx-seller-card-head">Vendedor</span>
+                    <div className="nx-seller-card-body">
+                      <div
+                        className="nx-seller-av"
+                        style={{ background: avatarColor.bg, color: avatarColor.color }}
+                      >
+                        {v.fotoPerfil
+                          ? <img src={v.fotoPerfil} alt={v.nombres} />
+                          : initials
+                        }
+                      </div>
+                      <div className="nx-seller-info">
+                        <span
+                          className="nx-seller-name"
+                          onClick={() => goToSeller(v.id)}
+                          title="Ver todos los productos de este vendedor"
+                        >
+                          {v.nombres} {v.apellidos}
+                        </span>
+                        {memberSince && (
+                          <div className="nx-seller-date">Miembro desde {memberSince}</div>
+                        )}
+                      </div>
+                      <button className="nx-seller-link" onClick={() => goToSeller(v.id)}>
+                        Ver tienda →
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -648,11 +620,11 @@ function Home() {
     prioridad: '',
   });
 
-  const navigate  = useNavigate();
-  const token     = localStorage.getItem('token');
-  const user      = JSON.parse(localStorage.getItem('user') || 'null');
-  const PER_PAGE  = 12;
-  const initials  = user ? `${(user.nombres || '')[0] || ''}${(user.apellidos || '')[0] || ''}`.toUpperCase() : '';
+  const navigate = useNavigate();
+  const token    = localStorage.getItem('token');
+  const user     = JSON.parse(localStorage.getItem('user') || 'null');
+  const PER_PAGE = 12;
+  const initials = user ? `${(user.nombres || '')[0] || ''}${(user.apellidos || '')[0] || ''}`.toUpperCase() : '';
   const { theme, toggleTheme } = useTheme();
 
   const { cart, error: cartErr, success: cartOk, addToCart, setError: setCartErr } = useHybridCart();
@@ -681,9 +653,15 @@ function Home() {
   }, []);
 
   const fetchProducts = useCallback(async (params = {}) => {
-    try { setLoading(true); const { data } = await api.get('/products', { params }); setProducts(data.products || []); }
-    catch { setError('Error al cargar productos'); }
-    finally { setLoading(false); }
+    try {
+      setLoading(true);
+      const { data } = await api.get('/products', { params });
+      setProducts(data.products || []);
+    } catch {
+      setError('Error al cargar productos');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
@@ -695,9 +673,26 @@ function Home() {
     return () => document.removeEventListener('click', h);
   }, [ddOpen]);
 
-  const doSearch  = () => { setPage(1); fetchProducts({ search: searchTerm || undefined, condition: fCond || undefined, maxPrice: fMaxPrice, minRating: fMinRating > 0 ? fMinRating : undefined }); };
-  const doAddToCart = (p, e) => { e.stopPropagation(); const qty = Number(qtys[p.id] || 1); if (!Number.isInteger(qty) || qty < 1) { setCartErr('Cantidad inválida'); return; } addToCart(p.id, qty, { name: p.titulo, price: p.precio }); setQtys(prev => ({ ...prev, [p.id]: 1 })); };
+  const doSearch = () => {
+    setPage(1);
+    fetchProducts({
+      search: searchTerm || undefined,
+      condition: fCond || undefined,
+      maxPrice: fMaxPrice,
+      minRating: fMinRating > 0 ? fMinRating : undefined,
+    });
+  };
+
+  const doAddToCart = (p, e) => {
+    e.stopPropagation();
+    const qty = Number(qtys[p.id] || 1);
+    if (!Number.isInteger(qty) || qty < 1) { setCartErr('Cantidad inválida'); return; }
+    addToCart(p.id, qty, { name: p.titulo, price: p.precio });
+    setQtys(prev => ({ ...prev, [p.id]: 1 }));
+  };
+
   const handleAssistChange = (field, value) => setAssistAnswers(prev => ({ ...prev, [field]: value }));
+
   const runAssistedSurvey = async () => {
     const isComplete = Object.values(assistAnswers).every(v => typeof v === 'string' && v.trim() !== '');
     if (!isComplete) {
@@ -707,15 +702,15 @@ function Home() {
     await fetchAssistedRecommendations(assistAnswers);
   };
 
-  const sorted   = [...products].sort((a, b) => {
+  const sorted  = [...products].sort((a, b) => {
     if (sortBy === 'price-low')  return (a.precio || 0) - (b.precio || 0);
     if (sortBy === 'price-high') return (b.precio || 0) - (a.precio || 0);
     if (sortBy === 'rating')     return (b.promedioCalificacion || 0) - (a.promedioCalificacion || 0);
     return 0;
   });
-  const totalPgs = Math.ceil(sorted.length / PER_PAGE);
-  const start    = (currentPage - 1) * PER_PAGE;
-  const shown    = sorted.slice(start, start + PER_PAGE);
+  const totalPgs  = Math.ceil(sorted.length / PER_PAGE);
+  const start     = (currentPage - 1) * PER_PAGE;
+  const shown     = sorted.slice(start, start + PER_PAGE);
   const toggleFav = id => setFavs(f => f.includes(id) ? f.filter(x => x !== id) : [...f, id]);
   const scrollTo  = id => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
   const stars     = n  => '★'.repeat(Math.round(n || 0)) + '☆'.repeat(5 - Math.round(n || 0));
@@ -732,19 +727,18 @@ function Home() {
         <div className="nx-nav-sep" />
         <div className="nx-nav-search">
           <span style={{ color: 'var(--ink-ghost)', fontSize: '0.9rem' }}>⌕</span>
-          <input placeholder="Buscar productos…" value={searchTerm} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && doSearch()} />
+          <input
+            placeholder="Buscar productos…"
+            value={searchTerm}
+            onChange={e => setSearch(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && doSearch()}
+          />
         </div>
         <div className="nx-nav-gap" />
         <div className="nx-nav-actions">
-          {/* Toggle tema */}
-          <button
-            className="nx-icon-btn"
-            onClick={toggleTheme}
-            title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
-          >
+          <button className="nx-icon-btn" onClick={toggleTheme} title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}>
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>
-
           {token && user && (
             <button className="nx-icon-btn" onClick={() => navigate('/cart')} title="Carrito">
               🛒
@@ -752,11 +746,9 @@ function Home() {
             </button>
           )}
           <button className="nx-icon-btn" onClick={() => scrollTo('catalogo')} title="Catálogo">⊞</button>
-
           {token && user?.esVendedorVerificado && (
             <button className="nx-nav-cta" onClick={() => navigate('/my-products')}>+ Publicar</button>
           )}
-
           {token && user ? (
             <div className="nx-user-wrap">
               <div className="nx-user-pill" onClick={() => setDdOpen(o => !o)}>
@@ -890,7 +882,6 @@ function Home() {
               Encuesta para compra asistida
             </button>
           </div>
-
           {assistOpen && (
             <div className="nx-assist-form">
               <div className="nx-assist-field">
@@ -956,7 +947,9 @@ function Home() {
         {assistErr && <div className="nx-alert-err" style={{ marginBottom: '1rem' }}>{assistErr}</div>}
 
         {assistLoading ? (
-          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--ink-ghost)', fontSize: '0.78rem', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Calculando recomendaciones…</div>
+          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--ink-ghost)', fontSize: '0.78rem', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+            Calculando recomendaciones…
+          </div>
         ) : recommendedProducts.length === 0 ? (
           <div className="nx-empty">
             <div className="nx-empty-title">Sin recomendaciones por ahora</div>
@@ -1113,7 +1106,12 @@ function Home() {
           {cartOk  && <div className="nx-alert-ok">{cartOk}</div>}
 
           <div className="nx-cat-searchbar">
-            <input placeholder="Buscar productos…" value={searchTerm} onChange={e => { setSearch(e.target.value); setPage(1); }} onKeyDown={e => e.key === 'Enter' && doSearch()} />
+            <input
+              placeholder="Buscar productos…"
+              value={searchTerm}
+              onChange={e => { setSearch(e.target.value); setPage(1); }}
+              onKeyDown={e => e.key === 'Enter' && doSearch()}
+            />
             <button onClick={doSearch}>Buscar</button>
           </div>
 
@@ -1136,7 +1134,9 @@ function Home() {
           </div>
 
           {loading ? (
-            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--ink-ghost)', fontSize: '0.78rem', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Cargando productos…</div>
+            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--ink-ghost)', fontSize: '0.78rem', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+              Cargando productos…
+            </div>
           ) : error ? (
             <div className="nx-alert-err">{error}</div>
           ) : shown.length === 0 ? (

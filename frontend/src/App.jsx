@@ -11,6 +11,7 @@ import MyProducts from './pages/MyProducts';
 import Cart from './pages/Cart';
 import PrivateRoute from './components/PrivateRoute';
 import ChatWidget from './components/ChatWidget';
+import SellerProfile from './pages/SellerProfile';
 
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/tienda" element={<Navigate to="/" replace />} />
+          <Route path="/seller/:sellerId" element={<SellerProfile />} />
 
           {/* Rutas protegidas */}
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
