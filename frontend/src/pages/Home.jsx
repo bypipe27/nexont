@@ -129,8 +129,9 @@ const STYLES = `
     background: var(--ink); color: var(--cream);
     display: flex; align-items: center; justify-content: center;
     font-size: 0.62rem; font-weight: 600; flex-shrink: 0;
-    transition: all 0.18s;
+    transition: all 0.18s; overflow: hidden; padding: 0;
   }
+  .nx-user-av img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
   .nx-user-name { font-size: 0.82rem; color: var(--ink); font-weight: 500; transition: color 0.18s; }
   .nx-user-chev { font-size: 0.6rem; color: var(--ink-ghost); transition: color 0.18s; }
 
@@ -377,43 +378,16 @@ const STYLES = `
   .nx-ms-lbl { font-size: 0.58rem; color: var(--ink-ghost); text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 0.35rem; display: block; }
   .nx-ms-val { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; font-weight: 300; color: var(--ink); display: block; }
 
-  /* ── SELLER CARD en modal (N14) ── */
-  .nx-seller-card {
-    border: 1px solid var(--amber);
-    background: var(--cream-dark);
-    padding: 1.1rem 1.25rem;
-    margin-top: 1rem;
-  }
-  .nx-seller-card-head {
-    font-size: 0.58rem; color: var(--ink-ghost);
-    text-transform: uppercase; letter-spacing: 0.14em;
-    margin-bottom: 0.85rem; display: block;
-  }
+  .nx-seller-card { border: 1px solid var(--amber); background: var(--cream-dark); padding: 1.1rem 1.25rem; margin-top: 1rem; }
+  .nx-seller-card-head { font-size: 0.58rem; color: var(--ink-ghost); text-transform: uppercase; letter-spacing: 0.14em; margin-bottom: 0.85rem; display: block; }
   .nx-seller-card-body { display: flex; align-items: center; gap: 0.85rem; }
-  .nx-seller-av {
-    width: 42px; height: 42px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.05rem; font-weight: 400;
-    flex-shrink: 0; border: 1px solid rgba(0,0,0,0.08); overflow: hidden;
-  }
+  .nx-seller-av { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; font-weight: 400; flex-shrink: 0; border: 1px solid rgba(0,0,0,0.08); overflow: hidden; }
   .nx-seller-av img { width: 100%; height: 100%; object-fit: cover; }
   .nx-seller-info { flex: 1; }
-  .nx-seller-name {
-    font-size: 0.92rem; color: var(--ink); font-weight: 500;
-    cursor: pointer; display: inline-block;
-    border-bottom: 1px solid transparent;
-    transition: border-color 0.15s, color 0.15s;
-    text-decoration: none;
-  }
+  .nx-seller-name { font-size: 0.92rem; color: var(--ink); font-weight: 500; cursor: pointer; display: inline-block; border-bottom: 1px solid transparent; transition: border-color 0.15s, color 0.15s; text-decoration: none; }
   .nx-seller-name:hover { border-bottom-color: var(--amber); color: var(--amber); }
   .nx-seller-date { font-size: 0.7rem; color: var(--ink-ghost); margin-top: 0.15rem; }
-  .nx-seller-link {
-    font-size: 0.62rem; color: var(--ink-ghost); letter-spacing: 0.1em; cursor: pointer;
-    text-transform: uppercase; font-weight: 500;
-    background: none; border: none; font-family: 'DM Sans', sans-serif;
-    transition: color 0.15s; padding: 0;
-  }
+  .nx-seller-link { font-size: 0.62rem; color: var(--ink-ghost); letter-spacing: 0.1em; cursor: pointer; text-transform: uppercase; font-weight: 500; background: none; border: none; font-family: 'DM Sans', sans-serif; transition: color 0.15s; padding: 0; }
   .nx-seller-link:hover { color: var(--amber); }
 
   @keyframes nx-shim { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
@@ -459,7 +433,7 @@ function getAvatarColor(name = '') {
   return AVATAR_COLORS[idx];
 }
 
-// ── Modal detalle (N14: card del vendedor) ────────────────────────────────────
+// ── Modal detalle ─────────────────────────────────────────────────────────────
 function ProductDetailModal({ productId, onClose }) {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -480,47 +454,27 @@ function ProductDetailModal({ productId, onClose }) {
   }, [onClose]);
 
   const stars = n => '★'.repeat(Math.round(n || 0)) + '☆'.repeat(5 - Math.round(n || 0));
-
-  const goToSeller = (sellerId) => {
-    onClose();
-    navigate(`/seller/${sellerId}`);
-  };
+  const goToSeller = (sellerId) => { onClose(); navigate(`/seller/${sellerId}`); };
 
   return (
     <div className="nx-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="nx-modal">
         <button className="nx-modal-x" onClick={onClose}>✕</button>
-
-        {loading && (
-          <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--ink-ghost)', fontSize: '0.85rem' }}>
-            Cargando…
-          </div>
-        )}
-        {error && (
-          <div style={{ padding: '2rem', textAlign: 'center', color: '#DC2626', fontSize: '0.85rem' }}>
-            {error}
-          </div>
-        )}
-
+        {loading && <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--ink-ghost)', fontSize: '0.85rem' }}>Cargando…</div>}
+        {error && <div style={{ padding: '2rem', textAlign: 'center', color: '#DC2626', fontSize: '0.85rem' }}>{error}</div>}
         {!loading && !error && product && (
           <>
             {product.imagenes?.[0]?.url
               ? <img src={product.imagenes[0].url} alt={product.titulo} className="nx-modal-img" />
               : <div className="nx-modal-noimg">Sin imagen</div>
             }
-
             <div className="nx-modal-body">
               <div className="nx-modal-title">{product.titulo}</div>
-              {product.descripcion && (
-                <div className="nx-modal-desc">{product.descripcion}</div>
-              )}
-
+              {product.descripcion && <div className="nx-modal-desc">{product.descripcion}</div>}
               <div className="nx-modal-grid">
                 <div className="nx-modal-stat">
                   <span className="nx-ms-lbl">Precio</span>
-                  <span className="nx-ms-val" style={{ color: 'var(--amber)' }}>
-                    ${parseFloat(product.precio).toFixed(2)}
-                  </span>
+                  <span className="nx-ms-val" style={{ color: 'var(--amber)' }}>${parseFloat(product.precio).toFixed(2)}</span>
                 </div>
                 <div className="nx-modal-stat">
                   <span className="nx-ms-lbl">Stock</span>
@@ -528,55 +482,30 @@ function ProductDetailModal({ productId, onClose }) {
                 </div>
                 <div className="nx-modal-stat">
                   <span className="nx-ms-lbl">Estado</span>
-                  <span className="nx-ms-val" style={{ textTransform: 'capitalize' }}>
-                    {product.condition || 'nuevo'}
-                  </span>
+                  <span className="nx-ms-val" style={{ textTransform: 'capitalize' }}>{product.condition || 'nuevo'}</span>
                 </div>
                 <div className="nx-modal-stat">
                   <span className="nx-ms-lbl">Calificación</span>
-                  <span className="nx-ms-val" style={{ fontSize: '0.85rem', color: 'var(--amber)' }}>
-                    {stars(product.rating)}
-                  </span>
+                  <span className="nx-ms-val" style={{ fontSize: '0.85rem', color: 'var(--amber)' }}>{stars(product.rating)}</span>
                 </div>
               </div>
-
-              {/* ── N14: Card del vendedor ── */}
               {product.seller && (() => {
                 const v = product.seller;
                 const initials = `${(v.nombres?.[0] || '').toUpperCase()}${(v.apellidos?.[0] || '').toUpperCase()}`;
                 const avatarColor = getAvatarColor(v.nombres || '');
-                const memberSince = v.creadoEn
-                  ? new Date(v.creadoEn).toLocaleDateString('es-CO', { year: 'numeric', month: 'long' })
-                  : null;
-
+                const memberSince = v.creadoEn ? new Date(v.creadoEn).toLocaleDateString('es-CO', { year: 'numeric', month: 'long' }) : null;
                 return (
                   <div className="nx-seller-card">
                     <span className="nx-seller-card-head">Vendedor</span>
                     <div className="nx-seller-card-body">
-                      <div
-                        className="nx-seller-av"
-                        style={{ background: avatarColor.bg, color: avatarColor.color }}
-                      >
-                        {v.fotoPerfil
-                          ? <img src={v.fotoPerfil} alt={v.nombres} />
-                          : initials
-                        }
+                      <div className="nx-seller-av" style={{ background: avatarColor.bg, color: avatarColor.color }}>
+                        {v.fotoPerfil ? <img src={v.fotoPerfil} alt={v.nombres} /> : initials}
                       </div>
                       <div className="nx-seller-info">
-                        <span
-                          className="nx-seller-name"
-                          onClick={() => goToSeller(v.id)}
-                          title="Ver todos los productos de este vendedor"
-                        >
-                          {v.nombres} {v.apellidos}
-                        </span>
-                        {memberSince && (
-                          <div className="nx-seller-date">Miembro desde {memberSince}</div>
-                        )}
+                        <span className="nx-seller-name" onClick={() => goToSeller(v.id)}>{v.nombres} {v.apellidos}</span>
+                        {memberSince && <div className="nx-seller-date">Miembro desde {memberSince}</div>}
                       </div>
-                      <button className="nx-seller-link" onClick={() => goToSeller(v.id)}>
-                        Ver tienda →
-                      </button>
+                      <button className="nx-seller-link" onClick={() => goToSeller(v.id)}>Ver tienda →</button>
                     </div>
                   </div>
                 );
@@ -613,21 +542,28 @@ function Home() {
   const [assistFallback, setAssistFallback] = useState(true);
   const [recommendedProducts, setRecommendedProducts] = useState([]);
   const [assistAnswers, setAssistAnswers] = useState({
-    objetivoCompra: '',
-    condicionPreferida: '',
-    presupuesto: '',
-    preferenciaClave: '',
-    prioridad: '',
+    objetivoCompra: '', condicionPreferida: '', presupuesto: '', preferenciaClave: '', prioridad: '',
   });
+
+  // ── user como estado reactivo ──
+  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user') || 'null'));
 
   const navigate = useNavigate();
   const token    = localStorage.getItem('token');
-  const user     = JSON.parse(localStorage.getItem('user') || 'null');
   const PER_PAGE = 12;
   const initials = user ? `${(user.nombres || '')[0] || ''}${(user.apellidos || '')[0] || ''}`.toUpperCase() : '';
   const { theme, toggleTheme } = useTheme();
-
   const { cart, error: cartErr, success: cartOk, addToCart, setError: setCartErr } = useHybridCart();
+
+  // ── Escuchar cambios de perfil desde Profile.jsx ──
+  useEffect(() => {
+    const handler = () => {
+      const updated = JSON.parse(localStorage.getItem('user') || 'null');
+      setUser(updated);
+    };
+    window.addEventListener('user-updated', handler);
+    return () => window.removeEventListener('user-updated', handler);
+  }, []);
 
   useEffect(() => {
     api.get('/products/recent')
@@ -638,30 +574,20 @@ function Home() {
 
   const fetchAssistedRecommendations = useCallback(async (answers = {}) => {
     try {
-      setAssistLoad(true);
-      setAssistErr('');
+      setAssistLoad(true); setAssistErr('');
       const { data } = await api.post('/products/recommendations-assisted?limit=6', { answers });
       setRecommendedProducts((data.products || []).slice(0, 6));
       setAssistFallback(Boolean(data.usedFallback));
     } catch {
       setAssistErr('No se pudieron cargar recomendaciones en este momento');
-      setRecommendedProducts([]);
-      setAssistFallback(true);
-    } finally {
-      setAssistLoad(false);
-    }
+      setRecommendedProducts([]); setAssistFallback(true);
+    } finally { setAssistLoad(false); }
   }, []);
 
   const fetchProducts = useCallback(async (params = {}) => {
-    try {
-      setLoading(true);
-      const { data } = await api.get('/products', { params });
-      setProducts(data.products || []);
-    } catch {
-      setError('Error al cargar productos');
-    } finally {
-      setLoading(false);
-    }
+    try { setLoading(true); const { data } = await api.get('/products', { params }); setProducts(data.products || []); }
+    catch { setError('Error al cargar productos'); }
+    finally { setLoading(false); }
   }, []);
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
@@ -673,41 +599,16 @@ function Home() {
     return () => document.removeEventListener('click', h);
   }, [ddOpen]);
 
-  const doSearch = () => {
-    setPage(1);
-    fetchProducts({
-      search: searchTerm || undefined,
-      condition: fCond || undefined,
-      maxPrice: fMaxPrice,
-      minRating: fMinRating > 0 ? fMinRating : undefined,
-    });
-  };
-
-  const doAddToCart = (p, e) => {
-    e.stopPropagation();
-    const qty = Number(qtys[p.id] || 1);
-    if (!Number.isInteger(qty) || qty < 1) { setCartErr('Cantidad inválida'); return; }
-    addToCart(p.id, qty, { name: p.titulo, price: p.precio });
-    setQtys(prev => ({ ...prev, [p.id]: 1 }));
-  };
-
+  const doSearch = () => { setPage(1); fetchProducts({ search: searchTerm || undefined, condition: fCond || undefined, maxPrice: fMaxPrice, minRating: fMinRating > 0 ? fMinRating : undefined }); };
+  const doAddToCart = (p, e) => { e.stopPropagation(); const qty = Number(qtys[p.id] || 1); if (!Number.isInteger(qty) || qty < 1) { setCartErr('Cantidad inválida'); return; } addToCart(p.id, qty, { name: p.titulo, price: p.precio }); setQtys(prev => ({ ...prev, [p.id]: 1 })); };
   const handleAssistChange = (field, value) => setAssistAnswers(prev => ({ ...prev, [field]: value }));
-
   const runAssistedSurvey = async () => {
     const isComplete = Object.values(assistAnswers).every(v => typeof v === 'string' && v.trim() !== '');
-    if (!isComplete) {
-      setAssistErr('Debes responder exactamente las 5 preguntas para personalizar recomendaciones');
-      return;
-    }
+    if (!isComplete) { setAssistErr('Debes responder exactamente las 5 preguntas para personalizar recomendaciones'); return; }
     await fetchAssistedRecommendations(assistAnswers);
   };
 
-  const sorted  = [...products].sort((a, b) => {
-    if (sortBy === 'price-low')  return (a.precio || 0) - (b.precio || 0);
-    if (sortBy === 'price-high') return (b.precio || 0) - (a.precio || 0);
-    if (sortBy === 'rating')     return (b.promedioCalificacion || 0) - (a.promedioCalificacion || 0);
-    return 0;
-  });
+  const sorted    = [...products].sort((a, b) => { if (sortBy === 'price-low') return (a.precio||0)-(b.precio||0); if (sortBy === 'price-high') return (b.precio||0)-(a.precio||0); if (sortBy === 'rating') return (b.promedioCalificacion||0)-(a.promedioCalificacion||0); return 0; });
   const totalPgs  = Math.ceil(sorted.length / PER_PAGE);
   const start     = (currentPage - 1) * PER_PAGE;
   const shown     = sorted.slice(start, start + PER_PAGE);
@@ -727,12 +628,7 @@ function Home() {
         <div className="nx-nav-sep" />
         <div className="nx-nav-search">
           <span style={{ color: 'var(--ink-ghost)', fontSize: '0.9rem' }}>⌕</span>
-          <input
-            placeholder="Buscar productos…"
-            value={searchTerm}
-            onChange={e => setSearch(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && doSearch()}
-          />
+          <input placeholder="Buscar productos…" value={searchTerm} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && doSearch()} />
         </div>
         <div className="nx-nav-gap" />
         <div className="nx-nav-actions">
@@ -752,7 +648,13 @@ function Home() {
           {token && user ? (
             <div className="nx-user-wrap">
               <div className="nx-user-pill" onClick={() => setDdOpen(o => !o)}>
-                <div className="nx-user-av">{initials}</div>
+                {/* ── Avatar: foto si existe, iniciales si no ── */}
+                <div className="nx-user-av">
+                  {user.fotoPerfil
+                    ? <img src={user.fotoPerfil} alt={initials} />
+                    : initials
+                  }
+                </div>
                 <span className="nx-user-name">{user.nombres}</span>
                 <span className="nx-user-chev">▾</span>
               </div>
@@ -760,7 +662,7 @@ function Home() {
                 <div className="nx-dropdown">
                   <div className="nx-dd-sec">
                     <div className="nx-dd-lbl">Mi cuenta</div>
-                    <div className="nx-dd-item">👤 Mi perfil</div>
+                    <div className="nx-dd-item" onClick={() => { setDdOpen(false); navigate('/profile'); }}>👤 Mi perfil</div>
                     <div className="nx-dd-item" onClick={() => { setDdOpen(false); navigate('/orders'); }}>📦 Mis órdenes</div>
                   </div>
                   {user.esVendedorVerificado && (
@@ -796,39 +698,19 @@ function Home() {
       <section className="nx-hero">
         <div className="nx-hero-left">
           <div className="nx-hero-season">Marketplace Colombiano</div>
-          <h1 className="nx-hero-h1">
-            Descubre lo<br />
-            <em>extraordinario</em>
-            en cada objeto
-          </h1>
-          <p className="nx-hero-p">
-            Vendedores verificados, productos únicos y la experiencia
-            de compra más refinada de Colombia.
-          </p>
+          <h1 className="nx-hero-h1">Descubre lo<br /><em>extraordinario</em>en cada objeto</h1>
+          <p className="nx-hero-p">Vendedores verificados, productos únicos y la experiencia de compra más refinada de Colombia.</p>
           <div className="nx-hero-actions">
             <button className="nx-btn-primary" onClick={() => scrollTo('catalogo')}>Explorar catálogo →</button>
             {!token && <Link to="/register" className="nx-btn-outline">Vender aquí</Link>}
-            {token && user?.esVendedorVerificado && (
-              <button className="nx-btn-outline" onClick={() => navigate('/my-products')}>Publicar producto</button>
-            )}
+            {token && user?.esVendedorVerificado && <button className="nx-btn-outline" onClick={() => navigate('/my-products')}>Publicar producto</button>}
           </div>
           <div className="nx-hero-stats">
-            <div className="nx-hstat">
-              <span className="nx-hstat-val">{products.length > 0 ? products.length : '—'}</span>
-              <span className="nx-hstat-lbl">Productos activos</span>
-            </div>
-            <div className="nx-hstat">
-              <span className="nx-hstat-val">100%</span>
-              <span className="nx-hstat-lbl">Vendedores verificados</span>
-            </div>
-            <div className="nx-hstat">
-              <span className="nx-hstat-val">24h</span>
-              <span className="nx-hstat-lbl">Soporte disponible</span>
-            </div>
+            <div className="nx-hstat"><span className="nx-hstat-val">{products.length > 0 ? products.length : '—'}</span><span className="nx-hstat-lbl">Productos activos</span></div>
+            <div className="nx-hstat"><span className="nx-hstat-val">100%</span><span className="nx-hstat-lbl">Vendedores verificados</span></div>
+            <div className="nx-hstat"><span className="nx-hstat-val">24h</span><span className="nx-hstat-lbl">Soporte disponible</span></div>
           </div>
         </div>
-
-        {/* Live feed */}
         <div className="nx-hero-right">
           <div className="nx-hero-right-head">
             <span className="nx-hero-right-title">Últimas publicaciones</span>
@@ -844,16 +726,11 @@ function Home() {
                 </div>
               </div>
             ))}
-            {!recentLoading && recentProducts.length === 0 && (
-              <div className="nx-hero-right-empty">Aún no hay publicaciones.<br />Sé el primero en publicar.</div>
-            )}
+            {!recentLoading && recentProducts.length === 0 && <div className="nx-hero-right-empty">Aún no hay publicaciones.<br />Sé el primero en publicar.</div>}
             {!recentLoading && recentProducts.slice(0, 6).map(p => (
               <div key={p.id} className="nx-feed-item" onClick={() => setSelectedId(p.id)}>
                 <div className="nx-feed-thumb">
-                  {p.imagenes?.[0]?.url
-                    ? <img src={p.imagenes[0].url} alt={p.titulo} />
-                    : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', color: 'var(--ink-ghost)' }}>📦</div>
-                  }
+                  {p.imagenes?.[0]?.url ? <img src={p.imagenes[0].url} alt={p.titulo} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem', color: 'var(--ink-ghost)' }}>📦</div>}
                 </div>
                 <div className="nx-feed-info">
                   <div className="nx-feed-name">{p.titulo}</div>
@@ -866,95 +743,32 @@ function Home() {
         </div>
       </section>
 
-      {/* ── RECOMENDADOS POR ENCUESTA ── */}
+      {/* ── RECOMENDADOS ── */}
       <section className="nx-section" style={{ borderTop: '1px solid var(--border)' }}>
         <div className="nx-section-head">
-          <div>
-            <span className="nx-section-eyebrow">Prototipo beta</span>
-            <h2 className="nx-section-title">Recomendados para ti</h2>
-          </div>
+          <div><span className="nx-section-eyebrow">Prototipo beta</span><h2 className="nx-section-title">Recomendados para ti</h2></div>
         </div>
-
         <div className="nx-assist-wrap">
           <div className="nx-assist-head">
             <div className="nx-assist-meta">Recomendación independiente del historial</div>
-            <button className="nx-assist-btn" onClick={() => setAssistOpen(v => !v)}>
-              Encuesta para compra asistida
-            </button>
+            <button className="nx-assist-btn" onClick={() => setAssistOpen(v => !v)}>Encuesta para compra asistida</button>
           </div>
           {assistOpen && (
             <div className="nx-assist-form">
-              <div className="nx-assist-field">
-                <label>1. ¿Qué deseas comprar?</label>
-                <select value={assistAnswers.objetivoCompra} onChange={e => handleAssistChange('objetivoCompra', e.target.value)}>
-                  <option value="">Selecciona</option>
-                  <option value="tecnologia">Tecnología</option>
-                  <option value="hogar">Hogar</option>
-                  <option value="moda">Moda</option>
-                  <option value="deportes">Deportes</option>
-                  <option value="gaming">Gaming</option>
-                  <option value="otro">Otro</option>
-                </select>
-              </div>
-              <div className="nx-assist-field">
-                <label>2. ¿Qué condición prefieres?</label>
-                <select value={assistAnswers.condicionPreferida} onChange={e => handleAssistChange('condicionPreferida', e.target.value)}>
-                  <option value="">Selecciona</option>
-                  <option value="NUEVO">Nuevo</option>
-                  <option value="USADO">Usado</option>
-                  <option value="REACONDICIONADO">Reacondicionado</option>
-                  <option value="CUALQUIERA">Cualquiera</option>
-                </select>
-              </div>
-              <div className="nx-assist-field">
-                <label>3. ¿Cuál es tu presupuesto?</label>
-                <select value={assistAnswers.presupuesto} onChange={e => handleAssistChange('presupuesto', e.target.value)}>
-                  <option value="">Selecciona</option>
-                  <option value="0-100">$0 - $100</option>
-                  <option value="100-300">$100 - $300</option>
-                  <option value="300-700">$300 - $700</option>
-                  <option value="700+">$700+</option>
-                </select>
-              </div>
-              <div className="nx-assist-field">
-                <label>4. ¿Qué valoras más del producto?</label>
-                <select value={assistAnswers.preferenciaClave} onChange={e => handleAssistChange('preferenciaClave', e.target.value)}>
-                  <option value="">Selecciona</option>
-                  <option value="rendimiento">Rendimiento</option>
-                  <option value="durabilidad">Durabilidad</option>
-                  <option value="portabilidad">Portabilidad</option>
-                  <option value="estetica">Estética</option>
-                  <option value="ahorro">Ahorro</option>
-                </select>
-              </div>
-              <div className="nx-assist-field full">
-                <label>5. Si debes priorizar, ¿qué prefieres?</label>
-                <select value={assistAnswers.prioridad} onChange={e => handleAssistChange('prioridad', e.target.value)}>
-                  <option value="">Selecciona</option>
-                  <option value="ahorro">Menor precio</option>
-                  <option value="calidad">Mayor calidad</option>
-                  <option value="disponibilidad">Mayor disponibilidad</option>
-                  <option value="novedad">Publicaciones más recientes</option>
-                </select>
-              </div>
-              <div className="nx-assist-actions">
-                <button className="nx-btn-primary" onClick={runAssistedSurvey}>Obtener recomendación →</button>
-              </div>
+              <div className="nx-assist-field"><label>1. ¿Qué deseas comprar?</label><select value={assistAnswers.objetivoCompra} onChange={e => handleAssistChange('objetivoCompra', e.target.value)}><option value="">Selecciona</option><option value="tecnologia">Tecnología</option><option value="hogar">Hogar</option><option value="moda">Moda</option><option value="deportes">Deportes</option><option value="gaming">Gaming</option><option value="otro">Otro</option></select></div>
+              <div className="nx-assist-field"><label>2. ¿Qué condición prefieres?</label><select value={assistAnswers.condicionPreferida} onChange={e => handleAssistChange('condicionPreferida', e.target.value)}><option value="">Selecciona</option><option value="NUEVO">Nuevo</option><option value="USADO">Usado</option><option value="REACONDICIONADO">Reacondicionado</option><option value="CUALQUIERA">Cualquiera</option></select></div>
+              <div className="nx-assist-field"><label>3. ¿Cuál es tu presupuesto?</label><select value={assistAnswers.presupuesto} onChange={e => handleAssistChange('presupuesto', e.target.value)}><option value="">Selecciona</option><option value="0-100">$0 - $100</option><option value="100-300">$100 - $300</option><option value="300-700">$300 - $700</option><option value="700+">$700+</option></select></div>
+              <div className="nx-assist-field"><label>4. ¿Qué valoras más del producto?</label><select value={assistAnswers.preferenciaClave} onChange={e => handleAssistChange('preferenciaClave', e.target.value)}><option value="">Selecciona</option><option value="rendimiento">Rendimiento</option><option value="durabilidad">Durabilidad</option><option value="portabilidad">Portabilidad</option><option value="estetica">Estética</option><option value="ahorro">Ahorro</option></select></div>
+              <div className="nx-assist-field full"><label>5. Si debes priorizar, ¿qué prefieres?</label><select value={assistAnswers.prioridad} onChange={e => handleAssistChange('prioridad', e.target.value)}><option value="">Selecciona</option><option value="ahorro">Menor precio</option><option value="calidad">Mayor calidad</option><option value="disponibilidad">Mayor disponibilidad</option><option value="novedad">Publicaciones más recientes</option></select></div>
+              <div className="nx-assist-actions"><button className="nx-btn-primary" onClick={runAssistedSurvey}>Obtener recomendación →</button></div>
             </div>
           )}
         </div>
-
         {assistErr && <div className="nx-alert-err" style={{ marginBottom: '1rem' }}>{assistErr}</div>}
-
         {assistLoading ? (
-          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--ink-ghost)', fontSize: '0.78rem', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-            Calculando recomendaciones…
-          </div>
+          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--ink-ghost)', fontSize: '0.78rem', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Calculando recomendaciones…</div>
         ) : recommendedProducts.length === 0 ? (
-          <div className="nx-empty">
-            <div className="nx-empty-title">Sin recomendaciones por ahora</div>
-            <p className="nx-empty-txt">Intenta responder la encuesta para personalizar mejor los resultados.</p>
-          </div>
+          <div className="nx-empty"><div className="nx-empty-title">Sin recomendaciones por ahora</div><p className="nx-empty-txt">Intenta responder la encuesta para personalizar mejor los resultados.</p></div>
         ) : (
           <>
             <div style={{ fontSize: '0.72rem', color: 'var(--ink-soft)', marginBottom: '1rem', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
@@ -964,15 +778,9 @@ function Home() {
               {recommendedProducts.slice(0, 6).map(p => (
                 <div key={p.id} className="nx-pcard" onClick={() => setSelectedId(p.id)}>
                   <div className="nx-pcard-img">
-                    <img
-                      src={p.imagenes?.[0]?.url || `https://via.placeholder.com/300/EDE8DF/7A7268?text=${encodeURIComponent(p.titulo)}`}
-                      alt={p.titulo}
-                      onError={e => { e.target.src = `https://via.placeholder.com/300/EDE8DF/7A7268?text=${encodeURIComponent(p.titulo)}`; }}
-                    />
+                    <img src={p.imagenes?.[0]?.url || `https://via.placeholder.com/300/EDE8DF/7A7268?text=${encodeURIComponent(p.titulo)}`} alt={p.titulo} onError={e => { e.target.src = `https://via.placeholder.com/300/EDE8DF/7A7268?text=${encodeURIComponent(p.titulo)}`; }} />
                     <span className="nx-pcard-badge">{p.condicion || p.condition || 'NUEVO'}</span>
-                    <button className="nx-fav" onClick={e => { e.stopPropagation(); toggleFav(p.id); }}>
-                      {favorites.includes(p.id) ? '❤️' : '♡'}
-                    </button>
+                    <button className="nx-fav" onClick={e => { e.stopPropagation(); toggleFav(p.id); }}>{favorites.includes(p.id) ? '❤️' : '♡'}</button>
                   </div>
                   <div className="nx-pcard-body">
                     <div className="nx-pcard-name">{p.titulo}</div>
@@ -980,9 +788,7 @@ function Home() {
                     <div className="nx-pcard-stars">{stars(p.promedioCalificacion ?? p.rating)}</div>
                     <div className="nx-pcard-add-row" onClick={e => e.stopPropagation()}>
                       <input type="number" min="1" className="nx-qty" value={qtys[p.id] || 1} onChange={e => setQtys(prev => ({ ...prev, [p.id]: e.target.value }))} />
-                      <button className={`nx-add-btn ${p.stock === 0 ? 'out' : 'ok'}`} disabled={p.stock === 0} onClick={e => doAddToCart(p, e)}>
-                        {p.stock === 0 ? 'Agotado' : '+ Agregar'}
-                      </button>
+                      <button className={`nx-add-btn ${p.stock === 0 ? 'out' : 'ok'}`} disabled={p.stock === 0} onClick={e => doAddToCart(p, e)}>{p.stock === 0 ? 'Agotado' : '+ Agregar'}</button>
                     </div>
                     <div className="nx-pcard-seller">{p.vendedor?.nombres || p.seller?.nombres} {p.vendedor?.apellidos || p.seller?.apellidos}</div>
                   </div>
@@ -996,48 +802,28 @@ function Home() {
       {/* ── PRODUCTOS RECIENTES ── */}
       <section className="nx-section" style={{ borderTop: '1px solid var(--border)' }}>
         <div className="nx-section-head">
-          <div>
-            <span className="nx-section-eyebrow">Últimas publicaciones</span>
-            <h2 className="nx-section-title">Productos Recientes</h2>
-          </div>
+          <div><span className="nx-section-eyebrow">Últimas publicaciones</span><h2 className="nx-section-title">Productos Recientes</h2></div>
           <button className="nx-section-link" onClick={() => scrollTo('catalogo')}>Ver catálogo completo →</button>
         </div>
-
         {recentLoading && (
           <div className="nx-skel-grid">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="nx-skel-card">
-                <div className="nx-skel-img" />
-                <div className="nx-skel-body">
-                  <div className="nx-skel-ln" /><div className="nx-skel-ln w60" /><div className="nx-skel-ln w40" />
-                </div>
-              </div>
-            ))}
+            {Array.from({ length: 6 }).map((_, i) => (<div key={i} className="nx-skel-card"><div className="nx-skel-img" /><div className="nx-skel-body"><div className="nx-skel-ln" /><div className="nx-skel-ln w60" /><div className="nx-skel-ln w40" /></div></div>))}
           </div>
         )}
-
         {!recentLoading && recentProducts.length === 0 && (
           <div className="nx-empty">
             <div className="nx-empty-title">El marketplace está por florecer</div>
             <p className="nx-empty-txt">Sé el primero en publicar un producto y llega a miles de compradores.</p>
-            {token && user?.esVendedorVerificado
-              ? <button className="nx-btn-primary" onClick={() => navigate('/my-products')}>Publicar primer producto →</button>
-              : <Link to="/register" className="nx-btn-primary">Comenzar a vender →</Link>
-            }
+            {token && user?.esVendedorVerificado ? <button className="nx-btn-primary" onClick={() => navigate('/my-products')}>Publicar primer producto →</button> : <Link to="/register" className="nx-btn-primary">Comenzar a vender →</Link>}
           </div>
         )}
-
         {!recentLoading && recentProducts.length > 0 && (
           <>
             <div className="nx-rgrid" style={{ borderTop: '1px solid var(--border)', borderLeft: '1px solid var(--border)' }}>
               {recentProducts.map(p => (
                 <div key={p.id} className="nx-rcard" onClick={() => setSelectedId(p.id)}>
                   <div className="nx-rcard-img">
-                    <img
-                      src={p.imagenes?.[0]?.url || `https://via.placeholder.com/480x360/EDE8DF/7A7268?text=${encodeURIComponent(p.titulo)}`}
-                      alt={p.titulo}
-                      onError={e => { e.target.src = `https://via.placeholder.com/480x360/EDE8DF/7A7268?text=${encodeURIComponent(p.titulo)}`; }}
-                    />
+                    <img src={p.imagenes?.[0]?.url || `https://via.placeholder.com/480x360/EDE8DF/7A7268?text=${encodeURIComponent(p.titulo)}`} alt={p.titulo} onError={e => { e.target.src = `https://via.placeholder.com/480x360/EDE8DF/7A7268?text=${encodeURIComponent(p.titulo)}`; }} />
                     <span className="nx-rcard-badge">{p.condicion || 'NUEVO'}</span>
                   </div>
                   <div className="nx-rcard-body">
@@ -1077,13 +863,11 @@ function Home() {
           <div className="nx-sb-sec">
             <span className="nx-sb-sec-title">Precio máximo</span>
             <input type="range" min="0" max="1000" step="10" value={fMaxPrice} onChange={e => setFMaxPrice(Number(e.target.value))} className="nx-sb-range" />
-            <div className="nx-sb-range-row">
-              <span>$0</span><span className="nx-sb-range-val">${fMaxPrice}</span><span>$1000+</span>
-            </div>
+            <div className="nx-sb-range-row"><span>$0</span><span className="nx-sb-range-val">${fMaxPrice}</span><span>$1000+</span></div>
           </div>
           <div className="nx-sb-sec">
             <span className="nx-sb-sec-title">Calificación mín.</span>
-            {[0, 1, 2, 3, 4, 5].map(r => (
+            {[0,1,2,3,4,5].map(r => (
               <label key={r} className="nx-sb-radio">
                 <input type="radio" name="rat" value={r} checked={fMinRating === r} onChange={() => setFMinRating(r)} />
                 <span style={{ color: r === 0 ? 'var(--ink-mid)' : 'var(--amber)' }}>{r === 0 ? 'Todas' : stars(r)}</span>
@@ -1097,28 +881,15 @@ function Home() {
         </aside>
 
         <div className="nx-cat-main">
-          <div className="nx-cat-heading">
-            <span className="nx-section-eyebrow">Catálogo completo</span>
-            <h2 className="nx-section-title">Todos los productos</h2>
-          </div>
-
+          <div className="nx-cat-heading"><span className="nx-section-eyebrow">Catálogo completo</span><h2 className="nx-section-title">Todos los productos</h2></div>
           {cartErr && <div className="nx-alert-err">{cartErr}</div>}
           {cartOk  && <div className="nx-alert-ok">{cartOk}</div>}
-
           <div className="nx-cat-searchbar">
-            <input
-              placeholder="Buscar productos…"
-              value={searchTerm}
-              onChange={e => { setSearch(e.target.value); setPage(1); }}
-              onKeyDown={e => e.key === 'Enter' && doSearch()}
-            />
+            <input placeholder="Buscar productos…" value={searchTerm} onChange={e => { setSearch(e.target.value); setPage(1); }} onKeyDown={e => e.key === 'Enter' && doSearch()} />
             <button onClick={doSearch}>Buscar</button>
           </div>
-
           <div className="nx-cat-toolbar">
-            <div className="nx-cat-count">
-              <b>{start + 1}–{Math.min(start + PER_PAGE, sorted.length)}</b> de <b>{sorted.length}</b> productos
-            </div>
+            <div className="nx-cat-count"><b>{start + 1}–{Math.min(start + PER_PAGE, sorted.length)}</b> de <b>{sorted.length}</b> productos</div>
             <div className="nx-toolbar-r">
               <div className="nx-view-toggle">
                 <button className={`nx-vbtn ${viewMode === 'grid' ? 'on' : ''}`} onClick={() => setView('grid')}>⊞</button>
@@ -1132,32 +903,20 @@ function Home() {
               </select>
             </div>
           </div>
-
           {loading ? (
-            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--ink-ghost)', fontSize: '0.78rem', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-              Cargando productos…
-            </div>
+            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--ink-ghost)', fontSize: '0.78rem', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Cargando productos…</div>
           ) : error ? (
             <div className="nx-alert-err">{error}</div>
           ) : shown.length === 0 ? (
-            <div className="nx-empty">
-              <div className="nx-empty-title">Sin resultados</div>
-              <p className="nx-empty-txt">No encontramos productos con esos criterios.</p>
-            </div>
+            <div className="nx-empty"><div className="nx-empty-title">Sin resultados</div><p className="nx-empty-txt">No encontramos productos con esos criterios.</p></div>
           ) : (
             <div className={`nx-pgrid ${viewMode === 'list' ? 'list' : ''}`} style={{ borderTop: '1px solid var(--border)', borderLeft: '1px solid var(--border)' }}>
               {shown.map(p => (
                 <div key={p.id} className="nx-pcard" onClick={() => setSelectedId(p.id)}>
                   <div className="nx-pcard-img">
-                    <img
-                      src={p.imagenes?.[0]?.url || `https://via.placeholder.com/300/EDE8DF/7A7268?text=${encodeURIComponent(p.titulo)}`}
-                      alt={p.titulo}
-                      onError={e => { e.target.src = `https://via.placeholder.com/300/EDE8DF/7A7268?text=${encodeURIComponent(p.titulo)}`; }}
-                    />
+                    <img src={p.imagenes?.[0]?.url || `https://via.placeholder.com/300/EDE8DF/7A7268?text=${encodeURIComponent(p.titulo)}`} alt={p.titulo} onError={e => { e.target.src = `https://via.placeholder.com/300/EDE8DF/7A7268?text=${encodeURIComponent(p.titulo)}`; }} />
                     <span className="nx-pcard-badge">{p.condicion || 'NUEVO'}</span>
-                    <button className="nx-fav" onClick={e => { e.stopPropagation(); toggleFav(p.id); }}>
-                      {favorites.includes(p.id) ? '❤️' : '♡'}
-                    </button>
+                    <button className="nx-fav" onClick={e => { e.stopPropagation(); toggleFav(p.id); }}>{favorites.includes(p.id) ? '❤️' : '♡'}</button>
                   </div>
                   <div className="nx-pcard-body">
                     <div className="nx-pcard-name">{p.titulo}</div>
@@ -1165,9 +924,7 @@ function Home() {
                     <div className="nx-pcard-stars">{stars(p.promedioCalificacion)}</div>
                     <div className="nx-pcard-add-row" onClick={e => e.stopPropagation()}>
                       <input type="number" min="1" className="nx-qty" value={qtys[p.id] || 1} onChange={e => setQtys(prev => ({ ...prev, [p.id]: e.target.value }))} />
-                      <button className={`nx-add-btn ${p.stock === 0 ? 'out' : 'ok'}`} disabled={p.stock === 0} onClick={e => doAddToCart(p, e)}>
-                        {p.stock === 0 ? 'Agotado' : '+ Agregar'}
-                      </button>
+                      <button className={`nx-add-btn ${p.stock === 0 ? 'out' : 'ok'}`} disabled={p.stock === 0} onClick={e => doAddToCart(p, e)}>{p.stock === 0 ? 'Agotado' : '+ Agregar'}</button>
                     </div>
                     <div className="nx-pcard-seller">{p.vendedor?.nombres} {p.vendedor?.apellidos}</div>
                   </div>
@@ -1175,7 +932,6 @@ function Home() {
               ))}
             </div>
           )}
-
           {totalPgs > 1 && (
             <div className="nx-pages">
               <button className="nx-pg" disabled={currentPage === 1} onClick={() => setPage(p => p - 1)}>←</button>

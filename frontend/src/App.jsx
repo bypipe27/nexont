@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Home from './pages/Home';
@@ -9,10 +8,10 @@ import VerifyEmail from './pages/VerifyEmail';
 import Dashboard from './pages/Dashboard';
 import MyProducts from './pages/MyProducts';
 import Cart from './pages/Cart';
+import Profile from './pages/Profile';
 import PrivateRoute from './components/PrivateRoute';
 import ChatWidget from './components/ChatWidget';
 import SellerProfile from './pages/SellerProfile';
-
 
 function App() {
   const [showChat, setShowChat] = useState(false);
@@ -30,32 +29,23 @@ function App() {
 
           {/* Rutas protegidas */}
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+          <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
           <Route path="/orders" element={<PrivateRoute><Orders /></PrivateRoute>} />
           <Route path="/my-products" element={<PrivateRoute><MyProducts /></PrivateRoute>} />
           <Route path="/cart" element={<PrivateRoute><Cart /></PrivateRoute>} />
         </Routes>
       </BrowserRouter>
-      {/* Botón flotante para abrir el chat */}
+
       {!showChat && (
         <button
           onClick={() => setShowChat(true)}
           style={{
-            position: 'fixed',
-            bottom: 32,
-            right: 32,
-            zIndex: 999,
-            background: '#2d6cdf',
-            color: '#fff',
-            border: 'none',
-            borderRadius: '50%',
-            width: 64,
-            height: 64,
+            position: 'fixed', bottom: 32, right: 32, zIndex: 999,
+            background: '#2d6cdf', color: '#fff', border: 'none',
+            borderRadius: '50%', width: 64, height: 64,
             boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
-            fontSize: 32,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
+            fontSize: 32, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
             transition: 'background 0.2s',
           }}
           aria-label="Abrir chat"
@@ -63,9 +53,7 @@ function App() {
           💬
         </button>
       )}
-      {showChat && (
-        <ChatWidget onClose={() => setShowChat(false)} />
-      )}
+      {showChat && <ChatWidget onClose={() => setShowChat(false)} />}
     </>
   );
 }
