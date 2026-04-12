@@ -276,7 +276,7 @@ const getProductById = async (id) => {
   const product = await prisma.producto.findFirst({
     where: { id, estaActivo: true },
     include: {
-      vendedor: { select: { id: true, nombres: true, apellidos: true, correo: true } },
+      vendedor: { select: { id: true, nombres: true, apellidos: true, correo: true, fotoPerfil: true, creadoEn: true } },
       imagenes: true,
     },
   });
@@ -356,6 +356,38 @@ const getMyProducts = async (sellerId) => {
   return products;
 };
 
+
+const getProductsBySellerPublic = async (sellerId) => {
+  const id = parseInt(sellerId, 10);
+  if (isNaN(id)) throw new Error('ID de vendedor inválido');
+ 
+  const seller = await prisma.usuario.findFirst({
+    where: { id, esActivo: true },
+    select: {
+      id: true,
+      nombres: true,
+      apellidos: true,
+      creadoEn: true,
+      fotoPerfil: true,
+    },
+  });
+ 
+  if (!seller) throw new Error('Vendedor no encontrado');
+ 
+  const products = await prisma.producto.findMany({
+    where: { vendedorId: id, estaActivo: true },
+    include: {
+      imagenes: true,
+      vendedor: {
+        select: { id: true, nombres: true, apellidos: true, creadoEn: true },
+      },
+    },
+    orderBy: { creadoEn: 'desc' },
+  });
+ 
+  return { seller, products, totalProductos: products.length };
+};
+
 module.exports = {
   createProduct,
   getProducts,
@@ -365,4 +397,5 @@ module.exports = {
   getProductById,
   updateProduct,
   deleteProduct,
+  getProductsBySellerPublic,
 };

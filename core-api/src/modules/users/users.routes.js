@@ -1,15 +1,19 @@
 const router = require('express').Router();
+const multer = require('multer');
+const usersController = require('./users.controller');
 
-// GET /api/v1/users
-router.get('/', (req, res) => res.json({ message: 'list users - TODO' }));
+const storage = multer.memoryStorage();
+const fileFilter = (req, file, cb) => {
+  const allowed = ['image/jpeg', 'image/png', 'image/webp'];
+  if (allowed.includes(file.mimetype)) cb(null, true);
+  else cb(new Error('Solo se permiten imágenes JPG, PNG o WEBP'));
+};
+const upload = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });
 
-// GET /api/v1/users/:id
-router.get('/:id', (req, res) => res.json({ message: 'get user - TODO' }));
+// GET /api/v1/users/me
+router.get('/me', usersController.getMe);
 
-// PUT /api/v1/users/:id
-router.put('/:id', (req, res) => res.json({ message: 'update user - TODO' }));
-
-// DELETE /api/v1/users/:id
-router.delete('/:id', (req, res) => res.json({ message: 'delete user - TODO' }));
+// PUT /api/v1/users/me
+router.put('/me', upload.single('fotoPerfil'), usersController.updateMe);
 
 module.exports = router;
