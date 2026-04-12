@@ -62,14 +62,28 @@ const STYLES = `
   .nxo-confirm-warn { color:#DC2626; font-size:0.78rem; text-align:center; margin-top:0.5rem; }
   .nxo-err { background:#FEF2F2; border:1px solid #FCA5A5; padding:0.7rem 1rem; margin-bottom:1rem; color:#DC2626; font-size:0.82rem; }
 
-  .nxo-order-card { background:var(--white); border:1px solid var(--border); padding:1.5rem 1.75rem; margin-bottom:0.75rem; cursor:pointer; transition:background 0.12s; display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:0.85rem; }
+  /* ORDER CARD con imagen miniatura */
+  .nxo-order-card { background:var(--white); border:1px solid var(--border); padding:1.25rem 1.5rem; margin-bottom:0.75rem; cursor:pointer; transition:background 0.12s; display:flex; align-items:flex-start; gap:1rem; }
   .nxo-order-card:hover { background:var(--cream-dark); }
+  .nxo-order-thumbs { display:flex; gap:0.35rem; flex-shrink:0; }
+  .nxo-order-thumb { width:48px; height:48px; object-fit:cover; border:1px solid var(--border); background:var(--cream-dark); flex-shrink:0; }
+  .nxo-order-thumb-placeholder { width:48px; height:48px; background:var(--cream-dark); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .nxo-order-body { flex:1; min-width:0; }
+  .nxo-order-top { display:flex; justify-content:space-between; align-items:flex-start; gap:0.5rem; flex-wrap:wrap; }
   .nxo-order-id { font-family:'Cormorant Garamond',serif; font-size:1.25rem; font-weight:300; color:var(--ink); margin-bottom:0.2rem; letter-spacing:-0.01em; }
   .nxo-order-inv { font-size:0.68rem; color:var(--ink-ghost); margin-bottom:0.2rem; }
   .nxo-order-date { font-size:0.72rem; color:var(--ink-soft); }
-  .nxo-order-status { display:inline-block; padding:0.2rem 0.85rem; font-size:0.6rem; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; border:1px solid; margin-bottom:0.5rem; }
+  .nxo-order-status { display:inline-block; padding:0.2rem 0.85rem; font-size:0.6rem; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; border:1px solid; margin-bottom:0.5rem; white-space:nowrap; }
   .nxo-order-total { font-family:'Cormorant Garamond',serif; font-weight:200; color:var(--amber); font-size:1.5rem; letter-spacing:-0.02em; }
   .nxo-order-meta { font-size:0.72rem; color:var(--ink-ghost); margin-top:0.4rem; }
+
+  /* PAGINACIÓN */
+  .nxo-pagination { display:flex; align-items:center; justify-content:center; gap:0.5rem; margin-top:2rem; }
+  .nxo-page-btn { height:36px; min-width:36px; padding:0 0.85rem; background:transparent; border:1px solid var(--border); color:var(--ink-soft); font-size:0.72rem; letter-spacing:0.08em; cursor:pointer; transition:all 0.15s; font-family:'DM Sans',sans-serif; }
+  .nxo-page-btn:hover:not(:disabled) { background:var(--ink); color:var(--cream); border-color:var(--ink); }
+  .nxo-page-btn:disabled { opacity:0.35; cursor:not-allowed; }
+  .nxo-page-btn.active { background:var(--ink); color:var(--cream); border-color:var(--ink); }
+  .nxo-page-info { font-size:0.72rem; color:var(--ink-soft); letter-spacing:0.06em; }
 
   .nxo-detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:0; }
   .nxo-detail-field { padding:1rem 1.5rem; border-bottom:1px solid rgba(26,23,20,0.06); border-right:1px solid rgba(26,23,20,0.06); }
@@ -77,7 +91,7 @@ const STYLES = `
   .nxo-df-lbl { font-size:0.58rem; color:var(--ink-ghost); text-transform:uppercase; letter-spacing:0.14em; margin-bottom:0.35rem; display:block; }
   .nxo-df-val { font-family:'Cormorant Garamond',serif; font-size:1rem; font-weight:300; color:var(--ink); text-transform:capitalize; }
 
-  .nxo-detail-item { display:grid; grid-template-columns:1fr auto; gap:1rem; padding:1rem 1.5rem; border-bottom:1px solid rgba(26,23,20,0.06); }
+  .nxo-detail-item { display:grid; grid-template-columns:48px 1fr auto; gap:0.85rem; padding:1rem 1.5rem; border-bottom:1px solid rgba(26,23,20,0.06); align-items:center; }
   .nxo-detail-item:last-child { border-bottom:none; }
   .nxo-di-name { font-size:0.9rem; font-weight:500; color:var(--ink); margin-bottom:0.15rem; }
   .nxo-di-meta { font-size:0.72rem; color:var(--ink-soft); }
@@ -124,6 +138,8 @@ const STYLES = `
   .nxi-close-btn:hover { background:var(--ink-mid); }
 `;
 if (!document.getElementById('nxo-styles')) { const el=document.createElement('style'); el.id='nxo-styles'; el.textContent=STYLES; document.head.appendChild(el); }
+
+const ORDERS_PER_PAGE = 10;
 
 function InvoiceModal({ invoice, order, onClose }) {
   if (!invoice || !order) return null;
@@ -186,6 +202,60 @@ const statusStyle = s => {
   return m[s?.toUpperCase()] || { bg:'var(--cream-dark)', color:'var(--ink-soft)', bc:'var(--border)' };
 };
 
+// Miniatura de producto con fallback
+function OrderThumbs({ items }) {
+  const previews = items.slice(0, 3);
+  return (
+    <div className="nxo-order-thumbs">
+      {previews.map((item, i) =>
+        item.imageUrl
+          ? <img key={i} className="nxo-order-thumb" src={item.imageUrl} alt={item.productName} />
+          : (
+            <div key={i} className="nxo-order-thumb-placeholder">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <rect x="2" y="2" width="14" height="14" rx="2" stroke="var(--ink-ghost)" strokeWidth="1"/>
+                <circle cx="6.5" cy="6.5" r="1.5" stroke="var(--ink-ghost)" strokeWidth="1"/>
+                <path d="M2 12l4-3 3 3 2-2 5 4" stroke="var(--ink-ghost)" strokeWidth="1" fill="none"/>
+              </svg>
+            </div>
+          )
+      )}
+    </div>
+  );
+}
+
+// Paginación
+function Pagination({ currentPage, totalPages, onPageChange }) {
+  if (totalPages <= 1) return null;
+
+  const pages = [];
+  for (let i = 1; i <= totalPages; i++) pages.push(i);
+
+  return (
+    <div className="nxo-pagination">
+      <button
+        className="nxo-page-btn"
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+      >← Anterior</button>
+
+      {pages.map(p => (
+        <button
+          key={p}
+          className={`nxo-page-btn${currentPage === p ? ' active' : ''}`}
+          onClick={() => onPageChange(p)}
+        >{p}</button>
+      ))}
+
+      <button
+        className="nxo-page-btn"
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+      >Siguiente →</button>
+    </div>
+  );
+}
+
 function Orders() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -202,12 +272,18 @@ function Orders() {
   const [orders, setOrders] = useState([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     if (view==='checkout') { setLoadingCart(true); api.get('/cart').then(({data})=>setCart(data)).catch(()=>setCheckoutError('No se pudo cargar el carrito')).finally(()=>setLoadingCart(false)); }
   }, [view]);
+
   useEffect(() => {
-    if (view==='list') { setLoadingOrders(true); api.get('/orders').then(({data})=>setOrders(data)).catch(()=>{}).finally(()=>setLoadingOrders(false)); }
+    if (view==='list') {
+      setLoadingOrders(true);
+      setCurrentPage(1);
+      api.get('/orders').then(({data})=>setOrders(data)).catch(()=>{}).finally(()=>setLoadingOrders(false));
+    }
   }, [view]);
 
   const handleConfirm = async () => {
@@ -216,6 +292,10 @@ function Orders() {
     catch (err) { setCheckoutError(err.response?.data?.error || 'Error al confirmar la compra'); }
     finally { setConfirming(false); }
   };
+
+  // Paginación calculada
+  const totalPages = Math.ceil(orders.length / ORDERS_PER_PAGE);
+  const paginatedOrders = orders.slice((currentPage - 1) * ORDERS_PER_PAGE, currentPage * ORDERS_PER_PAGE);
 
   if (view==='checkout') {
     const hasOverStock = cart?.items?.some(i => i.quantity > (i.product?.stock ?? Infinity));
@@ -290,28 +370,40 @@ function Orders() {
           {loadingOrders && <p style={{color:'var(--ink-ghost)',fontSize:'0.78rem',letterSpacing:'0.12em',textTransform:'uppercase'}}>Cargando…</p>}
           {!loadingOrders && orders.length===0 && (
             <div className="nxo-empty">
-              <div className="nxo-empty-title">Aún no tienes pedidos</div>
+              <div className="nxo-empty-title">Aún no has realizado compras</div>
               <p className="nxo-empty-sub">Explora el catálogo y realiza tu primera compra.</p>
-              <button className="nxo-cta" onClick={() => navigate('/')}>Ir a la tienda →</button>
+              <button className="nxo-cta" onClick={() => navigate('/')}>Ir al catálogo →</button>
             </div>
           )}
-          {orders.map(order => {
+          {paginatedOrders.map(order => {
             const ss = statusStyle(order.status);
             return (
               <div key={order.id} className="nxo-order-card" onClick={() => { setSelectedOrder(order); setView('detail'); }}>
-                <div>
-                  <div className="nxo-order-id">Pedido #{order.id}</div>
-                  {order.invoiceNumber && <div className="nxo-order-inv">Factura: {order.invoiceNumber}</div>}
-                  <div className="nxo-order-date">{new Date(order.createdAt).toLocaleDateString('es-CO',{year:'numeric',month:'long',day:'numeric'})}</div>
-                  <div className="nxo-order-meta">{order.items.length} producto{order.items.length!==1?'s':''} · {order.paymentMethod?.toLowerCase()}</div>
-                </div>
-                <div style={{textAlign:'right'}}>
-                  <div className="nxo-order-status" style={{background:ss.bg,color:ss.color,borderColor:ss.bc}}>{order.status?.toLowerCase()}</div>
-                  <div className="nxo-order-total">${Number(order.total).toFixed(2)}</div>
+                <OrderThumbs items={order.items} />
+                <div className="nxo-order-body">
+                  <div className="nxo-order-top">
+                    <div>
+                      <div className="nxo-order-id">Pedido #{order.id}</div>
+                      {order.invoiceNumber && <div className="nxo-order-inv">Factura: {order.invoiceNumber}</div>}
+                      <div className="nxo-order-date">{new Date(order.createdAt).toLocaleDateString('es-CO',{year:'numeric',month:'long',day:'numeric'})}</div>
+                      <div className="nxo-order-meta">{order.items.length} producto{order.items.length!==1?'s':''} · {order.paymentMethod?.toLowerCase()}</div>
+                    </div>
+                    <div style={{textAlign:'right'}}>
+                      <div className="nxo-order-status" style={{background:ss.bg,color:ss.color,borderColor:ss.bc}}>{order.status?.toLowerCase()}</div>
+                      <div className="nxo-order-total">${Number(order.total).toFixed(2)}</div>
+                    </div>
+                  </div>
                 </div>
               </div>
             );
           })}
+          {orders.length > ORDERS_PER_PAGE && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={p => { setCurrentPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+            />
+          )}
         </div>
       </div>
     );
@@ -337,6 +429,10 @@ function Orders() {
             <div className="nxo-panel-head"><span className="nxo-panel-title">Productos</span></div>
             {selectedOrder.items.map((item,i) => (
               <div key={i} className="nxo-detail-item">
+                {item.imageUrl
+                  ? <img src={item.imageUrl} alt={item.productName} className="nxo-order-thumb" />
+                  : <div className="nxo-order-thumb-placeholder"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="2" stroke="var(--ink-ghost)" strokeWidth="1"/><circle cx="6.5" cy="6.5" r="1.5" stroke="var(--ink-ghost)" strokeWidth="1"/><path d="M2 12l4-3 3 3 2-2 5 4" stroke="var(--ink-ghost)" strokeWidth="1" fill="none"/></svg></div>
+                }
                 <div><div className="nxo-di-name">{item.productName}</div><div className="nxo-di-meta">${Number(item.unitPrice).toFixed(2)} c/u · Cant: {item.quantity}</div></div>
                 <div className="nxo-di-total">${Number(item.lineTotal).toFixed(2)}</div>
               </div>
