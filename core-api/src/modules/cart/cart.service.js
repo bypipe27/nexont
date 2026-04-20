@@ -1,148 +1,143 @@
 const prisma = require('../../config/database');
 
+// ─── Formatear carrito para el cliente ───────────────────────────────────────
 const formatCart = (items) => {
   const subtotal = items.reduce((acc, item) => {
-    const price = Number(item.product.price);
-    return acc + (price * item.quantity);
+    const price = Number(item.producto?.precio || 0);
+    return acc + (price * item.cantidad);
   }, 0);
 
   return {
-    items,
-    totalItems: items.reduce((acc, item) => acc + item.quantity, 0),
+    items: items.map(item => ({
+      id: item.id,
+      quantity: item.cantidad,
+      product: {
+        id: item.producto.id,
+        titulo: item.producto.titulo,
+        price: Number(item.producto.precio),
+        stock: item.producto.stock,
+        estaActivo: item.producto.estaActivo,
+        imagenes: item.producto.imagenes,
+      },
+    })),
+    totalItems: items.reduce((acc, item) => acc + item.cantidad, 0),
     subtotal: Number(subtotal.toFixed(2)),
   };
 };
 
+// ─── Obtener carrito del usuario ─────────────────────────────────────────────
 const getCartByUser = async (userId) => {
-  const items = await prisma.cartItem.findMany({
-    where: {
-      userId,
-      product: {
-        isActive: true,
-      },
-    },
+  const items = await prisma.itemCarrito.findMany({
+    where: { usuarioId: userId },
     include: {
-      product: {
+      producto: {
         select: {
           id: true,
-          name: true,
-          price: true,
+          titulo: true,
+          precio: true,
           stock: true,
-          imageUrl: true,
-          isActive: true,
+          estaActivo: true,
+          imagenes: {
+            where: { esPrincipal: true },
+            select: { url: true },
+          },
         },
       },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { creadoEn: 'desc' },
   });
 
   return formatCart(items);
 };
 
+// ─── Agregar item al carrito ──────────────────────────────────────────────────
 const addItemToCart = async ({ userId, productId, quantity }) => {
-  const product = await prisma.product.findFirst({
-    where: { id: productId, isActive: true },
+  const product = await prisma.producto.findFirst({
+    where: { id: productId, estaActivo: true },
     select: { id: true, stock: true },
   });
 
-  if (!product) {
-    throw new Error('Producto no encontrado');
-  }
+  if (!product) throw new Error('Producto no encontrado');
 
-  const existing = await prisma.cartItem.findUnique({
+  // Buscar si ya existe en el carrito
+  const existing = await prisma.itemCarrito.findUnique({
     where: {
-      userId_productId: { userId, productId },
+      usuarioId_productoId: { usuarioId: userId, productoId: productId },
     },
-    select: { quantity: true },
+    select: { cantidad: true },
   });
 
-  const currentQuantity = existing ? existing.quantity : 0;
-  const finalQuantity = currentQuantity + quantity;
+  const currentQuantity = existing ? existing.cantidad : 0;
+  const finalQuantity   = currentQuantity + quantity;
 
   if (finalQuantity > product.stock) {
     throw new Error('No puedes agregar más cantidad que el stock disponible');
   }
 
-  await prisma.cartItem.upsert({
+  await prisma.itemCarrito.upsert({
     where: {
-      userId_productId: { userId, productId },
+      usuarioId_productoId: { usuarioId: userId, productoId: productId },
     },
-    update: {
-      quantity: finalQuantity,
-    },
-    create: {
-      userId,
-      productId,
-      quantity,
-    },
+    update: { cantidad: finalQuantity },
+    create: { usuarioId: userId, productoId: productId, cantidad: quantity },
   });
 
   return getCartByUser(userId);
 };
 
+// ─── Actualizar cantidad de un item ──────────────────────────────────────────
 const updateCartItemQuantity = async ({ userId, productId, quantity }) => {
-  const cartItem = await prisma.cartItem.findUnique({
+  const cartItem = await prisma.itemCarrito.findUnique({
     where: {
-      userId_productId: { userId, productId },
+      usuarioId_productoId: { usuarioId: userId, productoId: productId },
     },
   });
 
-  if (!cartItem) {
-    throw new Error('El producto no está en tu carrito');
-  }
+  if (!cartItem) throw new Error('El producto no está en tu carrito');
 
+  // Si quantity es 0, eliminar el item
   if (quantity === 0) {
-    await prisma.cartItem.delete({
+    await prisma.itemCarrito.delete({
       where: {
-        userId_productId: { userId, productId },
+        usuarioId_productoId: { usuarioId: userId, productoId: productId },
       },
     });
-
     return getCartByUser(userId);
   }
 
-  const product = await prisma.product.findFirst({
-    where: { id: productId, isActive: true },
+  const product = await prisma.producto.findFirst({
+    where: { id: productId, estaActivo: true },
     select: { id: true, stock: true },
   });
 
-  if (!product) {
-    throw new Error('Producto no encontrado');
-  }
+  if (!product) throw new Error('Producto no encontrado');
 
   if (quantity > product.stock) {
     throw new Error('No puedes guardar más cantidad que el stock disponible');
   }
 
-  await prisma.cartItem.update({
+  await prisma.itemCarrito.update({
     where: {
-      userId_productId: { userId, productId },
+      usuarioId_productoId: { usuarioId: userId, productoId: productId },
     },
-    data: {
-      quantity,
-    },
+    data: { cantidad: quantity },
   });
 
   return getCartByUser(userId);
 };
 
+// ─── Eliminar un item del carrito ─────────────────────────────────────────────
 const removeCartItem = async ({ userId, productId }) => {
-  await prisma.cartItem.deleteMany({
-    where: { userId, productId },
+  await prisma.itemCarrito.deleteMany({
+    where: { usuarioId: userId, productoId: productId },
   });
-
   return getCartByUser(userId);
 };
 
+// ─── Vaciar carrito completo ──────────────────────────────────────────────────
 const clearCart = async (userId) => {
-  await prisma.cartItem.deleteMany({ where: { userId } });
+  await prisma.itemCarrito.deleteMany({ where: { usuarioId: userId } });
   return getCartByUser(userId);
 };
 
-module.exports = {
-  getCartByUser,
-  addItemToCart,
-  updateCartItemQuantity,
-  removeCartItem,
-  clearCart,
-};
+module.exports = { getCartByUser, addItemToCart, updateCartItemQuantity, removeCartItem, clearCart };

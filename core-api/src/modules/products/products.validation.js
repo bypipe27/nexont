@@ -3,15 +3,15 @@ const { validate } = require('../../shared/validation/auth.validation');
 
 
 const createProductSchema = Joi.object({
-  name: Joi.string().trim().min(2).max(100).required().messages({
-    'string.min': 'El nombre debe tener al menos 2 caracteres',
-    'string.max': 'El nombre no puede superar 100 caracteres',
-    'any.required': 'El nombre es requerido',
+  titulo: Joi.string().trim().min(2).max(100).required().messages({
+    'string.min': 'El título debe tener al menos 2 caracteres',
+    'string.max': 'El título no puede superar 100 caracteres',
+    'any.required': 'El título es requerido',
   }),
-  description: Joi.string().trim().max(1000).optional().allow('').messages({
+  descripcion: Joi.string().trim().max(1000).optional().allow('').messages({
     'string.max': 'La descripción no puede superar 1000 caracteres',
   }),
-  price: Joi.number().positive().precision(2).required().messages({
+  precio: Joi.number().positive().precision(2).required().messages({
     'number.positive': 'El precio debe ser mayor a 0',
     'any.required': 'El precio es requerido',
   }),
@@ -20,14 +20,18 @@ const createProductSchema = Joi.object({
     'number.integer': 'La cantidad debe ser un número entero',
     'any.required': 'La cantidad disponible es requerida',
   }),
-  condition: Joi.string().valid('nuevo', 'usado', 'reacondicionado').optional().default('nuevo'), // <-- NUEVO
-  rating: Joi.number().min(0).max(5).optional().default(0), // <-- NUEVO
+  condicion: Joi.string().valid('NUEVO', 'USADO', 'REACONDICIONADO').optional().default('NUEVO'),
+  promedioCalificacion: Joi.number().min(0).max(5).optional().default(0),
 });
 
 // ─── Actualizar producto ──────────────────────────────────────────────────────
 const updateProductSchema = Joi.object({
-  name: Joi.string().trim().min(2).max(100).optional(),
-  description: Joi.string().trim().max(1000).optional().allow(''),
+  titulo: Joi.string().trim().min(2).max(100).optional(),
+  descripcion: Joi.string().trim().max(1000).optional().allow(''),
+  precio: Joi.number().positive().precision(2).optional(),
+  stock: Joi.number().integer().min(0).optional(),
+  condicion: Joi.string().valid('NUEVO', 'USADO', 'REACONDICIONADO').optional(),
+  promedioCalificacion: Joi.number().min(0).max(5).optional(),
   price: Joi.number().positive().precision(2).optional().messages({
     'number.positive': 'El precio debe ser mayor a 0',
   }),
