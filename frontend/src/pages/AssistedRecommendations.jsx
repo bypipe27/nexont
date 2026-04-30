@@ -4,6 +4,12 @@ import api from '../api/api';
 import { useHybridCart } from '../hooks/useHybridCart';
 
 const ASSISTED_STYLESHEET = `@import url('/styles/assisted-recommendations-styles.css');`;
+const SURVEY_RECO_CACHE_KEY = 'survey_recommendations_cache_v1';
+
+const buildSurveySignature = (answers = {}, questions = []) => {
+  const ids = questions?.length ? questions.map((q) => q.id) : Object.keys(answers).sort();
+  return ids.map((id) => answers[id] ?? '').join('|');
+};
 
 
 // ── Modal detalle ─────────────────────────────────────────────────────────────
@@ -106,13 +112,23 @@ function AssistedRecommendations() {
       const { data } = await api.get('/recommendations/survey/setup');
       const total = data.questions?.length || data.progress?.total || 0;
 
+      const storedCacheRaw = localStorage.getItem(SURVEY_RECO_CACHE_KEY);
+      const storedCache = storedCacheRaw ? JSON.parse(storedCacheRaw) : null;
+      const storedSig = storedCache?.answersSignature || '';
+      const currentSig = buildSurveySignature(data.answers || {}, data.questions || []);
+      const cachedRecommendations = storedSig && storedSig === currentSig
+        ? storedCache?.recommendations || []
+        : [];
+
       setSurveyQuestions(data.questions || []);
       setSurveyAnswers({});
       setSurveyCurrentIndex(0);
       setSelectedAnswer('');
       setSurveyProgress(data.progress || { current: 0, total: 0 });
       setSurveyDone(data.done || false);
-      setRecommendations(data.recommendations || []);
+      setRecommendations((data.recommendations && data.recommendations.length)
+        ? data.recommendations
+        : cachedRecommendations);
 
       // Si ya completó la encuesta previamente, cargar recomendaciones
       if (!data.done) {
@@ -200,6 +216,14 @@ function AssistedRecommendations() {
       setSurveyDone(data.done || false);
       setRecommendations(data.recommendations || []);
 
+      const signature = buildSurveySignature(nextAnswers, surveyQuestions);
+      localStorage.setItem(SURVEY_RECO_CACHE_KEY, JSON.stringify({
+        answersSignature: signature,
+        answers: nextAnswers,
+        recommendations: data.recommendations || [],
+        savedAt: new Date().toISOString(),
+      }));
+
     } catch (err) {
       setSurveyError(err.response?.data?.error || 'No se pudo guardar la respuesta');
     } finally {
@@ -214,6 +238,7 @@ function AssistedRecommendations() {
       setSurveyLoading(true);
       setSurveyError('');
       await api.post('/recommendations/survey/reset');
+      localStorage.removeItem(SURVEY_RECO_CACHE_KEY);
       setSurveyAnswers({});
       setSurveyQuestions([]);
       setSurveyCurrentIndex(0);
@@ -497,17 +522,6 @@ function AssistedRecommendations() {
                       <div className="nx-pcard-body">
                         <div className="nx-pcard-name">{p.titulo}</div>
                         
-                        {rec.razon && (
-                          <div style={{ 
-                            fontSize: '0.7rem', 
-                            color: 'var(--ink-soft)', 
-                            marginBottom: '0.5rem',
-                            fontStyle: 'italic'
-                          }}>
-                            {rec.razon}
-                          </div>
-                        )}
-
                         <div className="nx-pcard-price">
                           ${(parseFloat(p.precio) || 0).toFixed(2)}
                         </div>
@@ -550,6 +564,7 @@ function AssistedRecommendations() {
             </>
           )}
         </div>
+
       </section>
 
       {selectedId && (

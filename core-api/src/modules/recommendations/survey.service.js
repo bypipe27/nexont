@@ -41,9 +41,8 @@ const parseCompleteSurveyAnswers = (answers = {}) => {
 
 const deriveRecommendationPrefs = (answers = {}) => {
   const categoria = normalizeCategory(answers.categoria || null);
-  const presupuesto = answers.presupuesto || null;
   const condicionPreferida = answers.condicionPreferida || null;
-
+  const presupuesto = answers.presupuesto || null;
   const priceRange = presupuesto ? BUDGET_RANGES[presupuesto] : null;
 
   return {
@@ -69,7 +68,7 @@ const getSurveySetup = async (usuarioId) => {
 
 const resetSurvey = async (usuarioId) => {
   const prefs = await profileService.updatePreferences(usuarioId, {
-    survey: { answers: {}, recommendationCache: null },
+    survey: { answers: {} },
   });
 
   return buildSurveyState(prefs.survey?.answers || {});

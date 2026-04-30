@@ -81,44 +81,50 @@ const formatCategoryLabel = (value) => {
 
 // ─── QUERIES COMPRADOR ───────────────────────────────────────────────────────
 
-export async function buscarProductos({ query = '', categoria = null, precio_max = null, precio_min = null, condicion = null, limite = 3 }) {
+export async function buscarProductos({ categoria = null, precio_max = null, precio_min = null, condicion = null, limite = 3 }) {
   const categoriaNormalizada = normalizeCategory(categoria);
+  const precioMin = Number(precio_min);
+  const precioMax = Number(precio_max);
+  const hasPrecioMin = Number.isFinite(precioMin);
+  const hasPrecioMax = Number.isFinite(precioMax);
+  const condicionUpper = condicion ? String(condicion).toUpperCase() : null;
+  const validConditions = new Set(['NUEVO', 'USADO', 'REACONDICIONADO']);
+
+  if (categoria && !categoriaNormalizada) return [];
+  if (condicionUpper && !validConditions.has(condicionUpper)) return [];
+  if (hasPrecioMin && hasPrecioMax && precioMin > precioMax) return [];
+
+  const select = {
+    id:                 true,
+    titulo:             true,
+    descripcion:        true,
+    precio:             true,
+    stock:              true,
+    condicion:          true,
+    categoria:          true,
+    promedioCalificacion: true,
+    totalResenas:       true,
+    etiquetas:          true,
+    vendedor: {
+      select: { nombres: true, apellidos: true, esVendedorVerificado: true },
+    },
+    imagenes: {
+      where:   { esPrincipal: true },
+      select:  { url: true },
+      take:    1,
+    },
+  };
+
   const productos = await prisma.producto.findMany({
     where: {
       estaActivo: true,
       stock:      { gt: 0 },
-      ...(query && {
-        OR: [
-          { titulo:      { contains: query, mode: 'insensitive' } },
-          { descripcion: { contains: query, mode: 'insensitive' } },
-          { etiquetas:   { has: query } },
-        ],
-      }),
-      ...(precio_max !== null && { precio: { lte: precio_max } }),
-      ...(precio_min !== null && { precio: { gte: precio_min } }),
-      ...(condicion  && { condicion: condicion.toUpperCase() }),
+      ...(hasPrecioMax && { precio: { lte: precioMax } }),
+      ...(hasPrecioMin && { precio: { gte: precioMin } }),
+      ...(condicionUpper && { condicion: condicionUpper }),
       ...(categoriaNormalizada && { categoria: categoriaNormalizada }),
     },
-    select: {
-      id:                 true,
-      titulo:             true,
-      descripcion:        true,
-      precio:             true,
-      stock:              true,
-      condicion:          true,
-      categoria:          true,
-      promedioCalificacion: true,
-      totalResenas:       true,
-      etiquetas:          true,
-      vendedor: {
-        select: { nombres: true, apellidos: true, esVendedorVerificado: true },
-      },
-      imagenes: {
-        where:   { esPrincipal: true },
-        select:  { url: true },
-        take:    1,
-      },
-    },
+    select,
     orderBy: { promedioCalificacion: 'desc' },
     take: limite,
   });

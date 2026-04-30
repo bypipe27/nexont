@@ -5,8 +5,8 @@ export const TOOLS_COMPRADOR = [
     input_schema: {
       type: 'object',
       properties: {
-        query:      { type: 'string',  description: 'Texto a buscar en título y descripción' },
         categoria:  { type: 'string',  description: 'Categoría del producto (electrónica, ropa, hogar, etc.)' },
+        condicion:  { type: 'string',  description: 'Condición del producto (nuevo, usado, reacondicionado)' },
         precio_max: { type: 'number',  description: 'Precio máximo en pesos' },
         precio_min: { type: 'number',  description: 'Precio mínimo en pesos' },
         limite:     { type: 'integer', description: 'Cuántos resultados traer (máximo 5)', default: 3 },

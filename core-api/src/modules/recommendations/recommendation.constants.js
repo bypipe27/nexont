@@ -37,18 +37,6 @@ const SURVEY_QUESTIONS = [
     ],
   },
   {
-    id: 'preferenciaClave',
-    title: '¿Que valoras mas en un producto?',
-    type: 'single',
-    options: [
-      { value: 'rendimiento', label: 'Rendimiento' },
-      { value: 'durabilidad', label: 'Durabilidad' },
-      { value: 'portabilidad', label: 'Portabilidad' },
-      { value: 'estetica', label: 'Estetica' },
-      { value: 'ahorro', label: 'Ahorro' },
-    ],
-  },
-  {
     id: 'prioridad',
     title: 'Si debes priorizar, ¿que prefieres?',
     type: 'single',
