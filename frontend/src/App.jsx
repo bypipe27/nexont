@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Elements } from '@stripe/react-stripe-js';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -14,7 +15,38 @@ import ChatWidget from './components/ChatWidget';
 import SellerProfile from './pages/SellerProfile';
 
 function App() {
+  const [stripePromise, setStripePromise] = useState(null);
+  const [isReady, setIsReady] = useState(false);
   const [showChat, setShowChat] = useState(false);
+
+  useEffect(() => {
+    const initStripe = async () => {
+      const stripePublicKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+      
+      if (stripePublicKey && stripePublicKey.length > 20 && stripePublicKey.startsWith('pk_')) {
+        // Usar Stripe real
+        const { loadStripe } = await import('@stripe/stripe-js');
+        const stripe = await loadStripe(stripePublicKey);
+        setStripePromise(stripe);
+        console.log('✓ Stripe real cargado');
+      } else {
+        // Usar mock
+        const mockModule = await import('./config/stripe-mock');
+        const mockStripe = await mockModule.loadStripe();
+        setStripePromise(mockStripe);
+        console.log('🎭 Stripe Mock cargado (modo educativo)');
+      }
+      
+      setIsReady(true);
+    };
+
+    initStripe();
+  }, []);
+
+  if (!isReady) {
+    return <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>Cargando...</div>;
+  }
+
   return (
     <>
       <BrowserRouter>
@@ -30,9 +62,9 @@ function App() {
           {/* Rutas protegidas */}
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
-          <Route path="/orders" element={<PrivateRoute><Orders /></PrivateRoute>} />
+          <Route path="/orders" element={<PrivateRoute><Elements stripe={stripePromise}><Orders /></Elements></PrivateRoute>} />
           <Route path="/my-products" element={<PrivateRoute><MyProducts /></PrivateRoute>} />
-          <Route path="/cart" element={<PrivateRoute><Cart /></PrivateRoute>} />
+          <Route path="/cart" element={<PrivateRoute><Elements stripe={stripePromise}><Cart /></Elements></PrivateRoute>} />
         </Routes>
       </BrowserRouter>
 
