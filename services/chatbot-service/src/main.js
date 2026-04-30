@@ -97,8 +97,9 @@ export async function chat({ rol, historial = [], mensaje, contexto = {} }) {
               resultado = { error: `Error consultando Nexont: ${err.message}` };
             }
           }
-
-          console.log(`[CHATBOT] Resultado tool: ${nombre}:`, resultado);
+          console.log(`[CHATBOT] Resultado tool RAW:`, resultado);
+          console.log(`[CHATBOT] Resultado tool STRING:`, JSON.stringify(resultado, null, 2));
+          // console.log(`[CHATBOT] Resultado tool: ${nombre}:`, resultado);
 
           mensajes.push({
             role:         'tool',

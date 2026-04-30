@@ -9,6 +9,7 @@ import VerifyEmail from './pages/VerifyEmail';
 import Dashboard from './pages/Dashboard';
 import MyProducts from './pages/MyProducts';
 import Cart from './pages/Cart';
+import AssistedRecommendations from './pages/AssistedRecommendations';
 import PrivateRoute from './components/PrivateRoute';
 import ChatWidget from './components/ChatWidget';
 
@@ -25,6 +26,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/tienda" element={<Navigate to="/" replace />} />
+          <Route path="/recomendados" element={<AssistedRecommendations />} />
 
           {/* Rutas protegidas */}
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />

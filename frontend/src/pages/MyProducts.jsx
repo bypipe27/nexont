@@ -112,6 +112,7 @@ const STYLES = `
   .nxmp-card-stock-badge { position:absolute; top:0.55rem; left:0.55rem; background:var(--white); border:1px solid var(--border); color:var(--ink); font-size:0.56rem; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; padding:0.22rem 0.55rem; }
   .nxmp-card-body { padding:1.1rem; flex:1; display:flex; flex-direction:column; }
   .nxmp-card-cond { font-size:0.6rem; font-weight:600; color:var(--ink-ghost); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.3rem; }
+  .nxmp-card-cat { font-size:0.68rem; color:var(--ink-soft); letter-spacing:0.06em; margin-bottom:0.35rem; }
   .nxmp-card-name { font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:300; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:0.3rem; letter-spacing:-0.01em; }
   .nxmp-card-price { font-family:'Cormorant Garamond',serif; font-size:1.2rem; font-weight:200; color:var(--amber); margin-bottom:0.3rem; letter-spacing:-0.01em; }
   .nxmp-card-stars { color:var(--amber); font-size:0.65rem; margin-bottom:0.65rem; }
@@ -185,6 +186,23 @@ if (!document.getElementById('nxmp-styles')) {
   document.head.appendChild(el);
 }
 
+const CATEGORY_OPTIONS = [
+  { value: 'ELECTRONICA_TECNOLOGIA', label: 'Electrónica y Tecnología' },
+  { value: 'HOGAR_DECORACION', label: 'Hogar y Decoración' },
+  { value: 'MODA_ACCESORIOS', label: 'Moda y Accesorios' },
+  { value: 'SALUD_BELLEZA', label: 'Salud y Belleza' },
+  { value: 'DEPORTES_FITNESS', label: 'Deportes y Fitness' },
+  { value: 'JUGUETES_BEBES', label: 'Juguetes y Bebés' },
+  { value: 'AUTOMOTRIZ', label: 'Automotriz' },
+  { value: 'LIBROS_MUSICA_ENTRETENIMIENTO', label: 'Libros, Música y Entretenimiento' },
+  { value: 'ALIMENTOS_BEBIDAS', label: 'Alimentos y Bebidas' },
+  { value: 'SERVICIOS_OTROS', label: 'Servicios y Otros' },
+];
+
+const getCategoryLabel = (value) => {
+  return CATEGORY_OPTIONS.find(option => option.value === value)?.label || 'Servicios y Otros';
+};
+
 // ─── Toast ────────────────────────────────────────────────────────────────────
 function Toast({ message, type, onClose }) {
   useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t); }, [onClose]);
@@ -198,7 +216,7 @@ function Toast({ message, type, onClose }) {
 
 // ─── Modal Publicar ───────────────────────────────────────────────────────────
 function PublishModal({ isOpen, onClose, onPublished }) {
-  const [form, setForm] = useState({ titulo: '', descripcion: '', precio: '', stock: '', condicion: 'NUEVO' });
+  const [form, setForm] = useState({ titulo: '', descripcion: '', precio: '', stock: '', condicion: 'NUEVO', categoria: 'SERVICIOS_OTROS' });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState('');
@@ -209,7 +227,7 @@ function PublishModal({ isOpen, onClose, onPublished }) {
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
   const handleImage  = e => { const f = e.target.files[0]; if (f) { setImageFile(f); setImagePreview(URL.createObjectURL(f)); } };
   const handleClose  = () => {
-    setForm({ titulo: '', descripcion: '', precio: '', stock: '', condicion: 'NUEVO' });
+    setForm({ titulo: '', descripcion: '', precio: '', stock: '', condicion: 'NUEVO', categoria: 'SERVICIOS_OTROS' });
     setImageFile(null); setImagePreview(null); setError(''); setSuccess('');
     onClose();
   };
@@ -222,7 +240,8 @@ function PublishModal({ isOpen, onClose, onPublished }) {
       const fd = new FormData();
       fd.append('titulo', form.titulo); fd.append('descripcion', form.descripcion);
       fd.append('precio', parseFloat(form.precio)); fd.append('stock', parseInt(form.stock));
-      fd.append('condicion', form.condicion); fd.append('promedioCalificacion', 0);
+      fd.append('condicion', form.condicion); fd.append('categoria', form.categoria);
+      fd.append('promedioCalificacion', 0);
       if (imageFile) fd.append('imagen', imageFile);
       await api.post('/products', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       setSuccess('Producto publicado correctamente.');
@@ -262,6 +281,13 @@ function PublishModal({ isOpen, onClose, onPublished }) {
                 <option value="NUEVO">Nuevo</option><option value="USADO">Usado</option><option value="REACONDICIONADO">Reacondicionado</option>
               </select>
             </div>
+            <div className="nxpm-f"><label>Categoría</label>
+              <select name="categoria" value={form.categoria} onChange={handleChange}>
+                {CATEGORY_OPTIONS.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
             <div className="nxpm-f">
               <label>Imagen del producto</label>
               <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImage} className="nxpm-file-hidden" ref={fileInputRef} />
@@ -284,7 +310,7 @@ function PublishModal({ isOpen, onClose, onPublished }) {
 
 // ─── Modal Editar ─────────────────────────────────────────────────────────────
 function EditProductModal({ isOpen, onClose, product, onProductUpdated }) {
-  const [form, setForm] = useState({ titulo: '', descripcion: '', precio: '', stock: '', condicion: 'NUEVO' });
+  const [form, setForm] = useState({ titulo: '', descripcion: '', precio: '', stock: '', condicion: 'NUEVO', categoria: 'SERVICIOS_OTROS' });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState('');
@@ -293,7 +319,14 @@ function EditProductModal({ isOpen, onClose, product, onProductUpdated }) {
 
   useEffect(() => {
     if (product) {
-      setForm({ titulo: product.titulo || '', descripcion: product.descripcion || '', precio: product.precio || '', stock: product.stock || '', condicion: product.condicion || 'NUEVO' });
+      setForm({
+        titulo: product.titulo || '',
+        descripcion: product.descripcion || '',
+        precio: product.precio || '',
+        stock: product.stock || '',
+        condicion: product.condicion || 'NUEVO',
+        categoria: product.categoria || 'SERVICIOS_OTROS',
+      });
       setImagePreview(product.imagenes?.[0]?.url || null);
       setImageFile(null);
     }
@@ -309,7 +342,8 @@ function EditProductModal({ isOpen, onClose, product, onProductUpdated }) {
       const fd = new FormData();
       fd.append('titulo', form.titulo); fd.append('descripcion', form.descripcion);
       fd.append('precio', parseFloat(form.precio)); fd.append('stock', parseInt(form.stock));
-      fd.append('condicion', form.condicion); fd.append('promedioCalificacion', product?.promedioCalificacion || 0);
+      fd.append('condicion', form.condicion); fd.append('categoria', form.categoria);
+      fd.append('promedioCalificacion', product?.promedioCalificacion || 0);
       if (imageFile) fd.append('imagen', imageFile);
       await api.put(`/products/${product.id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       if (onProductUpdated) onProductUpdated();
@@ -345,6 +379,13 @@ function EditProductModal({ isOpen, onClose, product, onProductUpdated }) {
             <div className="nxpm-f"><label>Estado</label>
               <select name="condicion" value={form.condicion} onChange={handleChange}>
                 <option value="NUEVO">Nuevo</option><option value="USADO">Usado</option><option value="REACONDICIONADO">Reacondicionado</option>
+              </select>
+            </div>
+            <div className="nxpm-f"><label>Categoría</label>
+              <select name="categoria" value={form.categoria} onChange={handleChange}>
+                {CATEGORY_OPTIONS.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
               </select>
             </div>
             <div className="nxpm-f">
@@ -606,6 +647,7 @@ function MyProducts() {
                         </div>
                         <div className="nxmp-card-body">
                           <div className="nxmp-card-cond">{p.condicion || 'NUEVO'}</div>
+                          <div className="nxmp-card-cat">{getCategoryLabel(p.categoria)}</div>
                           <div className="nxmp-card-name">{p.titulo}</div>
                           <div className="nxmp-card-price">${(parseFloat(p.precio) || 0).toFixed(2)}</div>
                           <div className="nxmp-card-stars">{stars(p.promedioCalificacion)}</div>

@@ -2,9 +2,87 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+const CATEGORY_OPTIONS = [
+  { value: 'ELECTRONICA_TECNOLOGIA', label: 'Electrónica y Tecnología' },
+  { value: 'HOGAR_DECORACION', label: 'Hogar y Decoración' },
+  { value: 'MODA_ACCESORIOS', label: 'Moda y Accesorios' },
+  { value: 'SALUD_BELLEZA', label: 'Salud y Belleza' },
+  { value: 'DEPORTES_FITNESS', label: 'Deportes y Fitness' },
+  { value: 'JUGUETES_BEBES', label: 'Juguetes y Bebés' },
+  { value: 'AUTOMOTRIZ', label: 'Automotriz' },
+  { value: 'LIBROS_MUSICA_ENTRETENIMIENTO', label: 'Libros, Música y Entretenimiento' },
+  { value: 'ALIMENTOS_BEBIDAS', label: 'Alimentos y Bebidas' },
+  { value: 'SERVICIOS_OTROS', label: 'Servicios y Otros' },
+];
+
+const categoryEnumValues = new Set(CATEGORY_OPTIONS.map(option => option.value));
+
+const categoryMap = {
+  'electronica y tecnologia': 'ELECTRONICA_TECNOLOGIA',
+  'electronica tecnologia': 'ELECTRONICA_TECNOLOGIA',
+  'electronica': 'ELECTRONICA_TECNOLOGIA',
+  'tecnologia': 'ELECTRONICA_TECNOLOGIA',
+  'hogar y decoracion': 'HOGAR_DECORACION',
+  'hogar decoracion': 'HOGAR_DECORACION',
+  'hogar': 'HOGAR_DECORACION',
+  'decoracion': 'HOGAR_DECORACION',
+  'moda y accesorios': 'MODA_ACCESORIOS',
+  'moda accesorios': 'MODA_ACCESORIOS',
+  'moda': 'MODA_ACCESORIOS',
+  'accesorios': 'MODA_ACCESORIOS',
+  'salud y belleza': 'SALUD_BELLEZA',
+  'salud belleza': 'SALUD_BELLEZA',
+  'salud': 'SALUD_BELLEZA',
+  'belleza': 'SALUD_BELLEZA',
+  'deportes y fitness': 'DEPORTES_FITNESS',
+  'deportes fitness': 'DEPORTES_FITNESS',
+  'deportes': 'DEPORTES_FITNESS',
+  'fitness': 'DEPORTES_FITNESS',
+  'juguetes y bebes': 'JUGUETES_BEBES',
+  'juguetes bebes': 'JUGUETES_BEBES',
+  'juguetes': 'JUGUETES_BEBES',
+  'bebes': 'JUGUETES_BEBES',
+  'automotriz': 'AUTOMOTRIZ',
+  'libros musica y entretenimiento': 'LIBROS_MUSICA_ENTRETENIMIENTO',
+  'libros musica entretenimiento': 'LIBROS_MUSICA_ENTRETENIMIENTO',
+  'libros': 'LIBROS_MUSICA_ENTRETENIMIENTO',
+  'musica': 'LIBROS_MUSICA_ENTRETENIMIENTO',
+  'entretenimiento': 'LIBROS_MUSICA_ENTRETENIMIENTO',
+  'alimentos y bebidas': 'ALIMENTOS_BEBIDAS',
+  'alimentos bebidas': 'ALIMENTOS_BEBIDAS',
+  'alimentos': 'ALIMENTOS_BEBIDAS',
+  'bebidas': 'ALIMENTOS_BEBIDAS',
+  'servicios y otros': 'SERVICIOS_OTROS',
+  'servicios otros': 'SERVICIOS_OTROS',
+  'servicios': 'SERVICIOS_OTROS',
+  'otros': 'SERVICIOS_OTROS',
+};
+
+const normalizeCategoryKey = (value = '') => String(value)
+  .trim()
+  .toLowerCase()
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9\s]/g, '')
+  .replace(/\s+/g, ' ')
+  .trim();
+
+const normalizeCategory = (value) => {
+  if (!value) return null;
+  const upper = String(value).trim().toUpperCase();
+  if (categoryEnumValues.has(upper)) return upper;
+  const normalized = normalizeCategoryKey(value).replace(/_/g, ' ');
+  return categoryMap[normalized] || null;
+};
+
+const formatCategoryLabel = (value) => {
+  return CATEGORY_OPTIONS.find(option => option.value === value)?.label || 'Servicios y Otros';
+};
+
 // ─── QUERIES COMPRADOR ───────────────────────────────────────────────────────
 
 export async function buscarProductos({ query = '', categoria = null, precio_max = null, precio_min = null, condicion = null, limite = 3 }) {
+  const categoriaNormalizada = normalizeCategory(categoria);
   const productos = await prisma.producto.findMany({
     where: {
       estaActivo: true,
@@ -19,13 +97,7 @@ export async function buscarProductos({ query = '', categoria = null, precio_max
       ...(precio_max !== null && { precio: { lte: precio_max } }),
       ...(precio_min !== null && { precio: { gte: precio_min } }),
       ...(condicion  && { condicion: condicion.toUpperCase() }),
-      ...(categoria  && {
-        categorias: {
-          some: {
-            categoria: { nombre: { contains: categoria, mode: 'insensitive' } },
-          },
-        },
-      }),
+      ...(categoriaNormalizada && { categoria: categoriaNormalizada }),
     },
     select: {
       id:                 true,
@@ -34,6 +106,7 @@ export async function buscarProductos({ query = '', categoria = null, precio_max
       precio:             true,
       stock:              true,
       condicion:          true,
+      categoria:          true,
       promedioCalificacion: true,
       totalResenas:       true,
       etiquetas:          true,
@@ -45,9 +118,6 @@ export async function buscarProductos({ query = '', categoria = null, precio_max
         select:  { url: true },
         take:    1,
       },
-      categorias: {
-        select: { categoria: { select: { nombre: true } } },
-      },
     },
     orderBy: { promedioCalificacion: 'desc' },
     take: limite,
@@ -56,7 +126,7 @@ export async function buscarProductos({ query = '', categoria = null, precio_max
   return productos.map(p => ({
     ...p,
     imagen_principal: p.imagenes[0]?.url ?? null,
-    categorias:       p.categorias.map(c => c.categoria.nombre),
+    categorias:       [formatCategoryLabel(p.categoria)],
     imagenes:         undefined,
   }));
 }
@@ -71,6 +141,7 @@ export async function obtenerDetalleProducto({ producto_id }) {
       precio:               true,
       stock:                true,
       condicion:            true,
+      categoria:            true,
       promedioCalificacion: true,
       totalResenas:         true,
       etiquetas:            true,
@@ -89,9 +160,6 @@ export async function obtenerDetalleProducto({ producto_id }) {
         select:  { url: true, esPrincipal: true },
         orderBy: { orden: 'asc' },
       },
-      categorias: {
-        select: { categoria: { select: { nombre: true } } },
-      },
       resenas: {
         select:  { calificacion: true, comentario: true, sentimiento: true },
         orderBy: { creadoEn: 'desc' },
@@ -104,7 +172,7 @@ export async function obtenerDetalleProducto({ producto_id }) {
 
   return {
     ...producto,
-    categorias: producto.categorias.map(c => c.categoria.nombre),
+    categorias: [formatCategoryLabel(producto.categoria)],
   };
 }
 
@@ -114,26 +182,25 @@ export async function obtenerProductosSimilares({ producto_id, limite = 3 }) {
     where:  { id: producto_id },
     select: {
       precio:     true,
-      categorias: { select: { categoriaId: true } },
+      categoria:  true,
     },
   });
 
-  if (!referencia) return [];
-
-  const categoriasIds = referencia.categorias.map(c => c.categoriaId);
+  if (!referencia?.categoria) return [];
 
   return prisma.producto.findMany({
     where: {
       estaActivo: true,
       stock:      { gt: 0 },
       id:         { not: producto_id },
-      categorias: { some: { categoriaId: { in: categoriasIds } } },
+      categoria:  referencia.categoria,
     },
     select: {
       id:                   true,
       titulo:               true,
       precio:               true,
       condicion:            true,
+      categoria:            true,
       promedioCalificacion: true,
       imagenes: {
         where:  { esPrincipal: true },
@@ -158,12 +225,10 @@ export async function obtenerMisProductos({ usuario_id }) {
       stock:                true,
       estaActivo:           true,
       condicion:            true,
+      categoria:            true,
       promedioCalificacion: true,
       totalResenas:         true,
       creadoEn:             true,
-      categorias: {
-        select: { categoria: { select: { nombre: true } } },
-      },
       detallesPedido: {
         where: {
           pedido: { estado: { not: 'CANCELADO' } },
@@ -181,10 +246,11 @@ export async function obtenerMisProductos({ usuario_id }) {
     stock:                p.stock,
     estaActivo:           p.estaActivo,
     condicion:            p.condicion,
+    categoria:            p.categoria,
     promedioCalificacion: p.promedioCalificacion,
     totalResenas:         p.totalResenas,
     creadoEn:             p.creadoEn,
-    categorias:           p.categorias.map(c => c.categoria.nombre),
+    categorias:           [formatCategoryLabel(p.categoria)],
     total_ventas:         p.detallesPedido.length,
     ingresos_totales:     p.detallesPedido.reduce((acc, d) => acc + Number(d.subtotal), 0),
   }));
@@ -247,15 +313,12 @@ export async function obtenerEstadisticasVendedor({ usuario_id }) {
 }
 
 export async function analizarCompetencia({ categoria, precio_referencia = null }) {
+  const categoriaNormalizada = normalizeCategory(categoria);
   const productos = await prisma.producto.findMany({
     where: {
       estaActivo: true,
       precio:     { gt: 0 },
-      categorias: {
-        some: {
-          categoria: { nombre: { contains: categoria, mode: 'insensitive' } },
-        },
-      },
+      ...(categoriaNormalizada && { categoria: categoriaNormalizada }),
     },
     select: {
       titulo:               true,
@@ -295,15 +358,12 @@ export async function analizarCompetencia({ categoria, precio_referencia = null 
 }
 
 export async function sugerirPrecio({ categoria, condicion = null }) {
+  const categoriaNormalizada = normalizeCategory(categoria);
   const vendidos = await prisma.producto.findMany({
     where: {
       estaActivo: true,
       ...(condicion && { condicion: condicion.toUpperCase() }),
-      categorias: {
-        some: {
-          categoria: { nombre: { contains: categoria, mode: 'insensitive' } },
-        },
-      },
+      ...(categoriaNormalizada && { categoria: categoriaNormalizada }),
       detallesPedido: {
         some: { pedido: { estado: 'ENTREGADO' } },
       },

@@ -29,6 +29,19 @@ enum CondicionProducto {
   REACONDICIONADO
 }
 
+enum CategoriaProducto {
+  ELECTRONICA_TECNOLOGIA
+  HOGAR_DECORACION
+  MODA_ACCESORIOS
+  SALUD_BELLEZA
+  DEPORTES_FITNESS
+  JUGUETES_BEBES
+  AUTOMOTRIZ
+  LIBROS_MUSICA_ENTRETENIMIENTO
+  ALIMENTOS_BEBIDAS
+  SERVICIOS_OTROS
+}
+
 
 
 enum TipoEventoUsuario {
@@ -107,6 +120,7 @@ model Producto {
   precio             Decimal             @db.Decimal(10, 2)
   stock              Int                 @default(0)
   condicion          CondicionProducto   @default(NUEVO)
+  categoria          CategoriaProducto   @default(SERVICIOS_OTROS)
   estaActivo         Boolean             @default(true)
   vendedorId         Int
   promedioCalificacion Float?            @default(0)
@@ -118,7 +132,6 @@ model Producto {
   actualizadoEn      DateTime            @updatedAt
 
   vendedor           Usuario             @relation(fields: [vendedorId], references: [id])
-  categorias         ProductoCategoria[]
   imagenes           ProductoImagen[]
   // ...existing code...
   itemsCarrito       ItemCarrito[]
@@ -126,31 +139,6 @@ model Producto {
   resenas            Resena[]
 
   @@map("productos")
-}
-
-model Categoria {
-  id          Int                 @id @default(autoincrement())
-  nombre      String              @unique
-  slug        String              @unique
-  descripcion String?
-  creadoEn    DateTime            @default(now())
-  actualizadoEn DateTime          @updatedAt
-
-  productos   ProductoCategoria[]
-
-  @@map("categorias")
-}
-
-model ProductoCategoria {
-  productoId Int
-  categoriaId Int
-  creadoEn   DateTime @default(now())
-
-  producto   Producto  @relation(fields: [productoId], references: [id], onDelete: Cascade)
-  categoria  Categoria @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
-
-  @@id([productoId, categoriaId])
-  @@map("productos_categorias")
 }
 
 model ProductoImagen {
