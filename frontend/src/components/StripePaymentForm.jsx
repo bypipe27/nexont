@@ -1,13 +1,16 @@
-import { useState, useEffect } from 'react';
-import api from '../api/api';
+import { useState } from 'react';
+
+const normalizeDigits = (value) => value.replace(/\D/g, '');
 
 const detectCardType = (number) => {
-  const digits = number.replace(/\D/g, '');
+  const digits = normalizeDigits(number);
 
-  if (/^4\d{0,18}$/.test(digits)) return 'visa';
-  if (/^(5[1-5]\d{0,14}|2(2[2-9]\d{0,12}|[3-6]\d{0,13}|7[01]\d{0,12}|720\d{0,12}))$/.test(digits)) return 'mastercard';
-  if (/^3[47]\d{0,13}$/.test(digits)) return 'amex';
-  if (/^6(?:011|5\d{2})\d{0,12}$/.test(digits)) return 'discover';
+  if (!digits) return 'unknown';
+
+  if (digits.startsWith('4')) return 'visa';
+  if (/^(5[1-5]|2[2-7])/.test(digits)) return 'mastercard';
+  if (/^3[47]/.test(digits)) return 'amex';
+  if (/^(6011|65|64[4-9]|622)/.test(digits)) return 'discover';
 
   return 'unknown';
 };
@@ -26,6 +29,59 @@ const getCardRules = (type) => {
       return { lengths: [13, 14, 15, 16, 19], cvcLength: 3, label: 'Desconocida' };
   }
 };
+
+const getCardVisual = (type) => {
+  switch (type) {
+    case 'visa':
+      return { label: 'VISA', bg: '#1A1F71', fg: '#FFFFFF' };
+    case 'mastercard':
+      return { label: 'Mastercard', bg: '#FFF4E5', fg: '#C2410C', accent: true };
+    case 'amex':
+      return { label: 'AMEX', bg: '#0F4C81', fg: '#FFFFFF' };
+    case 'discover':
+      return { label: 'Discover', bg: '#FFF7ED', fg: '#C2410C' };
+    default:
+      return { label: 'Card', bg: '#F3F4F6', fg: '#6B7280' };
+  }
+};
+
+function CardBrandBadge({ type, compact = false }) {
+  const visual = getCardVisual(type);
+  return (
+    <span
+      aria-label={visual.label}
+      title={visual.label}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minWidth: compact ? '84px' : '112px',
+        height: compact ? '28px' : '32px',
+        padding: compact ? '0 0.65rem' : '0 0.8rem',
+        borderRadius: '999px',
+        background: visual.bg,
+        color: visual.fg,
+        border: '1px solid rgba(0,0,0,0.08)',
+        fontSize: compact ? '0.62rem' : '0.68rem',
+        fontWeight: 700,
+        letterSpacing: compact ? '0.12em' : '0.16em',
+        textTransform: 'uppercase',
+        lineHeight: 1,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {type === 'mastercard' ? (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.22rem' }}>
+          <span style={{ width: 10, height: 10, borderRadius: 999, background: '#EA001B', display: 'inline-block' }} />
+          <span style={{ width: 10, height: 10, borderRadius: 999, background: '#FF5F00', display: 'inline-block', marginLeft: -4 }} />
+          <span style={{ marginLeft: 2 }}>{visual.label}</span>
+        </span>
+      ) : (
+        visual.label
+      )}
+    </span>
+  );
+}
 
 const luhnCheck = (number) => {
   const digits = number.replace(/\D/g, '');
@@ -47,20 +103,15 @@ const luhnCheck = (number) => {
 
 function StripePaymentForm({ amount, orderId, onPaymentSuccess, onPaymentError, isProcessing, setIsProcessing }) {
   const [error, setError] = useState('');
-  const [isMockMode, setIsMockMode] = useState(true);
+  const [isMockMode] = useState(true);
   const [cardData, setCardData] = useState({
     cardNumber: '4242 4242 4242 4242',
     expiry: '07/28',
     cvc: '123',
   });
 
-  useEffect(() => {
-    setIsMockMode(true);
-  }, []);
-
   const handleCardNumberChange = (e) => {
-    let value = e.target.value.replace(/\s/g, '');
-    value = value.replace(/\D/g, '').substring(0, 19);
+    let value = normalizeDigits(e.target.value).substring(0, 19);
     const formatted = value.replace(/(\d{4})/g, '$1 ').trim();
     setCardData({ ...cardData, cardNumber: formatted });
   };
@@ -74,7 +125,7 @@ function StripePaymentForm({ amount, orderId, onPaymentSuccess, onPaymentError, 
   };
 
   const handleCvcChange = (e) => {
-    const value = e.target.value.replace(/\D/g, '').substring(0, 3);
+    const value = normalizeDigits(e.target.value).substring(0, 4);
     setCardData({ ...cardData, cvc: value });
   };
 
@@ -106,33 +157,29 @@ function StripePaymentForm({ amount, orderId, onPaymentSuccess, onPaymentError, 
     setIsProcessing(true);
 
     try {
-      // 1. Crear Payment Intent en el backend
-      const { data: intentData } = await api.post('/payments/intent', {
-        amount,
-        description: `Compra Nexont - Orden #${orderId}`
-      });
-
-      console.log('📋 Intent creado:', intentData.clientSecret);
-
-      // 2. Simular confirmación de pago en el frontend
+      // Simulación local del procesamiento de pago
       await new Promise(resolve => setTimeout(resolve, 1500));
 
-      // 3. Confirmar en el backend que el pago se procesó
-      await api.post('/payments/confirm', {
-        paymentIntentId: intentData.id
-      });
-
-      console.log('✓ Pago exitoso');
-      onPaymentSuccess();
+      if (typeof onPaymentSuccess === 'function') {
+        await onPaymentSuccess({
+          amount,
+          orderId,
+          cardBrand: getCardRules(cardType).label,
+          last4: cardDigits.slice(-4),
+          simulated: true,
+        });
+      }
     } catch (err) {
       const errMsg = err.response?.data?.error || err.message || 'Error al procesar pago';
       setError(errMsg);
-      onPaymentError(errMsg);
-      console.error('❌ Error en pago:', errMsg);
+      if (typeof onPaymentError === 'function') onPaymentError(errMsg);
     } finally {
       setIsProcessing(false);
     }
   };
+
+  const detectedType = detectCardType(cardData.cardNumber);
+  const cardVisual = getCardVisual(detectedType);
 
   return (
     <div style={{ padding: '1rem 0' }}>
@@ -150,9 +197,7 @@ function StripePaymentForm({ amount, orderId, onPaymentSuccess, onPaymentError, 
         </div>
       )}
 
-      <div style={{ marginBottom: '0.75rem', fontSize: '0.8rem', color: '#9CA3AF' }}>
-        Tipo detectado: <strong>{getCardRules(detectCardType(cardData.cardNumber)).label}</strong>
-      </div>
+      {/* Top brand badge removed — only bottom badge shown near the card number */}
 
       <div style={{
         background: 'var(--cream)',
@@ -163,9 +208,12 @@ function StripePaymentForm({ amount, orderId, onPaymentSuccess, onPaymentError, 
       }}>
         {/* Número de tarjeta */}
         <div style={{ marginBottom: '1rem' }}>
-          <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#666', display: 'block', marginBottom: '0.5rem' }}>
-            NÚMERO DE TARJETA
-          </label>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', marginBottom: '0.5rem' }}>
+            <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#666', display: 'block' }}>
+              NÚMERO DE TARJETA
+            </label>
+            <CardBrandBadge type={detectedType} compact={false} />
+          </div>
           <input
             type="text"
             placeholder="4242 4242 4242 4242"
@@ -179,10 +227,11 @@ function StripePaymentForm({ amount, orderId, onPaymentSuccess, onPaymentError, 
               fontSize: '16px',
               fontWeight: '500',
               color: '#000000',
-              border: '1px solid #ddd',
+              border: `1px solid ${detectedType === 'unknown' ? '#ddd' : '#D6D3D1'}`,
               borderRadius: '4px',
               fontFamily: '"DM Sans", monospace',
               boxSizing: 'border-box',
+              boxShadow: detectedType === 'unknown' ? 'none' : `0 0 0 1px ${cardVisual.bg}12 inset`,
             }}
           />
         </div>

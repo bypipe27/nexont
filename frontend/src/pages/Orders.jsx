@@ -276,6 +276,20 @@ function Orders() {
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const validPaymentMethods = new Set(['efectivo', 'tarjeta']);
+
+  const finalizeOrder = async (selectedPaymentMethod) => {
+    const method = selectedPaymentMethod || paymentMethod;
+    if (!validPaymentMethods.has(method)) {
+      throw new Error('Selecciona un método de pago válido');
+    }
+
+    const { data } = await api.post('/orders', { paymentMethod: method, notes });
+    setConfirmedOrder(data.order);
+    setInvoiceData(data.invoice);
+    setShowInvoice(true);
+    return data;
+  };
 
   useEffect(() => {
     if (view==='checkout') { setLoadingCart(true); api.get('/cart').then(({data})=>setCart(data)).catch(()=>setCheckoutError('No se pudo cargar el carrito')).finally(()=>setLoadingCart(false)); }
@@ -290,35 +304,31 @@ function Orders() {
   }, [view]);
 
   const handleConfirm = async () => {
-    setCheckoutError(''); 
-    if (paymentMethod === 'tarjeta') {
-      return; // El flujo está en StripePaymentForm
+    setCheckoutError('');
+    if (!validPaymentMethods.has(paymentMethod)) {
+      setCheckoutError('Selecciona un método de pago');
+      return;
     }
+
+    if (paymentMethod === 'tarjeta') return;
+
     setConfirming(true);
-    try { 
-      const { data } = await api.post('/orders', { paymentMethod, notes }); 
-      setConfirmedOrder(data.order); 
-      setInvoiceData(data.invoice); 
-      setShowInvoice(true); 
-    }
-    catch (err) { 
-      setCheckoutError(err.response?.data?.error || 'Error al confirmar la compra'); 
-    }
-    finally { 
-      setConfirming(false); 
+    try {
+      await finalizeOrder('efectivo');
+    } catch (err) {
+      setCheckoutError(err.response?.data?.error || err.message || 'Error al confirmar la compra');
+    } finally {
+      setConfirming(false);
     }
   };
 
   const handlePaymentSuccess = async () => {
-    // Después de que Stripe procesa el pago, confirmar la orden
+    setCheckoutError('');
     setPaymentProcessing(true);
     try {
-      const { data } = await api.post('/orders', { paymentMethod, notes });
-      setConfirmedOrder(data.order);
-      setInvoiceData(data.invoice);
-      setShowInvoice(true);
+      await finalizeOrder('tarjeta');
     } catch (err) {
-      setCheckoutError(err.response?.data?.error || 'Error al confirmar la compra');
+      setCheckoutError(err.response?.data?.error || err.message || 'Error al confirmar la compra');
     } finally {
       setPaymentProcessing(false);
     }
