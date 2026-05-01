@@ -227,6 +227,18 @@ const getMyProducts = async (req, res) => {
   }
 };
 
+const getProductsBySellerPublic = async (req, res) => {
+  try {
+    const sellerId = parseInt(req.params.sellerId, 10);
+    if (isNaN(sellerId)) return res.status(400).json({ error: 'ID inválido' });
+    const data = await productsService.getProductsBySellerPublic(sellerId);
+    return res.json(data);
+  } catch (err) {
+    const status = err.message === 'Vendedor no encontrado' ? 404 : 500;
+    return res.status(status).json({ error: err.message });
+  }
+};
+
 module.exports = {
   getProducts,
   getRecentProducts,
@@ -235,4 +247,5 @@ module.exports = {
   updateProduct,
   deleteProduct,
   getMyProducts,
+  getProductsBySellerPublic,
 };

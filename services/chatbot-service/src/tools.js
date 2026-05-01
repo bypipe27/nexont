@@ -76,12 +76,13 @@ export const TOOLS_VENDEDOR = [
   },
   {
     name: 'sugerir_precio',
-    description: 'Sugiere un rango de precio óptimo basado en productos similares que sí se han vendido.',
+    description: 'Sugiere precios bajo, promedio y alto basados en ventas reales de productos similares.',
     input_schema: {
       type: 'object',
       properties: {
         categoria: { type: 'string', description: 'Categoría del producto' },
         condicion: { type: 'string', description: 'Condición: nuevo, usado, reacondicionado' },
+        intencion: { type: 'string', description: 'Intención de venta: rapida, balanceada, margen (opcional)' },
       },
       required: ['categoria'],
     },

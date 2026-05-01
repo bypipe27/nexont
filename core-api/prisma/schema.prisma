@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 // ─── ENUMERACIONES ───────────────────────────────────────────────────────────
@@ -68,6 +69,7 @@ model Usuario {
   id                   Int              @id @default(autoincrement())
   correo               String           @unique
   contrasena           String
+  fotoPerfil           String?
   nombres              String
   apellidos            String
   telefono             String?

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/api';
 import { useTheme } from '../context/ThemeContext';
+import ChatWidget from '../components/ChatWidget';
 
 // ─── Estilos nxmp ─────────────────────────────────────────────────────────────
 const STYLES = `
@@ -72,6 +73,12 @@ const STYLES = `
   .nxmp-stat-val.green { color:#16A34A; }
   .nxmp-stat-val.red { color:#DC2626; }
   .nxmp-stat-val.amber { color:var(--amber); }
+
+  .nxmp-ai { border:1px solid var(--border); background:linear-gradient(135deg, rgba(196,151,58,0.08), rgba(245,240,232,0.9)); padding:1.8rem 2rem; margin-bottom:2.5rem; display:flex; align-items:center; justify-content:space-between; gap:1.5rem; }
+  .nxmp-ai-title { font-family:'Cormorant Garamond',serif; font-size:1.6rem; font-weight:300; color:var(--ink); margin-bottom:0.35rem; }
+  .nxmp-ai-text { color:var(--ink-soft); font-size:0.88rem; line-height:1.6; max-width:520px; }
+  .nxmp-ai-btn { height:40px; padding:0 1.6rem; background:var(--ink); color:var(--cream); font-family:'DM Sans',sans-serif; font-size:0.72rem; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; border:none; cursor:pointer; transition:background 0.2s; white-space:nowrap; }
+  .nxmp-ai-btn:hover { background:var(--ink-mid); }
 
   .nxmp-layout { display:flex; gap:2rem; align-items:flex-start; }
   .nxmp-sidebar { width:220px; flex-shrink:0; background:var(--white); border:1px solid var(--border); position:sticky; top:84px; }
@@ -178,6 +185,7 @@ const STYLES = `
   @keyframes nxmp-slide { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
 
   @media (max-width:900px) { .nxmp-sidebar { display:none; } .nxmp-stats { grid-template-columns:repeat(2,1fr); } .nxmp-page { padding:2.5rem 1.5rem 4rem; } }
+  @media (max-width:900px) { .nxmp-ai { flex-direction:column; align-items:flex-start; } }
 `;
 if (!document.getElementById('nxmp-styles')) {
   const el = document.createElement('style');
@@ -458,6 +466,8 @@ function MyProducts() {
   const [deleteProduct, setDeleteProduct] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [toast, setToast]               = useState(null);
+  const [showChat, setShowChat]         = useState(false);
+  const aiPrefill = 'Necesito ayuda para impulsar ventas. Analiza mi producto y dame precio bajo (venta rapida), precio promedio y precio alto (mayor ganancia), y sugerencias de titulo y descripcion. Detalles del producto: [pega aqui].';
 
   const token    = localStorage.getItem('token');
   const user     = JSON.parse(localStorage.getItem('user') || 'null');
@@ -583,6 +593,14 @@ function MyProducts() {
           <div className="nxmp-stat"><span className="nxmp-stat-val amber">{totalStock}</span><span className="nxmp-stat-lbl">Unidades</span></div>
         </div>
 
+        <section className="nxmp-ai">
+          <div>
+            <div className="nxmp-ai-title">Impulsa ventas con IA</div>
+            <div className="nxmp-ai-text">Consulta precios recomendados, mejora tus descripciones y descubre que elementos potencian tus publicaciones.</div>
+          </div>
+          <button className="nxmp-ai-btn" onClick={() => setShowChat(true)}>Hablar con Cardel</button>
+        </section>
+
         <div className="nxmp-layout">
           {/* Sidebar filtros */}
           <aside className="nxmp-sidebar">
@@ -684,6 +702,7 @@ function MyProducts() {
         loading={deleteLoading}
       />
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      {showChat && <ChatWidget onClose={() => setShowChat(false)} initialInput={aiPrefill} />}
     </div>
   );
 }

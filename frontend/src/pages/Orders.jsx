@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/api';
+import StripePaymentForm from '../components/StripePaymentForm';
 
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,200;0,300;0,400;0,600;1,200;1,300&family=DM+Sans:wght@300;400;500;600&display=swap');
@@ -263,9 +264,11 @@ function Orders() {
   const [view, setView] = useState(fromCheckout ? 'checkout' : 'list');
   const [cart, setCart] = useState(null);
   const [notes, setNotes] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('efectivo');
   const [loadingCart, setLoadingCart] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [showInvoice, setShowInvoice] = useState(false);
   const [invoiceData, setInvoiceData] = useState(null);
   const [confirmedOrder, setConfirmedOrder] = useState(null);
@@ -273,6 +276,20 @@ function Orders() {
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const validPaymentMethods = new Set(['efectivo', 'tarjeta']);
+
+  const finalizeOrder = async (selectedPaymentMethod) => {
+    const method = selectedPaymentMethod || paymentMethod;
+    if (!validPaymentMethods.has(method)) {
+      throw new Error('Selecciona un método de pago válido');
+    }
+
+    const { data } = await api.post('/orders', { paymentMethod: method, notes });
+    setConfirmedOrder(data.order);
+    setInvoiceData(data.invoice);
+    setShowInvoice(true);
+    return data;
+  };
 
   useEffect(() => {
     if (view==='checkout') { setLoadingCart(true); api.get('/cart').then(({data})=>setCart(data)).catch(()=>setCheckoutError('No se pudo cargar el carrito')).finally(()=>setLoadingCart(false)); }
@@ -287,10 +304,38 @@ function Orders() {
   }, [view]);
 
   const handleConfirm = async () => {
-    setCheckoutError(''); setConfirming(true);
-    try { const { data } = await api.post('/orders', { paymentMethod:'efectivo', notes }); setConfirmedOrder(data.order); setInvoiceData(data.invoice); setShowInvoice(true); }
-    catch (err) { setCheckoutError(err.response?.data?.error || 'Error al confirmar la compra'); }
-    finally { setConfirming(false); }
+    setCheckoutError('');
+    if (!validPaymentMethods.has(paymentMethod)) {
+      setCheckoutError('Selecciona un método de pago');
+      return;
+    }
+
+    if (paymentMethod === 'tarjeta') return;
+
+    setConfirming(true);
+    try {
+      await finalizeOrder('efectivo');
+    } catch (err) {
+      setCheckoutError(err.response?.data?.error || err.message || 'Error al confirmar la compra');
+    } finally {
+      setConfirming(false);
+    }
+  };
+
+  const handlePaymentSuccess = async () => {
+    setCheckoutError('');
+    setPaymentProcessing(true);
+    try {
+      await finalizeOrder('tarjeta');
+    } catch (err) {
+      setCheckoutError(err.response?.data?.error || err.message || 'Error al confirmar la compra');
+    } finally {
+      setPaymentProcessing(false);
+    }
+  };
+
+  const handlePaymentError = (error) => {
+    setCheckoutError(error);
   };
 
   // Paginación calculada
@@ -332,8 +377,8 @@ function Orders() {
             </div>
             <div className="nxo-panel">
               <div className="nxo-panel-head"><span className="nxo-panel-title">Método de pago</span></div>
-              <div className="nxo-pay-option">
-                <input type="radio" defaultChecked readOnly style={{accentColor:'var(--ink)'}} />
+              <label className="nxo-pay-option" style={{cursor:'pointer',transition:'background 0.12s'}} onClick={() => setPaymentMethod('tarjeta')} onMouseEnter={e => e.currentTarget.style.background='var(--cream-dark)'} onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+                <input type="radio" name="paymentMethod" value="tarjeta" checked={paymentMethod==='tarjeta'} onChange={() => setPaymentMethod('tarjeta')} style={{accentColor:'var(--ink)',cursor:'pointer'}} />
                 <span style={{width:32,height:32,border:'1px solid var(--border)',background:'var(--cream-dark)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <rect x="1" y="3.5" width="14" height="9" rx="0.5" stroke="#3D3830" strokeWidth="1"/>
@@ -342,17 +387,44 @@ function Orders() {
                     <line x1="12.5" y1="3.5" x2="12.5" y2="12.5" stroke="#3D3830" strokeWidth="1"/>
                   </svg>
                 </span>
+                <div><div className="nxo-pay-name">Tarjeta de crédito/débito</div><div className="nxo-pay-sub">Procesado por Stripe</div></div>
+              </label>
+              <label className="nxo-pay-option" style={{cursor:'pointer',transition:'background 0.12s'}} onClick={() => setPaymentMethod('efectivo')} onMouseEnter={e => e.currentTarget.style.background='var(--cream-dark)'} onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+                <input type="radio" name="paymentMethod" value="efectivo" checked={paymentMethod==='efectivo'} onChange={() => setPaymentMethod('efectivo')} style={{accentColor:'var(--ink)',cursor:'pointer'}} />
+                <span style={{width:32,height:32,border:'1px solid var(--border)',background:'var(--cream-dark)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M2 5C2 4.45228 2.44772 4 3 4H13C13.5523 4 14 4.45228 14 5V11C14 11.5523 13.5523 12 13 12H3C2.44772 12 2 11.5523 2 11V5Z" stroke="#3D3830" strokeWidth="1"/>
+                    <circle cx="8" cy="8" r="1.5" stroke="#3D3830" strokeWidth="1"/>
+                  </svg>
+                </span>
                 <div><div className="nxo-pay-name">Efectivo</div><div className="nxo-pay-sub">Pago en el momento de la entrega</div></div>
-              </div>
+              </label>
+              {paymentMethod === 'tarjeta' && (
+                <div style={{ padding: '1.5rem 1.5rem 0' }}>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--ink-soft)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Detalles de la tarjeta</div>
+                  <StripePaymentForm 
+                    amount={Number(cart.subtotal || 0)} 
+                    orderId={cart.id || 'new'}
+                    onPaymentSuccess={handlePaymentSuccess}
+                    onPaymentError={handlePaymentError}
+                    isProcessing={paymentProcessing}
+                    setIsProcessing={setPaymentProcessing}
+                  />
+                </div>
+              )}
             </div>
             <div className="nxo-panel">
               <div className="nxo-panel-head"><span className="nxo-panel-title">Notas del pedido (opcional)</span></div>
               <textarea className="nxo-notes" value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Instrucciones especiales, dirección de entrega…" rows={3} />
             </div>
-            <button className="nxo-confirm-btn" onClick={handleConfirm} disabled={confirming||hasOverStock}>
-              {confirming ? 'Procesando…' : '✓ Confirmar compra'}
-            </button>
-            {hasOverStock && <p className="nxo-confirm-warn">Ajusta las cantidades antes de continuar</p>}
+            {paymentMethod === 'efectivo' && (
+              <>
+                <button className="nxo-confirm-btn" onClick={handleConfirm} disabled={confirming||hasOverStock}>
+                  {confirming ? 'Procesando…' : '✓ Confirmar compra'}
+                </button>
+                {hasOverStock && <p className="nxo-confirm-warn">Ajusta las cantidades antes de continuar</p>}
+              </>
+            )}
           </>}
         </div>
         {showInvoice && <InvoiceModal invoice={invoiceData} order={confirmedOrder} onClose={() => { setShowInvoice(false); setView('list'); }} />}

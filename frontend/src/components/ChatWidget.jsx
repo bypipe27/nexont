@@ -12,17 +12,21 @@ const getUserContextAndRole = () => {
   return { contexto: {}, rol: 'comprador' };
 };
 
-const ChatWidget = ({ onClose }) => {
+const ChatWidget = ({ onClose, initialInput = '' }) => {
   const [messages, setMessages] = useState([
     { role: 'assistant', content: '¡Hola! ¿En qué puedo ayudarte hoy?' }
   ]);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState(initialInput);
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  useEffect(() => {
+    if (initialInput) setInput(initialInput);
+  }, [initialInput]);
 
   const sendMessage = async (e) => {
     e.preventDefault();

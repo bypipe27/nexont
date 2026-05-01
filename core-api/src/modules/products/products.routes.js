@@ -28,6 +28,9 @@ router.get('/recent', productsController.getRecentProducts);
 // GET /api/v1/products/my — Productos del vendedor autenticado
 router.get('/my', authMiddleware, productsController.getMyProducts);
 
+// GET /api/v1/products/seller/:sellerId — Perfil público del vendedor
+router.get('/seller/:sellerId', productsController.getProductsBySellerPublic);
+
 // GET /api/v1/products/:id — Obtener producto por ID
 router.get('/:id', productsController.getProductById);
 

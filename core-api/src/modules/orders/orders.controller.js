@@ -5,9 +5,9 @@ const confirm = async (req, res) => {
     const userId = req.user.userId; // <-- era req.user.id
     const { paymentMethod = 'efectivo', notes = '' } = req.body;
 
-    const validMethods = ['efectivo'];
+    const validMethods = ['efectivo', 'tarjeta'];
     if (!validMethods.includes(paymentMethod)) {
-      return res.status(400).json({ error: 'Método de pago no válido. Solo se acepta: efectivo' });
+      return res.status(400).json({ error: 'Método de pago no válido. Solo se acepta: efectivo, tarjeta' });
     }
 
     const result = await ordersService.confirmOrder({ userId, paymentMethod, notes });

@@ -363,6 +363,15 @@ export async function analizarCompetencia({ categoria, precio_referencia = null 
   };
 }
 
+const quantile = (values, q) => {
+  if (!values.length) return null;
+  const pos = (values.length - 1) * q;
+  const base = Math.floor(pos);
+  const rest = pos - base;
+  const next = values[base + 1];
+  return next !== undefined ? values[base] + rest * (next - values[base]) : values[base];
+};
+
 export async function sugerirPrecio({ categoria, condicion = null }) {
   const categoriaNormalizada = normalizeCategory(categoria);
   const vendidos = await prisma.producto.findMany({
@@ -383,15 +392,38 @@ export async function sugerirPrecio({ categoria, condicion = null }) {
 
   const precios = vendidos.map(p => Number(p.precio)).sort((a, b) => a - b);
   const promedio = precios.reduce((a, b) => a + b, 0) / precios.length;
-  const p25 = precios[Math.floor(precios.length * 0.25)];
-  const p75 = precios[Math.floor(precios.length * 0.75)];
+  const min = precios[0];
+  const max = precios[precios.length - 1];
+  const p25 = quantile(precios, 0.25);
+  const p50 = quantile(precios, 0.5);
+  const p75 = quantile(precios, 0.75);
+
+  let precio_bajo = p25 ?? min;
+  let precio_promedio = promedio;
+  let precio_alto = p75 ?? max;
+
+  if (!(precio_bajo < precio_promedio && precio_promedio < precio_alto)) {
+    precio_bajo = Math.min(min, (p50 ?? promedio) * 0.95);
+    precio_promedio = p50 ?? promedio;
+    precio_alto = Math.max(max, (p50 ?? promedio) * 1.05);
+  }
+
+  if (!(precio_bajo < precio_promedio)) {
+    precio_bajo = Math.max(min, precio_promedio * 0.9);
+  }
+  if (!(precio_promedio < precio_alto)) {
+    precio_alto = Math.max(max, precio_promedio * 1.1);
+  }
 
   return {
-    precio_promedio: promedio.toFixed(2),
-    precio_minimo:   precios[0].toFixed(2),
-    precio_maximo:   precios[precios.length - 1].toFixed(2),
-    rango_sugerido:  `$${p25?.toFixed(2)} – $${p75?.toFixed(2)}`,
-    muestra:         precios.length,
+    precio_bajo:      precio_bajo.toFixed(2),
+    precio_promedio:  precio_promedio.toFixed(2),
+    precio_alto:      precio_alto.toFixed(2),
+    precio_minimo:    min.toFixed(2),
+    precio_maximo:    max.toFixed(2),
+    precio_mediana:   (p50 ?? promedio).toFixed(2),
+    rango_sugerido:   `$${(p25 ?? min).toFixed(2)} – $${(p75 ?? max).toFixed(2)}`,
+    muestra:          precios.length,
   };
 }
 
