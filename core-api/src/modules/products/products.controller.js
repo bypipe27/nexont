@@ -19,6 +19,7 @@ const getProducts = async (req, res) => {
       descripcion: p.descripcion,
       precio: parseFloat(p.precio),
       stock: p.stock,
+      categoria: p.categoria,
       condition: p.condicion?.toLowerCase() || 'nuevo',
       rating: p.promedioCalificacion || 0,
       imagenes: p.imagenes || [],
@@ -44,6 +45,7 @@ const getRecentProducts = async (req, res) => {
       descripcion: p.descripcion,
       precio: parseFloat(p.precio),
       stock: p.stock,
+      categoria: p.categoria,
       condition: p.condicion?.toLowerCase() || 'nuevo',
       rating: p.promedioCalificacion || 0,
       imagenes: p.imagenes || [],
@@ -57,40 +59,6 @@ const getRecentProducts = async (req, res) => {
   }
 };
 
-// ─── Recomendaciones por encuesta asistida (prototipo) ───────────────────────
-const getAssistedRecommendations = async (req, res) => {
-  try {
-    const limit = parseInt(req.query.limit, 10) || 6;
-    const answers = req.body?.answers || {};
-
-    const result = await productsService.getAssistedRecommendations({ answers, limit });
-
-    const mapped = result.products.map((p) => ({
-      id: p.id,
-      titulo: p.titulo,
-      descripcion: p.descripcion,
-      precio: parseFloat(p.precio),
-      stock: p.stock,
-      condicion: p.condicion,
-      condition: p.condicion?.toLowerCase() || 'nuevo',
-      promedioCalificacion: p.promedioCalificacion || 0,
-      rating: p.promedioCalificacion || 0,
-      imagenes: p.imagenes || [],
-      vendedor: p.vendedor,
-      seller: p.vendedor,
-      creadoEn: p.creadoEn,
-    }));
-
-    res.json({
-      products: mapped,
-      usedFallback: result.usedFallback,
-      mode: result.usedFallback ? 'fallback' : 'assisted',
-      prototype: true,
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
 
 // ─── Obtener producto por ID ──────────────────────────────────────────────────
 const getProductById = async (req, res) => {
@@ -107,6 +75,7 @@ const getProductById = async (req, res) => {
         descripcion: product.descripcion,
         precio: parseFloat(product.precio),
         stock: product.stock,
+        categoria: product.categoria,
         condition: product.condicion?.toLowerCase() || 'nuevo',
         rating: product.promedioCalificacion || 0,
         imagenes: product.imagenes || [],
@@ -123,7 +92,7 @@ const getProductById = async (req, res) => {
 // ─── Publicar nuevo producto ──────────────────────────────────────────────────
 const createProduct = async (req, res) => {
   try {
-    const { titulo, descripcion, precio, stock, condicion } = req.body;
+    const { titulo, descripcion, precio, stock, condicion, categoria } = req.body;
 
     const sellerId = getSellerIdFromReq(req);
     if (isNaN(sellerId)) {
@@ -163,6 +132,7 @@ const createProduct = async (req, res) => {
       sellerId,
       imageUrl,
       condicion: condicion || 'NUEVO',
+      categoria,
     });
 
     res.status(201).json({
@@ -173,6 +143,7 @@ const createProduct = async (req, res) => {
         descripcion: product.descripcion,
         precio: parseFloat(product.precio),
         stock: product.stock,
+        categoria: product.categoria,
         condition: product.condicion?.toLowerCase() || 'nuevo',
         imagenes: product.imagenes || [],
         seller: product.vendedor,
@@ -200,6 +171,7 @@ const updateProduct = async (req, res) => {
         descripcion: updated.descripcion,
         precio: parseFloat(updated.precio),
         stock: updated.stock,
+        categoria: updated.categoria,
         condition: updated.condicion?.toLowerCase() || 'nuevo',
         imagenes: updated.imagenes || [],
         seller: updated.vendedor,
@@ -241,6 +213,7 @@ const getMyProducts = async (req, res) => {
       descripcion: p.descripcion,
       precio: parseFloat(p.precio),
       stock: p.stock,
+      categoria: p.categoria,
       condition: p.condicion?.toLowerCase() || 'nuevo',
       rating: p.promedioCalificacion || 0,
       imagenes: p.imagenes || [],
@@ -269,7 +242,6 @@ const getProductsBySellerPublic = async (req, res) => {
 module.exports = {
   getProducts,
   getRecentProducts,
-  getAssistedRecommendations,
   getProductById,
   createProduct,
   updateProduct,

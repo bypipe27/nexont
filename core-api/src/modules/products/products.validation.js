@@ -1,6 +1,6 @@
 const Joi = require('joi');
 const { validate } = require('../../shared/validation/auth.validation');
-
+const { CATEGORY_ENUM_VALUES } = require('../../shared/utils/category.utils');
 
 const createProductSchema = Joi.object({
   titulo: Joi.string().trim().min(2).max(100).required().messages({
@@ -21,6 +21,7 @@ const createProductSchema = Joi.object({
     'any.required': 'La cantidad disponible es requerida',
   }),
   condicion: Joi.string().valid('NUEVO', 'USADO', 'REACONDICIONADO').optional().default('NUEVO'),
+  categoria: Joi.string().valid(...CATEGORY_ENUM_VALUES).optional().default('SERVICIOS_OTROS'),
   promedioCalificacion: Joi.number().min(0).max(5).optional().default(0),
 });
 
@@ -31,6 +32,7 @@ const updateProductSchema = Joi.object({
   precio: Joi.number().positive().precision(2).optional(),
   stock: Joi.number().integer().min(0).optional(),
   condicion: Joi.string().valid('NUEVO', 'USADO', 'REACONDICIONADO').optional(),
+  categoria: Joi.string().valid(...CATEGORY_ENUM_VALUES).optional(),
   promedioCalificacion: Joi.number().min(0).max(5).optional(),
   price: Joi.number().positive().precision(2).optional().messages({
     'number.positive': 'El precio debe ser mayor a 0',

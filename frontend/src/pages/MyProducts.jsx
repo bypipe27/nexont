@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/api';
 import { useTheme } from '../context/ThemeContext';
+import ChatWidget from '../components/ChatWidget';
 
 // ─── Estilos nxmp ─────────────────────────────────────────────────────────────
 const STYLES = `
@@ -73,6 +74,12 @@ const STYLES = `
   .nxmp-stat-val.red { color:#DC2626; }
   .nxmp-stat-val.amber { color:var(--amber); }
 
+  .nxmp-ai { border:1px solid var(--border); background:linear-gradient(135deg, rgba(196,151,58,0.08), rgba(245,240,232,0.9)); padding:1.8rem 2rem; margin-bottom:2.5rem; display:flex; align-items:center; justify-content:space-between; gap:1.5rem; }
+  .nxmp-ai-title { font-family:'Cormorant Garamond',serif; font-size:1.6rem; font-weight:300; color:var(--ink); margin-bottom:0.35rem; }
+  .nxmp-ai-text { color:var(--ink-soft); font-size:0.88rem; line-height:1.6; max-width:520px; }
+  .nxmp-ai-btn { height:40px; padding:0 1.6rem; background:var(--ink); color:var(--cream); font-family:'DM Sans',sans-serif; font-size:0.72rem; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; border:none; cursor:pointer; transition:background 0.2s; white-space:nowrap; }
+  .nxmp-ai-btn:hover { background:var(--ink-mid); }
+
   .nxmp-layout { display:flex; gap:2rem; align-items:flex-start; }
   .nxmp-sidebar { width:220px; flex-shrink:0; background:var(--white); border:1px solid var(--border); position:sticky; top:84px; }
   .nxmp-sb-head { padding:0.9rem 1.25rem; border-bottom:1px solid var(--border); }
@@ -112,6 +119,7 @@ const STYLES = `
   .nxmp-card-stock-badge { position:absolute; top:0.55rem; left:0.55rem; background:var(--white); border:1px solid var(--border); color:var(--ink); font-size:0.56rem; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; padding:0.22rem 0.55rem; }
   .nxmp-card-body { padding:1.1rem; flex:1; display:flex; flex-direction:column; }
   .nxmp-card-cond { font-size:0.6rem; font-weight:600; color:var(--ink-ghost); text-transform:uppercase; letter-spacing:0.12em; margin-bottom:0.3rem; }
+  .nxmp-card-cat { font-size:0.68rem; color:var(--ink-soft); letter-spacing:0.06em; margin-bottom:0.35rem; }
   .nxmp-card-name { font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:300; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:0.3rem; letter-spacing:-0.01em; }
   .nxmp-card-price { font-family:'Cormorant Garamond',serif; font-size:1.2rem; font-weight:200; color:var(--amber); margin-bottom:0.3rem; letter-spacing:-0.01em; }
   .nxmp-card-stars { color:var(--amber); font-size:0.65rem; margin-bottom:0.65rem; }
@@ -177,6 +185,7 @@ const STYLES = `
   @keyframes nxmp-slide { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
 
   @media (max-width:900px) { .nxmp-sidebar { display:none; } .nxmp-stats { grid-template-columns:repeat(2,1fr); } .nxmp-page { padding:2.5rem 1.5rem 4rem; } }
+  @media (max-width:900px) { .nxmp-ai { flex-direction:column; align-items:flex-start; } }
 `;
 if (!document.getElementById('nxmp-styles')) {
   const el = document.createElement('style');
@@ -184,6 +193,23 @@ if (!document.getElementById('nxmp-styles')) {
   el.textContent = STYLES;
   document.head.appendChild(el);
 }
+
+const CATEGORY_OPTIONS = [
+  { value: 'ELECTRONICA_TECNOLOGIA', label: 'Electrónica y Tecnología' },
+  { value: 'HOGAR_DECORACION', label: 'Hogar y Decoración' },
+  { value: 'MODA_ACCESORIOS', label: 'Moda y Accesorios' },
+  { value: 'SALUD_BELLEZA', label: 'Salud y Belleza' },
+  { value: 'DEPORTES_FITNESS', label: 'Deportes y Fitness' },
+  { value: 'JUGUETES_BEBES', label: 'Juguetes y Bebés' },
+  { value: 'AUTOMOTRIZ', label: 'Automotriz' },
+  { value: 'LIBROS_MUSICA_ENTRETENIMIENTO', label: 'Libros, Música y Entretenimiento' },
+  { value: 'ALIMENTOS_BEBIDAS', label: 'Alimentos y Bebidas' },
+  { value: 'SERVICIOS_OTROS', label: 'Servicios y Otros' },
+];
+
+const getCategoryLabel = (value) => {
+  return CATEGORY_OPTIONS.find(option => option.value === value)?.label || 'Servicios y Otros';
+};
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 function Toast({ message, type, onClose }) {
@@ -198,7 +224,7 @@ function Toast({ message, type, onClose }) {
 
 // ─── Modal Publicar ───────────────────────────────────────────────────────────
 function PublishModal({ isOpen, onClose, onPublished }) {
-  const [form, setForm] = useState({ titulo: '', descripcion: '', precio: '', stock: '', condicion: 'NUEVO' });
+  const [form, setForm] = useState({ titulo: '', descripcion: '', precio: '', stock: '', condicion: 'NUEVO', categoria: 'SERVICIOS_OTROS' });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState('');
@@ -209,7 +235,7 @@ function PublishModal({ isOpen, onClose, onPublished }) {
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
   const handleImage  = e => { const f = e.target.files[0]; if (f) { setImageFile(f); setImagePreview(URL.createObjectURL(f)); } };
   const handleClose  = () => {
-    setForm({ titulo: '', descripcion: '', precio: '', stock: '', condicion: 'NUEVO' });
+    setForm({ titulo: '', descripcion: '', precio: '', stock: '', condicion: 'NUEVO', categoria: 'SERVICIOS_OTROS' });
     setImageFile(null); setImagePreview(null); setError(''); setSuccess('');
     onClose();
   };
@@ -222,7 +248,8 @@ function PublishModal({ isOpen, onClose, onPublished }) {
       const fd = new FormData();
       fd.append('titulo', form.titulo); fd.append('descripcion', form.descripcion);
       fd.append('precio', parseFloat(form.precio)); fd.append('stock', parseInt(form.stock));
-      fd.append('condicion', form.condicion); fd.append('promedioCalificacion', 0);
+      fd.append('condicion', form.condicion); fd.append('categoria', form.categoria);
+      fd.append('promedioCalificacion', 0);
       if (imageFile) fd.append('imagen', imageFile);
       await api.post('/products', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       setSuccess('Producto publicado correctamente.');
@@ -262,6 +289,13 @@ function PublishModal({ isOpen, onClose, onPublished }) {
                 <option value="NUEVO">Nuevo</option><option value="USADO">Usado</option><option value="REACONDICIONADO">Reacondicionado</option>
               </select>
             </div>
+            <div className="nxpm-f"><label>Categoría</label>
+              <select name="categoria" value={form.categoria} onChange={handleChange}>
+                {CATEGORY_OPTIONS.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
             <div className="nxpm-f">
               <label>Imagen del producto</label>
               <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImage} className="nxpm-file-hidden" ref={fileInputRef} />
@@ -284,7 +318,7 @@ function PublishModal({ isOpen, onClose, onPublished }) {
 
 // ─── Modal Editar ─────────────────────────────────────────────────────────────
 function EditProductModal({ isOpen, onClose, product, onProductUpdated }) {
-  const [form, setForm] = useState({ titulo: '', descripcion: '', precio: '', stock: '', condicion: 'NUEVO' });
+  const [form, setForm] = useState({ titulo: '', descripcion: '', precio: '', stock: '', condicion: 'NUEVO', categoria: 'SERVICIOS_OTROS' });
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState('');
@@ -293,7 +327,14 @@ function EditProductModal({ isOpen, onClose, product, onProductUpdated }) {
 
   useEffect(() => {
     if (product) {
-      setForm({ titulo: product.titulo || '', descripcion: product.descripcion || '', precio: product.precio || '', stock: product.stock || '', condicion: product.condicion || 'NUEVO' });
+      setForm({
+        titulo: product.titulo || '',
+        descripcion: product.descripcion || '',
+        precio: product.precio || '',
+        stock: product.stock || '',
+        condicion: product.condicion || 'NUEVO',
+        categoria: product.categoria || 'SERVICIOS_OTROS',
+      });
       setImagePreview(product.imagenes?.[0]?.url || null);
       setImageFile(null);
     }
@@ -309,7 +350,8 @@ function EditProductModal({ isOpen, onClose, product, onProductUpdated }) {
       const fd = new FormData();
       fd.append('titulo', form.titulo); fd.append('descripcion', form.descripcion);
       fd.append('precio', parseFloat(form.precio)); fd.append('stock', parseInt(form.stock));
-      fd.append('condicion', form.condicion); fd.append('promedioCalificacion', product?.promedioCalificacion || 0);
+      fd.append('condicion', form.condicion); fd.append('categoria', form.categoria);
+      fd.append('promedioCalificacion', product?.promedioCalificacion || 0);
       if (imageFile) fd.append('imagen', imageFile);
       await api.put(`/products/${product.id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       if (onProductUpdated) onProductUpdated();
@@ -345,6 +387,13 @@ function EditProductModal({ isOpen, onClose, product, onProductUpdated }) {
             <div className="nxpm-f"><label>Estado</label>
               <select name="condicion" value={form.condicion} onChange={handleChange}>
                 <option value="NUEVO">Nuevo</option><option value="USADO">Usado</option><option value="REACONDICIONADO">Reacondicionado</option>
+              </select>
+            </div>
+            <div className="nxpm-f"><label>Categoría</label>
+              <select name="categoria" value={form.categoria} onChange={handleChange}>
+                {CATEGORY_OPTIONS.map(option => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
               </select>
             </div>
             <div className="nxpm-f">
@@ -417,6 +466,8 @@ function MyProducts() {
   const [deleteProduct, setDeleteProduct] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [toast, setToast]               = useState(null);
+  const [showChat, setShowChat]         = useState(false);
+  const aiPrefill = 'Necesito ayuda para impulsar ventas. Analiza mi producto y dame precio bajo (venta rapida), precio promedio y precio alto (mayor ganancia), y sugerencias de titulo y descripcion. Detalles del producto: [pega aqui].';
 
   const token    = localStorage.getItem('token');
   const user     = JSON.parse(localStorage.getItem('user') || 'null');
@@ -542,6 +593,14 @@ function MyProducts() {
           <div className="nxmp-stat"><span className="nxmp-stat-val amber">{totalStock}</span><span className="nxmp-stat-lbl">Unidades</span></div>
         </div>
 
+        <section className="nxmp-ai">
+          <div>
+            <div className="nxmp-ai-title">Impulsa ventas con IA</div>
+            <div className="nxmp-ai-text">Consulta precios recomendados, mejora tus descripciones y descubre que elementos potencian tus publicaciones.</div>
+          </div>
+          <button className="nxmp-ai-btn" onClick={() => setShowChat(true)}>Hablar con Cardel</button>
+        </section>
+
         <div className="nxmp-layout">
           {/* Sidebar filtros */}
           <aside className="nxmp-sidebar">
@@ -606,6 +665,7 @@ function MyProducts() {
                         </div>
                         <div className="nxmp-card-body">
                           <div className="nxmp-card-cond">{p.condicion || 'NUEVO'}</div>
+                          <div className="nxmp-card-cat">{getCategoryLabel(p.categoria)}</div>
                           <div className="nxmp-card-name">{p.titulo}</div>
                           <div className="nxmp-card-price">${(parseFloat(p.precio) || 0).toFixed(2)}</div>
                           <div className="nxmp-card-stars">{stars(p.promedioCalificacion)}</div>
@@ -642,6 +702,7 @@ function MyProducts() {
         loading={deleteLoading}
       />
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      {showChat && <ChatWidget onClose={() => setShowChat(false)} initialInput={aiPrefill} />}
     </div>
   );
 }
