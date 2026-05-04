@@ -100,22 +100,27 @@ const submitVerification = async (req, res) => {
   try {
     const userId = req.user.userId;
     // Set to pendiente
-    verificationMap.set(userId, 'pendiente');
+    // First, attempt immediate verification if user already provided required data
+    const already = await checkAndSetVerified(userId);
+    if (already) {
+      return res.json({ message: 'Usuario verificado correctamente', status: 'verificado' });
+    }
 
-    // Simulate async verification process (random result after delay)
+    // Not yet complete: set to pendiente and simulate async verification (keeps previous behaviour)
+    verificationMap.set(userId, 'pendiente');
     setTimeout(async () => {
       const result = Math.random() < 0.75 ? 'verificado' : 'rechazado';
-      verificationMap.set(userId, result);
-
-      // If verified, update persistent flag so profile shows verified state
       if (result === 'verificado') {
-        try {
-          await prisma.usuario.update({ where: { id: userId }, data: { esVendedorVerificado: true } });
-        } catch (_) { /* ignore DB errors silently */ }
+        // only set verified if criteria are satisfied at that time
+        const completedLater = await checkAndSetVerified(userId);
+        if (completedLater) verificationMap.set(userId, 'verificado');
+        else verificationMap.set(userId, 'pendiente');
+      } else {
+        verificationMap.set(userId, 'rechazado');
       }
-    }, 4000); // 4 seconds
+    }, 4000);
 
-    res.json({ message: 'Solicitud recibida. Estado: pendiente' });
+    res.json({ message: 'Solicitud recibida. Estado: pendiente', status: 'pendiente' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -128,9 +133,15 @@ const getVerification = async (req, res) => {
     const user = await prisma.usuario.findUnique({ where: { id: userId }, select: { esVendedorVerificado: true } });
 
     if (user?.esVendedorVerificado) {
+      // don't allow caching of verification status
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+      res.set('Pragma', 'no-cache');
       return res.json({ status: 'verificado' });
     }
 
+    // ensure clients always receive current status (avoid 304 responses)
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.set('Pragma', 'no-cache');
     const status = verificationMap.get(userId) || 'rechazado';
     res.json({ status });
   } catch (err) {
@@ -334,6 +345,47 @@ const getSellerDashboard = async (req, res) => {
 
 module.exports = { getMe, updateMe, submitVerification, getVerification };
 
+// Helper: check verification criteria and set esVendedorVerificado when satisfied
+const checkAndSetVerified = async (userId) => {
+  try {
+    const user = await prisma.usuario.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        esVendedorVerificado: true,
+        fotoPerfil: true,
+        perfil: { select: { documentoIdentidad: true, preferencias: true } },
+      },
+    });
+
+    if (!user) return false;
+    if (user.esVendedorVerificado) return true;
+
+    const docNumber = user.perfil?.documentoIdentidad || '';
+    const prefs = user.perfil?.preferencias || {};
+    const docImage = prefs?.verificationFiles?.docImage;
+    const hasPhoto = !!user.fotoPerfil;
+
+    const docValid = typeof docNumber === 'string' && /^\d{4,}$/.test(docNumber);
+
+    // Debug info for verification flow (non-sensitive): presence flags
+    try {
+      console.debug(`[verification] user=${userId} docPresent=${Boolean(docNumber)} docValid=${docValid} hasDocImage=${Boolean(docImage)} hasPhoto=${hasPhoto}`);
+    } catch (_) { /* ignore logging errors */ }
+
+    // Require a valid document number and at least one image: either document image or personal photo
+    if (docValid && (docImage || hasPhoto)) {
+      await prisma.usuario.update({ where: { id: userId }, data: { esVendedorVerificado: true } });
+      verificationMap.set(userId, 'verificado');
+      return true;
+    }
+
+    return false;
+  } catch (err) {
+    return false;
+  }
+};
+
 // POST /api/v1/users/me/documents
 const uploadToCloudinary = (buffer, folder) => new Promise((resolve, reject) => {
   const stream = cloudinary.uploader.upload_stream({ folder, resource_type: 'image' }, (error, result) => {
@@ -347,17 +399,23 @@ const uploadDocuments = async (req, res) => {
   try {
     const userId = req.user.userId;
 
-    // documentoIdentidad -> PerfilUsuario.documentoIdentidad
+    // documentoIdentidad (file) -> store file URL in perfil.preferencias.verificationFiles.docImage
     if (req.files && req.files.documentoIdentidad && req.files.documentoIdentidad[0]) {
       const file = req.files.documentoIdentidad[0];
       const result = await uploadToCloudinary(file.buffer, 'nexont/documents');
       const url = result.secure_url;
-      // upsert perfil
+
+      // merge into preferencias JSON
+      const perfil = await prisma.perfilUsuario.findUnique({ where: { usuarioId: userId } });
+      const prefs = perfil?.preferencias || {};
+      prefs.verificationFiles = prefs.verificationFiles || {};
+      prefs.verificationFiles.docImage = url;
       await prisma.perfilUsuario.upsert({
         where: { usuarioId: userId },
-        update: { documentoIdentidad: url },
-        create: { usuarioId: userId, documentoIdentidad: url },
+        update: { preferencias: prefs },
+        create: { usuarioId: userId, preferencias: prefs },
       });
+      try { console.info(`[verification] uploaded document image for user=${userId}`); } catch (_) {}
     }
 
     // fotoPersonal -> Usuario.fotoPerfil
@@ -366,7 +424,11 @@ const uploadDocuments = async (req, res) => {
       const result = await uploadToCloudinary(file.buffer, 'nexont/profiles');
       const url = result.secure_url;
       await prisma.usuario.update({ where: { id: userId }, data: { fotoPerfil: url } });
+      try { console.info(`[verification] uploaded personal photo for user=${userId}`); } catch (_) {}
     }
+
+    // After storing files, check if verification can be completed
+    await checkAndSetVerified(userId);
 
     res.json({ message: 'Documentos subidos correctamente' });
   } catch (err) {
@@ -381,24 +443,65 @@ module.exports.uploadDocuments = uploadDocuments;
 const submitVerificationForm = async (req, res) => {
   try {
     const userId = req.user.userId;
+    try { console.info(`[verification] submitVerificationForm called for user=${userId} payload=${JSON.stringify({ fullName: Boolean(req.body.fullName), documentNumber: req.body.documentNumber ? 'present' : 'missing', ciudad: Boolean(req.body.ciudad) })}`); } catch (_) {}
     const { fullName, documentNumber, ciudad } = req.body;
 
     if (!fullName || !documentNumber || !ciudad) {
       return res.status(400).json({ error: 'Todos los campos son requeridos' });
     }
 
+    // Validate document number: at least 4 digits
+    if (!/^\d{4,}$/.test(documentNumber)) {
+      return res.status(400).json({ error: 'El número de documento debe tener al menos 4 dígitos' });
+    }
     // Save fullName into Usuario.nombres (minimal change)
     await prisma.usuario.update({ where: { id: userId }, data: { nombres: fullName } });
 
-    // Upsert perfil with documentoIdentidad and ciudad
-    await prisma.perfilUsuario.upsert({
-      where: { usuarioId: userId },
-      create: { usuarioId: userId, documentoIdentidad: documentNumber, ciudad },
-      update: { documentoIdentidad: documentNumber, ciudad },
-    });
+    // Upsert perfil with documentoIdentidad and ciudad (use find -> update/create to get clearer errors)
+    try {
+      const existing = await prisma.perfilUsuario.findUnique({ where: { usuarioId: userId } });
+      if (existing) {
+        await prisma.perfilUsuario.update({ where: { id: existing.id }, data: { documentoIdentidad: documentNumber, ciudad } });
+      } else {
+        await prisma.perfilUsuario.create({ data: { usuarioId: userId, documentoIdentidad: documentNumber, ciudad } });
+      }
+      try { console.info(`[verification] saved verification form for user=${userId}`); } catch (_) {}
+    } catch (dbErr) {
+      try { console.error('[verification][error] saving perfilUsuario', dbErr && (dbErr.stack || dbErr.message || dbErr)); } catch (_) {}
 
-    res.json({ message: 'Formulario de verificación guardado correctamente' });
+      const msg = (dbErr && (dbErr.message || '')).toString();
+      // Workaround for Postgres 'cached plan must not change result type' - attempt raw SQL fallback
+      if (msg.includes('cached plan must not change result type')) {
+        try {
+          const uid = Number(userId);
+          const safeDoc = String(documentNumber).replace(/'/g, "''");
+          const safeCiudad = String(ciudad).replace(/'/g, "''");
+          const existingRows = await prisma.$queryRawUnsafe(`SELECT id FROM perfiles_usuarios WHERE "usuarioId" = ${uid} LIMIT 1;`);
+          if (existingRows && existingRows.length && existingRows[0].id) {
+            const id = existingRows[0].id;
+            await prisma.$executeRawUnsafe(`UPDATE perfiles_usuarios SET "documentoIdentidad" = '${safeDoc}', ciudad = '${safeCiudad}', "actualizadoEn" = now() WHERE id = ${id};`);
+          } else {
+            await prisma.$executeRawUnsafe(`INSERT INTO perfiles_usuarios ("usuarioId","documentoIdentidad","ciudad","creadoEn","actualizadoEn") VALUES (${uid}, '${safeDoc}', '${safeCiudad}', now(), now());`);
+          }
+          try { console.info(`[verification] fallback saved perfilUsuario for user=${uid}`); } catch (_) {}
+        } catch (fallbackErr) {
+          try { console.error('[verification][error] fallback saving perfilUsuario', fallbackErr && (fallbackErr.stack || fallbackErr.message || fallbackErr)); } catch (_) {}
+          return res.status(500).json({ error: 'Error guardando el perfil de verificación (fallback)', detail: fallbackErr.message });
+        }
+      } else {
+        return res.status(500).json({ error: 'Error guardando el perfil de verificación', detail: dbErr.message, stack: dbErr.stack });
+      }
+    }
+
+    // mark as pending and evaluate if verification can be completed
+    verificationMap.set(userId, 'pendiente');
+    const completed = await checkAndSetVerified(userId);
+
+    if (completed) return res.json({ message: 'Usuario verificado correctamente' });
+
+    res.json({ message: 'Formulario de verificación guardado correctamente. Estado: pendiente' });
   } catch (err) {
+    try { console.error('[verification][error] submitVerificationForm', err && (err.stack || err.message || err)); } catch (_) {}
     res.status(500).json({ error: err.message });
   }
 };

@@ -238,6 +238,7 @@ export default function Profile() {
   const [personalSelected, setPersonalSelected] = useState(false);
   const [verificationForm, setVerificationForm] = useState({ fullName: '', documentNumber: '', ciudad: '' });
   const [submittingVerificationForm, setSubmittingVerificationForm] = useState(false);
+  const [verificationFormError, setVerificationFormError] = useState('');
   const [verificationStatus, setVerificationStatus] = useState(null);
   const [verifying, setVerifying] = useState(false);
 
@@ -407,39 +408,15 @@ export default function Profile() {
                 </div>
                 <div>
                   <label className="pf-label">Número de documento</label>
-                  <input className="pf-input" value={verificationForm.documentNumber} onChange={e => setVerificationForm(f => ({ ...f, documentNumber: e.target.value }))} />
+                  <input className="pf-input" value={verificationForm.documentNumber} onChange={e => { setVerificationForm(f => ({ ...f, documentNumber: e.target.value })); setVerificationFormError(''); }} />
+                  {verificationFormError && <div className="pf-avatar-err" style={{ marginTop: 8 }}>{verificationFormError}</div>}
                 </div>
                 <div style={{ gridColumn: '1 / -1' }}>
                   <label className="pf-label">Ciudad</label>
                   <input className="pf-input" value={verificationForm.ciudad} onChange={e => setVerificationForm(f => ({ ...f, ciudad: e.target.value }))} />
                 </div>
               </div>
-              <div className="pf-actions" style={{ paddingTop: '0.75rem' }}>
-                <button
-                  className="pf-save"
-                  disabled={submittingVerificationForm}
-                  onClick={async () => {
-                    // simple required validation
-                    if (!verificationForm.fullName.trim() || !verificationForm.documentNumber.trim() || !verificationForm.ciudad.trim()) {
-                      showToast('Todos los campos son obligatorios');
-                      return;
-                    }
-                    try {
-                      setSubmittingVerificationForm(true);
-                      const { data } = await api.post('/users/me/verification/form', verificationForm);
-                      showToast(data.message || 'Formulario guardado');
-                      // Clear form after successful submit so values no longer appear
-                      setVerificationForm({ fullName: '', documentNumber: '', ciudad: '' });
-                    } catch (err) {
-                      showToast(err.response?.data?.error || 'Error al enviar el formulario');
-                    } finally {
-                      setSubmittingVerificationForm(false);
-                    }
-                  }}
-                >
-                  {submittingVerificationForm ? 'Enviando…' : 'Enviar formulario'}
-                </button>
-              </div>
+              {/* single action: enviar verificación será el botón único más abajo */}
             </div>
             <button className="pf-avatar-btn" onClick={() => fileRef.current?.click()}>
               Elegir imagen
@@ -448,36 +425,10 @@ export default function Profile() {
             {/* Document upload (cedula + foto personal) */}
             <div style={{ marginTop: '0.6rem' }}>
               <div className="pf-avatar-label">Subir documento y foto</div>
-              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                <button className="pf-avatar-btn" onClick={() => docRef.current?.click()} disabled={uploadingDocs}>Seleccionar cédula {docSelected && <span style={{ color: '#16A34A', marginLeft: 8 }}>✓</span>}</button>
-                <button className="pf-avatar-btn" onClick={() => personalRef.current?.click()} disabled={uploadingDocs}>Seleccionar foto personal {personalSelected && <span style={{ color: '#16A34A', marginLeft: 8 }}>✓</span>}</button>
-                <button
-                  className="pf-avatar-btn"
-                  onClick={async () => {
-                    try {
-                      setUploadingDocs(true);
-                      const fd = new FormData();
-                      if (docRef.current?.files?.[0]) fd.append('documentoIdentidad', docRef.current.files[0]);
-                      if (personalRef.current?.files?.[0]) fd.append('fotoPersonal', personalRef.current.files[0]);
-                      const { data } = await api.post('/users/me/documents', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
-                      showToast(data.message || 'Documentos subidos correctamente');
-                      // Refresh user data to update preview
-                      try {
-                        const res = await api.get('/users/me');
-                        if (res.data?.user?.fotoPerfil) setPreview(res.data.user.fotoPerfil);
-                      } catch (_) {}
-                      // clear file inputs
-                      if (docRef.current) docRef.current.value = '';
-                      if (personalRef.current) personalRef.current.value = '';
-                    } catch (err) {
-                      showToast(err.response?.data?.error || 'Error al subir');
-                    } finally { setUploadingDocs(false); }
-                  }}
-                  disabled={uploadingDocs}
-                >
-                  {uploadingDocs ? 'Subiendo…' : 'Subir'}
-                </button>
-              </div>
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                  <button className="pf-avatar-btn" onClick={() => docRef.current?.click()} disabled={uploadingDocs}>Seleccionar cédula {docSelected && <span style={{ color: '#16A34A', marginLeft: 8 }}>✓</span>}</button>
+                  <button className="pf-avatar-btn" onClick={() => personalRef.current?.click()} disabled={uploadingDocs}>Seleccionar foto personal {personalSelected && <span style={{ color: '#16A34A', marginLeft: 8 }}>✓</span>}</button>
+                </div>
               <input ref={docRef} type="file" accept="image/jpeg,image/png" style={{ display:'none' }} onChange={(e) => setDocSelected(!!e.target.files?.[0])} />
               <input ref={personalRef} type="file" accept="image/jpeg,image/png" style={{ display:'none' }} onChange={(e) => setPersonalSelected(!!e.target.files?.[0])} />
             </div>
@@ -490,20 +441,71 @@ export default function Profile() {
                 {verificationStatus === 'rechazado' && 'Estado: rechazado'}
                 {verificationStatus === null && 'Estado: rechazado'}
               </div>
-              <div>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                 <button
-                  className="pf-avatar-btn"
+                  className="pf-save"
                   onClick={async () => {
+                    // single combined submit: form -> files -> request verification
+                    if (!verificationForm.fullName.trim() || !verificationForm.documentNumber.trim() || !verificationForm.ciudad.trim()) {
+                      showToast('Completa todos los campos del formulario antes de enviar');
+                      return;
+                    }
+                    if (!/^\d{4,}$/.test(verificationForm.documentNumber.trim())) {
+                      setVerificationFormError('El número de documento debe tener al menos 4 dígitos');
+                      return;
+                    }
+
+                    const hasDoc = !!docRef.current?.files?.[0];
+                    const hasPersonal = !!personalRef.current?.files?.[0];
+                    if (!hasDoc && !hasPersonal && !preview) {
+                      // if no new files and no existing profile photo
+                      showToast('Adjunta al menos una imagen: cédula o foto personal (JPG/PNG)');
+                      return;
+                    }
+
                     try {
-                      setVerifying(true);
-                      await api.post('/users/me/verification');
-                      setVerificationStatus('pendiente');
+                      setSubmittingVerificationForm(true);
+                      // submit form
+                      await api.post('/users/me/verification/form', verificationForm);
+                      // upload files if present
+                      if (hasDoc || hasPersonal) {
+                        setUploadingDocs(true);
+                        const fd = new FormData();
+                        if (hasDoc) fd.append('documentoIdentidad', docRef.current.files[0]);
+                        if (hasPersonal) fd.append('fotoPersonal', personalRef.current.files[0]);
+                        await api.post('/users/me/documents', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+                      }
+                      // request verification
+                      const { data } = await api.post('/users/me/verification');
+                      if (data?.status === 'verificado') {
+                        // refresh user and navigate to dashboard
+                        try { const res = await api.get('/users/me'); const updated = res.data?.user; if (updated) { localStorage.setItem('user', JSON.stringify({ ...(JSON.parse(localStorage.getItem('user')||'{}')), ...updated })); window.dispatchEvent(new Event('user-updated')); } } catch(_){}
+                        setVerificationStatus('verificado');
+                        showToast('¡Verificado! Redirigiendo al dashboard...');
+                        setTimeout(() => navigate('/dashboard'), 600);
+                      } else {
+                        setVerificationStatus('pendiente');
+                        showToast('Solicitud enviada. Estado: pendiente');
+                        // refresh verification status
+                        fetchVerification();
+                        // navigate user to profile to finish if needed
+                        // (we stay on profile so they can see status)
+                      }
+
+                      // cleanup
+                      setVerificationForm({ fullName: '', documentNumber: '', ciudad: '' });
+                      if (docRef.current) docRef.current.value = '';
+                      if (personalRef.current) personalRef.current.value = '';
+                      setDocSelected(false); setPersonalSelected(false);
                     } catch (err) {
-                      // ignore
-                    } finally { setVerifying(false); }
+                      showToast(err.response?.data?.error || 'Error al enviar verificación');
+                    } finally {
+                      setSubmittingVerificationForm(false); setUploadingDocs(false);
+                    }
                   }}
-                  disabled={verificationStatus === 'pendiente' || verifying || verificationStatus === 'verificado'}>
-                  {verificationStatus === 'verificado' ? 'Verificado' : (verificationStatus === 'pendiente' ? 'Solicitado…' : 'Solicitar verificación')}
+                  disabled={verificationStatus === 'verificado' || submittingVerificationForm}
+                >
+                  {submittingVerificationForm ? 'Enviando…' : (verificationStatus === 'verificado' ? 'Verificado' : 'Enviar verificación')}
                 </button>
               </div>
             </div>

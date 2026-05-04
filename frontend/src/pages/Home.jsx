@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/api';
 import { useHybridCart } from '../hooks/useHybridCart';
@@ -574,6 +574,17 @@ function Home() {
   const [recentProducts, setRecent]     = useState([]);
   const [recentLoading, setRecentLoad]  = useState(true);
   const [ddOpen, setDdOpen]             = useState(false);
+  const [showVerificationForm, setShowVerificationForm] = useState(false);
+  const [verificationForm, setVerificationForm] = useState({ fullName: '', documentNumber: '', ciudad: '' });
+  const [verificationFormError, setVerificationFormError] = useState('');
+  const docRef = useRef(null);
+  const personalRef = useRef(null);
+  const [docSelected, setDocSelected] = useState(false);
+  const [personalSelected, setPersonalSelected] = useState(false);
+  const [submittingVerificationForm, setSubmittingVerificationForm] = useState(false);
+  const [uploadingDocs, setUploadingDocs] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [toast, setToast] = useState('');
   const [searchTerm, setSearch]         = useState('');
   const [sortBy, setSortBy]             = useState('newest');
   const [viewMode, setView]             = useState('grid');
@@ -717,7 +728,32 @@ function Home() {
                   )}
                   {!user.esVendedorVerificado && (
                     <div className="nx-dd-sec">
-                      <div className="nx-dd-item highlight">⭐ Verificarse como vendedor</div>
+                      <div
+                        className="nx-dd-item highlight"
+                        style={{ cursor: 'pointer' }}
+                        onClick={async () => {
+                          try {
+                            // trigger verification endpoint which now attempts immediate verification
+                            const { data } = await api.post('/users/me/verification');
+                            if (data?.status === 'verificado') {
+                              // refresh user
+                              try { const res = await api.get('/users/me'); const updated = res.data?.user; if (updated) { localStorage.setItem('user', JSON.stringify({ ...(JSON.parse(localStorage.getItem('user')||'{}')), ...updated })); window.dispatchEvent(new Event('user-updated')); } } catch (_) {}
+                              // navigate to dashboard
+                              navigate('/dashboard');
+                            } else {
+                              // show pending toast and optionally poll (frontend already polls on profile)
+                              // just show toast for now
+                              // open profile so user can complete missing steps
+                              setDdOpen(false);
+                              navigate('/profile');
+                            }
+                          } catch (err) {
+                            // on error, open profile
+                            setDdOpen(false);
+                            navigate('/profile');
+                          }
+                        }}
+                      >⭐ Verificarse como vendedor</div>
                     </div>
                   )}
                   <div className="nx-dd-sec">
