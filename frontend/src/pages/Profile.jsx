@@ -222,6 +222,8 @@ export default function Profile() {
   const navigate = useNavigate();
   const { theme } = useTheme();
   const fileRef = useRef(null);
+  const docRef = useRef(null);
+  const personalRef = useRef(null);
 
   const [form, setForm] = useState({ nombres: '', apellidos: '', correo: '' });
   const [preview, setPreview]       = useState(null);   // URL preview local
@@ -231,6 +233,13 @@ export default function Profile() {
   const [saving, setSaving]         = useState(false);
   const [toast, setToast]           = useState('');
   const [loading, setLoading]       = useState(true);
+  const [uploadingDocs, setUploadingDocs] = useState(false);
+  const [docSelected, setDocSelected] = useState(false);
+  const [personalSelected, setPersonalSelected] = useState(false);
+  const [verificationForm, setVerificationForm] = useState({ fullName: '', documentNumber: '', ciudad: '' });
+  const [submittingVerificationForm, setSubmittingVerificationForm] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState(null);
+  const [verifying, setVerifying] = useState(false);
 
   // Cargar datos actuales del usuario
   useEffect(() => {
@@ -239,10 +248,30 @@ export default function Profile() {
         const u = data.user;
         setForm({ nombres: u.nombres || '', apellidos: u.apellidos || '', correo: u.correo || '' });
         if (u.fotoPerfil) setPreview(u.fotoPerfil);
+        // load verification status
+        fetchVerification();
       })
       .catch(() => navigate('/login'))
       .finally(() => setLoading(false));
   }, [navigate]);
+
+  const fetchVerification = async () => {
+    try {
+      const { data } = await api.get('/users/me/verification');
+      setVerificationStatus(data.status);
+    } catch (err) {
+      // ignore
+    }
+  };
+
+  // Polling helper while pending
+  useEffect(() => {
+    let timer;
+    if (verificationStatus === 'pendiente') {
+      timer = setInterval(fetchVerification, 2000);
+    }
+    return () => clearInterval(timer);
+  }, [verificationStatus]);
 
   const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
@@ -368,10 +397,116 @@ export default function Profile() {
               JPG, PNG o WEBP · Máximo 5 MB<br />
               {photoFile && <span style={{ color: 'var(--amber)' }}>Imagen seleccionada — guarda para aplicar</span>}
             </div>
+            {/* Vendor verification form (N26) */}
+            <div style={{ marginTop: '1rem', borderTop: '1px solid var(--border)', paddingTop: '1rem' }}>
+              <div className="pf-avatar-label">Formulario de verificación</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem', marginTop: '0.6rem' }}>
+                <div>
+                  <label className="pf-label">Nombre completo</label>
+                  <input className="pf-input" value={verificationForm.fullName} onChange={e => setVerificationForm(f => ({ ...f, fullName: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="pf-label">Número de documento</label>
+                  <input className="pf-input" value={verificationForm.documentNumber} onChange={e => setVerificationForm(f => ({ ...f, documentNumber: e.target.value }))} />
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label className="pf-label">Ciudad</label>
+                  <input className="pf-input" value={verificationForm.ciudad} onChange={e => setVerificationForm(f => ({ ...f, ciudad: e.target.value }))} />
+                </div>
+              </div>
+              <div className="pf-actions" style={{ paddingTop: '0.75rem' }}>
+                <button
+                  className="pf-save"
+                  disabled={submittingVerificationForm}
+                  onClick={async () => {
+                    // simple required validation
+                    if (!verificationForm.fullName.trim() || !verificationForm.documentNumber.trim() || !verificationForm.ciudad.trim()) {
+                      showToast('Todos los campos son obligatorios');
+                      return;
+                    }
+                    try {
+                      setSubmittingVerificationForm(true);
+                      const { data } = await api.post('/users/me/verification/form', verificationForm);
+                      showToast(data.message || 'Formulario guardado');
+                      // Clear form after successful submit so values no longer appear
+                      setVerificationForm({ fullName: '', documentNumber: '', ciudad: '' });
+                    } catch (err) {
+                      showToast(err.response?.data?.error || 'Error al enviar el formulario');
+                    } finally {
+                      setSubmittingVerificationForm(false);
+                    }
+                  }}
+                >
+                  {submittingVerificationForm ? 'Enviando…' : 'Enviar formulario'}
+                </button>
+              </div>
+            </div>
             <button className="pf-avatar-btn" onClick={() => fileRef.current?.click()}>
               Elegir imagen
             </button>
             {photoErr && <div className="pf-avatar-err">{photoErr}</div>}
+            {/* Document upload (cedula + foto personal) */}
+            <div style={{ marginTop: '0.6rem' }}>
+              <div className="pf-avatar-label">Subir documento y foto</div>
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                <button className="pf-avatar-btn" onClick={() => docRef.current?.click()} disabled={uploadingDocs}>Seleccionar cédula {docSelected && <span style={{ color: '#16A34A', marginLeft: 8 }}>✓</span>}</button>
+                <button className="pf-avatar-btn" onClick={() => personalRef.current?.click()} disabled={uploadingDocs}>Seleccionar foto personal {personalSelected && <span style={{ color: '#16A34A', marginLeft: 8 }}>✓</span>}</button>
+                <button
+                  className="pf-avatar-btn"
+                  onClick={async () => {
+                    try {
+                      setUploadingDocs(true);
+                      const fd = new FormData();
+                      if (docRef.current?.files?.[0]) fd.append('documentoIdentidad', docRef.current.files[0]);
+                      if (personalRef.current?.files?.[0]) fd.append('fotoPersonal', personalRef.current.files[0]);
+                      const { data } = await api.post('/users/me/documents', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+                      showToast(data.message || 'Documentos subidos correctamente');
+                      // Refresh user data to update preview
+                      try {
+                        const res = await api.get('/users/me');
+                        if (res.data?.user?.fotoPerfil) setPreview(res.data.user.fotoPerfil);
+                      } catch (_) {}
+                      // clear file inputs
+                      if (docRef.current) docRef.current.value = '';
+                      if (personalRef.current) personalRef.current.value = '';
+                    } catch (err) {
+                      showToast(err.response?.data?.error || 'Error al subir');
+                    } finally { setUploadingDocs(false); }
+                  }}
+                  disabled={uploadingDocs}
+                >
+                  {uploadingDocs ? 'Subiendo…' : 'Subir'}
+                </button>
+              </div>
+              <input ref={docRef} type="file" accept="image/jpeg,image/png" style={{ display:'none' }} onChange={(e) => setDocSelected(!!e.target.files?.[0])} />
+              <input ref={personalRef} type="file" accept="image/jpeg,image/png" style={{ display:'none' }} onChange={(e) => setPersonalSelected(!!e.target.files?.[0])} />
+            </div>
+            {/* Verification status block */}
+            <div style={{ marginTop: '0.6rem' }}>
+              <div className="pf-avatar-label">Verificación de vendedor</div>
+              <div style={{ fontSize: '0.85rem', color: 'var(--ink-soft)', marginBottom: '0.5rem' }}>
+                {verificationStatus === 'verificado' && 'Estado: verificado'}
+                {verificationStatus === 'pendiente' && 'Estado: pendiente — procesando...'}
+                {verificationStatus === 'rechazado' && 'Estado: rechazado'}
+                {verificationStatus === null && 'Estado: rechazado'}
+              </div>
+              <div>
+                <button
+                  className="pf-avatar-btn"
+                  onClick={async () => {
+                    try {
+                      setVerifying(true);
+                      await api.post('/users/me/verification');
+                      setVerificationStatus('pendiente');
+                    } catch (err) {
+                      // ignore
+                    } finally { setVerifying(false); }
+                  }}
+                  disabled={verificationStatus === 'pendiente' || verifying || verificationStatus === 'verificado'}>
+                  {verificationStatus === 'verificado' ? 'Verificado' : (verificationStatus === 'pendiente' ? 'Solicitado…' : 'Solicitar verificación')}
+                </button>
+              </div>
+            </div>
           </div>
 
           <input
