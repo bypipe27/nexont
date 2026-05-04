@@ -460,6 +460,16 @@ function Dashboard() {
     };
   }, [fetchDashboard]);
 
+  // If user is not verified as vendor, redirect them to profile to complete verification
+  useEffect(() => {
+    if (!loading) {
+      const seller = dashboard?.seller;
+      if (seller && !seller.esVendedorVerificado) {
+        navigate('/profile');
+      }
+    }
+  }, [loading, dashboard, navigate]);
+
   const handleLogout = async () => {
     try {
       await api.post('/auth/logout');
