@@ -21,6 +21,9 @@ const docsUpload = multer({ storage, fileFilter: docsFileFilter, limits: { fileS
 // GET /api/v1/users/me
 router.get('/me', usersController.getMe);
 
+// GET /api/v1/users/me/dashboard
+router.get('/me/dashboard', usersController.getSellerDashboard);
+
 // PUT /api/v1/users/me
 router.put('/me', upload.single('fotoPerfil'), usersController.updateMe);
 

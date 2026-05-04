@@ -682,7 +682,10 @@ function Home() {
           )}
           <button className="nx-icon-btn" onClick={() => scrollTo('catalogo')} title="Catálogo">⊞</button>
           {token && user?.esVendedorVerificado && (
-            <button className="nx-nav-cta" onClick={() => navigate('/my-products')}>+ Publicar</button>
+            <>
+              <button className="nx-btn-outline" style={{ height: 38, fontSize: '0.75rem' }} onClick={() => navigate('/dashboard')}>Dashboard</button>
+              <button className="nx-nav-cta" onClick={() => navigate('/my-products')}>+ Publicar</button>
+            </>
           )}
           {token && user ? (
             <div className="nx-user-wrap">
@@ -707,6 +710,7 @@ function Home() {
                   {user.esVendedorVerificado && (
                     <div className="nx-dd-sec">
                       <div className="nx-dd-lbl">Vendedor</div>
+                      <div className="nx-dd-item" onClick={() => { setDdOpen(false); navigate('/dashboard'); }}>📊 Mi dashboard</div>
                       <div className="nx-dd-item" onClick={() => { setDdOpen(false); navigate('/my-products'); }}>🏪 Mis productos</div>
                       <div className="nx-dd-item" onClick={() => { setDdOpen(false); navigate('/my-products'); }}>➕ Agregar producto</div>
                     </div>

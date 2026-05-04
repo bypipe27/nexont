@@ -567,6 +567,7 @@ function MyProducts() {
                 </div>
                 <div className="nxmp-dd-sec">
                   <div className="nxmp-dd-lbl">Vendedor</div>
+                  <div className="nxmp-dd-item" onClick={() => navigate('/dashboard')}>📊 Mi dashboard</div>
                   <div className="nxmp-dd-item" onClick={() => setShowModal(true)}>➕ Nuevo producto</div>
                   <div className="nxmp-dd-item" onClick={() => navigate('/')}>🏪 Ver catálogo</div>
                 </div>
