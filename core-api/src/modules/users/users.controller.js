@@ -138,6 +138,200 @@ const getVerification = async (req, res) => {
   }
 };
 
+// GET /api/v1/users/me/dashboard
+const getSellerDashboard = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const seller = await prisma.usuario.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        correo: true,
+        nombres: true,
+        apellidos: true,
+        fotoPerfil: true,
+        esVendedorVerificado: true,
+        esCorreoVerificado: true,
+        creadoEn: true,
+        perfil: {
+          select: {
+            ciudad: true,
+            pais: true,
+          },
+        },
+      },
+    });
+
+    if (!seller) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+    const [products, productStats, soldSummary, recentSales, salesAggregate, soldProducts] = await Promise.all([
+      prisma.producto.findMany({
+        where: { vendedorId: userId },
+        select: {
+          id: true,
+          titulo: true,
+          precio: true,
+          stock: true,
+          estaActivo: true,
+          condicion: true,
+          categoria: true,
+          promedioCalificacion: true,
+          totalResenas: true,
+          creadoEn: true,
+          imagenes: {
+            where: { esPrincipal: true },
+            select: { url: true },
+            take: 1,
+          },
+        },
+        orderBy: { creadoEn: 'desc' },
+      }),
+      prisma.producto.aggregate({
+        where: { vendedorId: userId },
+        _count: { _all: true },
+        _avg: { promedioCalificacion: true },
+        _sum: { totalResenas: true },
+      }),
+      Promise.all([
+        prisma.pedido.count({
+          where: {
+            estado: 'PENDIENTE',
+            detalles: { some: { producto: { vendedorId: userId } } },
+          },
+        }),
+        prisma.pedido.count({
+          where: {
+            estado: 'CONFIRMADO',
+            detalles: { some: { producto: { vendedorId: userId } } },
+          },
+        }),
+        prisma.pedido.count({
+          where: {
+            estado: 'ENTREGADO',
+            detalles: { some: { producto: { vendedorId: userId } } },
+          },
+        }),
+        prisma.pedido.count({
+          where: {
+            estado: { in: ['PENDIENTE', 'CONFIRMADO', 'ENTREGADO'] },
+            detalles: { some: { producto: { vendedorId: userId } } },
+          },
+        }),
+      ]),
+      prisma.detallePedido.findMany({
+        where: {
+          pedido: { estado: { not: 'CANCELADO' } },
+          producto: { vendedorId: userId },
+        },
+        select: {
+          id: true,
+          cantidad: true,
+          subtotal: true,
+          pedido: {
+            select: {
+              id: true,
+              estado: true,
+              creadoEn: true,
+              usuario: {
+                select: {
+                  nombres: true,
+                  apellidos: true,
+                },
+              },
+            },
+          },
+          producto: {
+            select: {
+              id: true,
+              titulo: true,
+              imagenes: {
+                where: { esPrincipal: true },
+                select: { url: true },
+                take: 1,
+              },
+            },
+          },
+        },
+        orderBy: { id: 'desc' },
+        take: 6,
+      }),
+      prisma.detallePedido.aggregate({
+        where: {
+          pedido: { estado: { not: 'CANCELADO' } },
+          producto: { vendedorId: userId },
+        },
+        _sum: { subtotal: true, cantidad: true },
+        _count: { _all: true },
+      }),
+      prisma.detallePedido.findMany({
+        where: {
+          pedido: { estado: { not: 'CANCELADO' } },
+          producto: { vendedorId: userId },
+        },
+        select: { productoId: true },
+        distinct: ['productoId'],
+      }),
+    ]);
+
+    const [pendingOrders, confirmedOrders, deliveredOrders, totalOrders] = soldSummary;
+    const activeProducts = products.filter((product) => product.estaActivo);
+    const outOfStockProducts = activeProducts.filter((product) => product.stock === 0).length;
+    const lowStockProducts = activeProducts.filter((product) => product.stock > 0 && product.stock <= 3).length;
+
+    const recentProducts = products.slice(0, 6).map((product) => ({
+      id: product.id,
+      titulo: product.titulo,
+      precio: Number(product.precio),
+      stock: product.stock,
+      condicion: product.condicion,
+      categoria: product.categoria,
+      promedioCalificacion: product.promedioCalificacion || 0,
+      totalResenas: product.totalResenas || 0,
+      creadoEn: product.creadoEn,
+      imagenPrincipal: product.imagenes[0]?.url || null,
+    }));
+
+    const recentSalesMapped = recentSales.map((sale) => ({
+      id: sale.id,
+      orderId: sale.pedido.id,
+      orderStatus: sale.pedido.estado,
+      quantity: sale.cantidad,
+      subtotal: Number(sale.subtotal),
+      createdAt: sale.pedido.creadoEn,
+      buyerName: `${sale.pedido.usuario.nombres || ''} ${sale.pedido.usuario.apellidos || ''}`.trim(),
+      product: {
+        id: sale.producto.id,
+        titulo: sale.producto.titulo,
+        imagenPrincipal: sale.producto.imagenes[0]?.url || null,
+      },
+    }));
+
+    res.json({
+      seller,
+      summary: {
+        totalProducts: productStats._count._all || 0,
+        activeProducts: activeProducts.length,
+        outOfStockProducts,
+        lowStockProducts,
+        averageRating: Number(productStats._avg.promedioCalificacion || 0),
+        totalReviews: productStats._sum.totalResenas || 0,
+        totalOrders,
+        pendingOrders,
+        confirmedOrders,
+        deliveredOrders,
+        soldProducts: soldProducts.length,
+        totalSales: Number(salesAggregate._sum.subtotal || 0),
+        totalUnitsSold: salesAggregate._sum.cantidad || 0,
+      },
+      recentProducts,
+      recentSales: recentSalesMapped,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = { getMe, updateMe, submitVerification, getVerification };
 
 // POST /api/v1/users/me/documents
@@ -210,3 +404,4 @@ const submitVerificationForm = async (req, res) => {
 };
 
 module.exports.submitVerificationForm = submitVerificationForm;
+module.exports.getSellerDashboard = getSellerDashboard;
