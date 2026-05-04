@@ -269,7 +269,7 @@ export default function Profile() {
   useEffect(() => {
     let timer;
     if (verificationStatus === 'pendiente') {
-      timer = setInterval(fetchVerification, 2000);
+      timer = setInterval(fetchVerification, 30000);
     }
     return () => clearInterval(timer);
   }, [verificationStatus]);
