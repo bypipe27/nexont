@@ -7,7 +7,192 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─── ENUMERACIONES ───────────────────────────────────────────────────────────
+model Usuario {
+  id                   Int             @id @default(autoincrement())
+  correo               String          @unique
+  contrasena           String
+  nombres              String
+  apellidos            String
+  telefono             String?
+  direccionPrincipal   String?
+  esCorreoVerificado   Boolean         @default(false)
+  tokenVerificacion    String?
+  verificacionExpira   DateTime?
+  esActivo             Boolean         @default(true)
+  esVendedorVerificado Boolean         @default(false)
+  esAdmin              Boolean         @default(false)
+  creadoEn             DateTime        @default(now())
+  actualizadoEn        DateTime        @updatedAt
+  eventos              EventoUsuario[]
+  interaccionesIA      InteraccionIA[]
+  itemsCarrito         ItemCarrito[]
+  pedidos              Pedido[]
+  perfil               PerfilUsuario?
+  productos            Producto[]
+  resenas              Resena[]
+
+  @@map("usuarios")
+}
+
+model PerfilUsuario {
+  id                 Int       @id @default(autoincrement())
+  usuarioId          Int       @unique
+  documentoIdentidad String?
+  fechaNacimiento    DateTime?
+  genero             String?
+  ciudad             String?
+  pais               String?
+  preferencias       Json?
+  notasAnalitica     String?
+  creadoEn           DateTime  @default(now())
+  actualizadoEn      DateTime  @updatedAt
+  usuario            Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("perfiles_usuarios")
+}
+
+model Producto {
+  id                   Int               @id @default(autoincrement())
+  titulo               String
+  descripcion          String?
+  precio               Decimal           @db.Decimal(10, 2)
+  stock                Int               @default(0)
+  condicion            CondicionProducto @default(NUEVO)
+  estaActivo           Boolean           @default(true)
+  vendedorId           Int
+  promedioCalificacion Float?            @default(0)
+  totalResenas         Int               @default(0)
+  etiquetas            String[]
+  metadatos            Json?
+  embeddingTexto       String?
+  creadoEn             DateTime          @default(now())
+  actualizadoEn        DateTime          @updatedAt
+  categoria            CategoriaProducto @default(SERVICIOS_OTROS)
+  itemsCarrito         ItemCarrito[]
+  detallesPedido       DetallePedido[]
+  vendedor             Usuario           @relation(fields: [vendedorId], references: [id])
+  imagenes             ProductoImagen[]
+  resenas              Resena[]
+
+  @@map("productos")
+}
+
+model ProductoImagen {
+  id          Int      @id @default(autoincrement())
+  productoId  Int
+  url         String
+  esPrincipal Boolean  @default(false)
+  orden       Int      @default(0)
+  creadoEn    DateTime @default(now())
+  producto    Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+
+  @@map("productos_imagenes")
+}
+
+model ItemCarrito {
+  id            Int      @id @default(autoincrement())
+  usuarioId     Int
+  productoId    Int
+  cantidad      Int      @default(1)
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+  producto      Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  usuario       Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, productoId])
+  @@map("items_carrito")
+}
+
+model Pedido {
+  id            Int             @id @default(autoincrement())
+  usuarioId     Int
+  estado        EstadoPedido    @default(PENDIENTE)
+  metodoPago    MetodoPago      @default(EFECTIVO)
+  total         Decimal         @db.Decimal(10, 2)
+  notas         String?
+  creadoEn      DateTime        @default(now())
+  actualizadoEn DateTime        @updatedAt
+  factura       Factura?
+  usuario       Usuario         @relation(fields: [usuarioId], references: [id])
+  detalles      DetallePedido[]
+
+  @@map("pedidos")
+}
+
+model DetallePedido {
+  id             Int      @id @default(autoincrement())
+  pedidoId       Int
+  productoId     Int
+  cantidad       Int
+  precioUnitario Decimal  @db.Decimal(10, 2)
+  subtotal       Decimal  @db.Decimal(10, 2)
+  pedido         Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+  producto       Producto @relation(fields: [productoId], references: [id])
+
+  @@map("pedidos_detalles")
+}
+
+model Factura {
+  id            Int        @id @default(autoincrement())
+  numeroFactura String     @unique
+  pedidoId      Int        @unique
+  usuarioId     Int
+  total         Decimal    @db.Decimal(10, 2)
+  metodoPago    MetodoPago
+  emitidaEn     DateTime   @default(now())
+  pedido        Pedido     @relation(fields: [pedidoId], references: [id])
+
+  @@map("facturas")
+}
+
+model Resena {
+  id           Int      @id @default(autoincrement())
+  usuarioId    Int
+  productoId   Int
+  calificacion Int      @default(5)
+  comentario   String?
+  sentimiento  String?
+  metadatos    Json?
+  creadoEn     DateTime @default(now())
+  producto     Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+  usuario      Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, productoId])
+  @@map("resenas")
+}
+
+model EventoUsuario {
+  id             Int                @id @default(autoincrement())
+  usuarioId      Int?
+  tipo           TipoEventoUsuario
+  descripcion    String?
+  referenciaId   Int?
+  referenciaTipo String?
+  origen         CanalInteraccionIA @default(DASHBOARD)
+  metadatos      Json?
+  registradoEn   DateTime           @default(now())
+  usuario        Usuario?           @relation(fields: [usuarioId], references: [id])
+
+  @@index([tipo, registradoEn])
+  @@map("eventos_usuario")
+}
+
+model InteraccionIA {
+  id                 Int                @id @default(autoincrement())
+  usuarioId          Int?
+  canal              CanalInteraccionIA @default(CHATBOT)
+  consulta           String
+  respuesta          String?
+  intencionDetectada String?
+  confianza          Float?
+  tokensConsumidos   Int?
+  metadatos          Json?
+  creadoEn           DateTime           @default(now())
+  usuario            Usuario?           @relation(fields: [usuarioId], references: [id])
+
+  @@index([canal, creadoEn])
+  @@map("interacciones_ia")
+}
 
 enum EstadoPedido {
   PENDIENTE
@@ -29,7 +214,18 @@ enum CondicionProducto {
   REACONDICIONADO
 }
 
-
+enum CategoriaProducto {
+  ELECTRONICA_TECNOLOGIA
+  HOGAR_DECORACION
+  MODA_ACCESORIOS
+  SALUD_BELLEZA
+  DEPORTES_FITNESS
+  JUGUETES_BEBES
+  AUTOMOTRIZ
+  LIBROS_MUSICA_ENTRETENIMIENTO
+  ALIMENTOS_BEBIDAS
+  SERVICIOS_OTROS
+}
 
 enum TipoEventoUsuario {
   SESION_INICIADA
@@ -47,243 +243,4 @@ enum CanalInteraccionIA {
   ASISTENTE_VENTAS
   SOPORTE
   OTRO
-}
-
-// ─── USUARIOS Y PERFIL ───────────────────────────────────────────────────────
-
-model Usuario {
-  id                   Int              @id @default(autoincrement())
-  correo               String           @unique
-  contrasena           String
-  nombres              String
-  apellidos            String
-  telefono             String?
-  direccionPrincipal   String?
-  esCorreoVerificado   Boolean          @default(false)
-  tokenVerificacion    String?
-  verificacionExpira   DateTime?
-  esActivo             Boolean          @default(true)
-  esVendedorVerificado Boolean          @default(false)
-  esAdmin              Boolean          @default(false)
-  creadoEn             DateTime         @default(now())
-  actualizadoEn        DateTime         @updatedAt
-
-  perfil               PerfilUsuario?
-  productos            Producto[]
-  itemsCarrito         ItemCarrito[]
-  pedidos              Pedido[]
-  // ...existing code...
-  resenas              Resena[]
-  eventos              EventoUsuario[]
-  interaccionesIA      InteraccionIA[]
-
-  @@map("usuarios")
-}
-
-model PerfilUsuario {
-  id                Int      @id @default(autoincrement())
-  usuarioId         Int      @unique
-  documentoIdentidad String?
-  fechaNacimiento   DateTime?
-  genero            String?
-  ciudad            String?
-  pais              String?
-  preferencias      Json?
-  notasAnalitica    String?  @db.Text
-  creadoEn          DateTime @default(now())
-  actualizadoEn     DateTime @updatedAt
-
-  usuario           Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-
-  @@map("perfiles_usuarios")
-}
-
-// ─── PRODUCTOS Y CATALOGOS ───────────────────────────────────────────────────
-
-model Producto {
-  id                 Int                 @id @default(autoincrement())
-  titulo             String
-  descripcion        String?
-  precio             Decimal             @db.Decimal(10, 2)
-  stock              Int                 @default(0)
-  condicion          CondicionProducto   @default(NUEVO)
-  estaActivo         Boolean             @default(true)
-  vendedorId         Int
-  promedioCalificacion Float?            @default(0)
-  totalResenas       Int                 @default(0)
-  etiquetas          String[]
-  metadatos          Json?
-  embeddingTexto     String?             @db.Text
-  creadoEn           DateTime            @default(now())
-  actualizadoEn      DateTime            @updatedAt
-
-  vendedor           Usuario             @relation(fields: [vendedorId], references: [id])
-  categorias         ProductoCategoria[]
-  imagenes           ProductoImagen[]
-  // ...existing code...
-  itemsCarrito       ItemCarrito[]
-  detallesPedido     DetallePedido[]
-  resenas            Resena[]
-
-  @@map("productos")
-}
-
-model Categoria {
-  id          Int                 @id @default(autoincrement())
-  nombre      String              @unique
-  slug        String              @unique
-  descripcion String?
-  creadoEn    DateTime            @default(now())
-  actualizadoEn DateTime          @updatedAt
-
-  productos   ProductoCategoria[]
-
-  @@map("categorias")
-}
-
-model ProductoCategoria {
-  productoId Int
-  categoriaId Int
-  creadoEn   DateTime @default(now())
-
-  producto   Producto  @relation(fields: [productoId], references: [id], onDelete: Cascade)
-  categoria  Categoria @relation(fields: [categoriaId], references: [id], onDelete: Cascade)
-
-  @@id([productoId, categoriaId])
-  @@map("productos_categorias")
-}
-
-model ProductoImagen {
-  id         Int      @id @default(autoincrement())
-  productoId Int
-  url        String
-  esPrincipal Boolean @default(false)
-  orden      Int      @default(0)
-  creadoEn   DateTime @default(now())
-
-  producto   Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
-
-  @@map("productos_imagenes")
-}
-
-
-// ─── CARRITO ────────────────────────────────────────────────────────────────
-
-model ItemCarrito {
-  id          Int      @id @default(autoincrement())
-  usuarioId   Int
-  productoId  Int
-  cantidad    Int      @default(1)
-  creadoEn    DateTime @default(now())
-  actualizadoEn DateTime @updatedAt
-
-  usuario     Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  producto    Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
-
-  @@unique([usuarioId, productoId])
-  @@map("items_carrito")
-}
-
-// ─── PEDIDOS, PAGOS Y ENVIOS ────────────────────────────────────────────────
-
-model Pedido {
-  id            Int           @id @default(autoincrement())
-  usuarioId     Int
-  estado        EstadoPedido  @default(PENDIENTE)
-  metodoPago    MetodoPago    @default(EFECTIVO)
-  total         Decimal       @db.Decimal(10, 2)
-  notas         String?
-  creadoEn      DateTime      @default(now())
-  actualizadoEn DateTime      @updatedAt
-
-  usuario       Usuario       @relation(fields: [usuarioId], references: [id])
-  detalles      DetallePedido[]
-  factura       Factura?
-  // ...existing code...
-
-  @@map("pedidos")
-}
-
-model DetallePedido {
-  id             Int      @id @default(autoincrement())
-  pedidoId       Int
-  productoId     Int
-  cantidad       Int
-  precioUnitario Decimal  @db.Decimal(10, 2)
-  subtotal       Decimal  @db.Decimal(10, 2)
-
-  pedido         Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
-  producto       Producto @relation(fields: [productoId], references: [id])
-
-  @@map("pedidos_detalles")
-}
-
-model Factura {
-  id            Int         @id @default(autoincrement())
-  numeroFactura String      @unique
-  pedidoId      Int         @unique
-  usuarioId     Int
-  total         Decimal     @db.Decimal(10, 2)
-  metodoPago    MetodoPago
-  emitidaEn     DateTime    @default(now())
-
-  pedido        Pedido      @relation(fields: [pedidoId], references: [id])
-
-  @@map("facturas")
-}
-
-
-
-// ─── EXPERIENCIA DEL CLIENTE E IA ───────────────────────────────────────────
-
-model Resena {
-  id          Int      @id @default(autoincrement())
-  usuarioId   Int
-  productoId  Int
-  calificacion Int     @default(5)
-  comentario  String?
-  sentimiento String?
-  metadatos   Json?
-  creadoEn    DateTime @default(now())
-
-  usuario     Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  producto    Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
-
-  @@unique([usuarioId, productoId])
-  @@map("resenas")
-}
-
-model EventoUsuario {
-  id            Int               @id @default(autoincrement())
-  usuarioId     Int?
-  tipo          TipoEventoUsuario
-  descripcion   String?
-  referenciaId  Int?
-  referenciaTipo String?
-  origen        CanalInteraccionIA @default(DASHBOARD)
-  metadatos     Json?
-  registradoEn  DateTime          @default(now())
-
-  usuario       Usuario?          @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
-
-  @@index([tipo, registradoEn])
-  @@map("eventos_usuario")
-}
-
-model InteraccionIA {
-  id                Int               @id @default(autoincrement())
-  usuarioId         Int?
-  canal             CanalInteraccionIA @default(CHATBOT)
-  consulta          String            @db.Text
-  respuesta         String?           @db.Text
-  intencionDetectada String?
-  confianza         Float?
-  tokensConsumidos  Int?
-  metadatos         Json?
-  creadoEn          DateTime          @default(now())
-
-  usuario           Usuario?          @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
-
-  @@index([canal, creadoEn])
-  @@map("interacciones_ia")
 }

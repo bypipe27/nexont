@@ -32,6 +32,14 @@ const apiLimiter = rateLimit({
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => {
+    const path = req.originalUrl || req.url || '';
+    return (
+      path.startsWith('/api/v1/users/me/verification') ||
+      path.startsWith('/api/v1/users/me/documents') ||
+      path.startsWith('/api/v1/users/me/verification/form')
+    );
+  },
 });
 
 module.exports = { loginLimiter, registerLimiter, apiLimiter };
