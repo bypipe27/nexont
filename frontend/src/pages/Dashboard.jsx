@@ -37,6 +37,18 @@ const DASHBOARD_STYLES = `
   .sd-card-lbl { font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.16em; color: var(--ink-ghost); margin-bottom: 0.6rem; }
   .sd-card-val { font-family: 'Cormorant Garamond', serif; font-size: 2.1rem; font-weight: 200; line-height: 1; color: var(--ink); margin-bottom: 0.3rem; }
   .sd-card-note { font-size: 0.76rem; color: var(--ink-soft); line-height: 1.5; }
+  .sd-chart-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; }
+  .sd-chart { background: var(--white); border: 1px solid var(--border); padding: 1.2rem 1.25rem 1.35rem; }
+  .sd-chart-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+  .sd-chart-title { font-family: 'Cormorant Garamond', serif; font-size: 1.45rem; font-weight: 300; color: var(--ink); }
+  .sd-chart-sub { font-size: 0.72rem; color: var(--ink-soft); line-height: 1.5; }
+  .sd-chart-bars { display: grid; gap: 0.8rem; }
+  .sd-chart-row { display: grid; grid-template-columns: 98px 1fr 42px; gap: 0.75rem; align-items: center; }
+  .sd-chart-label { font-size: 0.72rem; color: var(--ink-mid); line-height: 1.25; }
+  .sd-chart-track { height: 10px; background: rgba(26,23,20,0.06); border: 1px solid rgba(26,23,20,0.06); overflow: hidden; }
+  .sd-chart-fill { height: 100%; background: linear-gradient(90deg, var(--ink), var(--amber)); min-width: 0; }
+  .sd-chart-value { text-align: right; font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; color: var(--ink); }
+  .sd-chart-empty { padding: 1.4rem 0; color: var(--ink-soft); font-size: 0.82rem; line-height: 1.7; }
   .sd-section { margin-top: 2rem; }
   .sd-section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; }
   .sd-section-title { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 200; color: var(--ink); }
@@ -160,6 +172,43 @@ function getConditionLabel(value) {
 function stars(value) {
   const count = Math.max(0, Math.min(5, Math.round(Number(value) || 0)));
   return '★'.repeat(count) + '☆'.repeat(5 - count);
+}
+
+function getBarWidth(value, maxValue) {
+  if (!maxValue) return '0%';
+  return `${Math.max(0, Math.round((value / maxValue) * 100))}%`;
+}
+
+function ChartCard({ title, subtitle, series, emptyText }) {
+  const maxValue = Math.max(0, ...series.map((item) => Number(item.value) || 0));
+  const hasData = series.some((item) => Number(item.value) > 0);
+
+  return (
+    <article className="sd-chart">
+      <div className="sd-chart-head">
+        <div>
+          <div className="sd-chart-title">{title}</div>
+          <div className="sd-chart-sub">{subtitle}</div>
+        </div>
+      </div>
+
+      {hasData ? (
+        <div className="sd-chart-bars">
+          {series.map((item) => (
+            <div className="sd-chart-row" key={item.label}>
+              <div className="sd-chart-label">{item.label}</div>
+              <div className="sd-chart-track">
+                <div className="sd-chart-fill" style={{ width: getBarWidth(Number(item.value) || 0, maxValue), background: item.color || 'linear-gradient(90deg, var(--ink), var(--amber))' }} />
+              </div>
+              <div className="sd-chart-value">{item.displayValue ?? item.value}</div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="sd-chart-empty">{emptyText}</div>
+      )}
+    </article>
+  );
 }
 
 function ProductDetailModal({ product, onClose, onEdit, onDelete }) {
@@ -504,6 +553,22 @@ function Dashboard() {
   const summary = dashboard?.summary || {};
   const recentSales = dashboard?.recentSales || [];
   const sellerName = seller ? `${seller.nombres || ''} ${seller.apellidos || ''}`.trim() : 'Vendedor';
+  const ordersSeries = [
+    { label: 'Pendientes', value: summary.pendingOrders || 0 },
+    { label: 'Confirmados', value: summary.confirmedOrders || 0 },
+    { label: 'Entregados', value: summary.deliveredOrders || 0 },
+  ];
+  const inventorySeries = [
+    { label: 'Activos', value: summary.activeProducts || 0 },
+    { label: 'Sin stock', value: summary.outOfStockProducts || 0 },
+    { label: 'Stock bajo', value: summary.lowStockProducts || 0 },
+    { label: 'Vendidos', value: summary.soldProducts || 0 },
+  ];
+  const salesSeries = [
+    { label: 'Ingresos', value: summary.totalSales || 0, displayValue: formatMoney(summary.totalSales || 0) },
+    { label: 'Unidades', value: summary.totalUnitsSold || 0 },
+    { label: 'Reseñas', value: summary.totalReviews || 0 },
+  ];
 
   return (
     <div className="sd-root" data-theme={theme}>
@@ -610,6 +675,36 @@ function Dashboard() {
             <div className="sd-card-val">{(summary.averageRating || 0).toFixed(1)}</div>
             <div className="sd-card-note">Promedio de tus productos publicados.</div>
           </article>
+        </section>
+
+        <section className="sd-section">
+          <div className="sd-section-head">
+            <div>
+              <div className="sd-eyebrow">Visualización</div>
+              <div className="sd-section-title">Gráficos de métricas</div>
+            </div>
+          </div>
+
+          <div className="sd-chart-grid">
+            <ChartCard
+              title="Estado de pedidos"
+              subtitle="Distribución por flujo de compra"
+              series={ordersSeries}
+              emptyText="No hay pedidos registrados todavía. Cuando entren órdenes, aquí verás la proporción entre pendientes, confirmados y entregados."
+            />
+            <ChartCard
+              title="Inventario"
+              subtitle="Salud del catálogo"
+              series={inventorySeries}
+              emptyText="No hay productos activos para graficar. Publica productos para ver stock, agotados y vendidos."
+            />
+            <ChartCard
+              title="Actividad comercial"
+              subtitle="Indicadores resumidos"
+              series={salesSeries}
+              emptyText="Aún no hay ventas ni reseñas. Cuando haya actividad, este bloque mostrará ingresos, unidades y reviews."
+            />
+          </div>
         </section>
 
         <section className="sd-section">
