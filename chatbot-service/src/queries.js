@@ -223,7 +223,10 @@ export async function obtenerProductosSimilares({ producto_id, limite = 3 }) {
 
 export async function obtenerMisProductos({ usuario_id }) {
   const productos = await prisma.producto.findMany({
-    where: { vendedorId: usuario_id },
+    where: { 
+      vendedorId: usuario_id,
+      estaActivo: true 
+    },
     select: {
       id:                   true,
       titulo:               true,

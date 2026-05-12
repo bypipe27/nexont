@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/api';
 import { useTheme } from '../context/ThemeContext';
+import AssistedTopBar from '../components/assisted/AssistedTopBar';
 
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,200;0,300;0,400;0,600;0,700;1,200;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap');
@@ -226,13 +227,13 @@ export default function Profile() {
   const personalRef = useRef(null);
 
   const [form, setForm] = useState({ nombres: '', apellidos: '', correo: '' });
-  const [preview, setPreview]       = useState(null);   // URL preview local
-  const [photoFile, setPhotoFile]   = useState(null);   // File a subir
+  const [preview, setPreview] = useState(null);   // URL preview local
+  const [photoFile, setPhotoFile] = useState(null);   // File a subir
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [photoErr, setPhotoErr]     = useState('');
-  const [saving, setSaving]         = useState(false);
-  const [toast, setToast]           = useState('');
-  const [loading, setLoading]       = useState(true);
+  const [photoErr, setPhotoErr] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState('');
+  const [loading, setLoading] = useState(true);
   const [uploadingDocs, setUploadingDocs] = useState(false);
   const [docSelected, setDocSelected] = useState(false);
   const [personalSelected, setPersonalSelected] = useState(false);
@@ -304,10 +305,10 @@ export default function Profile() {
     setPhotoErr('');
     try {
       const formData = new FormData();
-      if (form.nombres)   formData.append('nombres',   form.nombres.trim());
+      if (form.nombres) formData.append('nombres', form.nombres.trim());
       if (form.apellidos) formData.append('apellidos', form.apellidos.trim());
-      if (form.correo)    formData.append('correo',    form.correo.trim());
-      if (photoFile)      formData.append('fotoPerfil', photoFile);
+      if (form.correo) formData.append('correo', form.correo.trim());
+      if (photoFile) formData.append('fotoPerfil', photoFile);
 
       const { data } = await api.put('/users/me', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -357,15 +358,7 @@ export default function Profile() {
 
   return (
     <div className="pf-root" data-theme={theme}>
-
-      {/* NAV */}
-      <nav className="pf-nav">
-        <Link to="/" className="pf-nav-brand">
-          <img src="/resources/icon.png" alt="Nexont" />
-          <span className="pf-nav-wordmark">Nexont</span>
-        </Link>
-        <Link to="/" className="pf-nav-back">← Volver al inicio</Link>
-      </nav>
+      <AssistedTopBar active="tienda" />
 
       <div className="pf-layout">
         <div className="pf-eyebrow">Mi cuenta</div>
@@ -425,12 +418,12 @@ export default function Profile() {
             {/* Document upload (cedula + foto personal) */}
             <div style={{ marginTop: '0.6rem' }}>
               <div className="pf-avatar-label">Subir documento y foto</div>
-                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                  <button className="pf-avatar-btn" onClick={() => docRef.current?.click()} disabled={uploadingDocs}>Seleccionar cédula {docSelected && <span style={{ color: '#16A34A', marginLeft: 8 }}>✓</span>}</button>
-                  <button className="pf-avatar-btn" onClick={() => personalRef.current?.click()} disabled={uploadingDocs}>Seleccionar foto personal {personalSelected && <span style={{ color: '#16A34A', marginLeft: 8 }}>✓</span>}</button>
-                </div>
-              <input ref={docRef} type="file" accept="image/jpeg,image/png" style={{ display:'none' }} onChange={(e) => setDocSelected(!!e.target.files?.[0])} />
-              <input ref={personalRef} type="file" accept="image/jpeg,image/png" style={{ display:'none' }} onChange={(e) => setPersonalSelected(!!e.target.files?.[0])} />
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                <button className="pf-avatar-btn" onClick={() => docRef.current?.click()} disabled={uploadingDocs}>Seleccionar cédula {docSelected && <span style={{ color: '#16A34A', marginLeft: 8 }}>✓</span>}</button>
+                <button className="pf-avatar-btn" onClick={() => personalRef.current?.click()} disabled={uploadingDocs}>Seleccionar foto personal {personalSelected && <span style={{ color: '#16A34A', marginLeft: 8 }}>✓</span>}</button>
+              </div>
+              <input ref={docRef} type="file" accept="image/jpeg,image/png" style={{ display: 'none' }} onChange={(e) => setDocSelected(!!e.target.files?.[0])} />
+              <input ref={personalRef} type="file" accept="image/jpeg,image/png" style={{ display: 'none' }} onChange={(e) => setPersonalSelected(!!e.target.files?.[0])} />
             </div>
             {/* Verification status block */}
             <div style={{ marginTop: '0.6rem' }}>
@@ -479,7 +472,7 @@ export default function Profile() {
                       const { data } = await api.post('/users/me/verification');
                       if (data?.status === 'verificado') {
                         // refresh user and navigate to dashboard
-                        try { const res = await api.get('/users/me'); const updated = res.data?.user; if (updated) { localStorage.setItem('user', JSON.stringify({ ...(JSON.parse(localStorage.getItem('user')||'{}')), ...updated })); window.dispatchEvent(new Event('user-updated')); } } catch(_){}
+                        try { const res = await api.get('/users/me'); const updated = res.data?.user; if (updated) { localStorage.setItem('user', JSON.stringify({ ...(JSON.parse(localStorage.getItem('user') || '{}')), ...updated })); window.dispatchEvent(new Event('user-updated')); } } catch (_) { }
                         setVerificationStatus('verificado');
                         showToast('¡Verificado! Redirigiendo al dashboard...');
                         setTimeout(() => navigate('/dashboard'), 600);

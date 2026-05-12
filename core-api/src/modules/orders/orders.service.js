@@ -24,19 +24,23 @@ const mapPaymentMethod = (method) => {
 
 // ─── Confirmar compra ─────────────────────────────────────────────────────────
 const confirmOrder = async ({ userId, paymentMethod = 'efectivo', notes = '' }) => {
-  // 1. Obtener carrito
-  const cartItems = await prisma.itemCarrito.findMany({
-    where: { usuarioId: userId, producto: { estaActivo: true } },
-    include: {
-      producto: {
-        select: { id: true, titulo: true, precio: true, stock: true, estaActivo: true },
+  // 1. Obtener carrito y última factura al mismo tiempo (1 viaje de red)
+  const [cartItems, lastInvoice] = await Promise.all([
+    prisma.itemCarrito.findMany({
+      where: { usuarioId: userId, producto: { estaActivo: true } },
+      include: {
+        producto: { select: { id: true, titulo: true, precio: true, stock: true, estaActivo: true } },
       },
-    },
-  });
+    }),
+    prisma.factura.findFirst({
+      orderBy: { id: 'desc' },
+      select: { numeroFactura: true },
+    }),
+  ]);
 
   if (cartItems.length === 0) throw new Error('El carrito está vacío');
 
-  // 2. Validar stock antes de la transacción
+  // 2. Validar stock en memoria
   const stockErrors = [];
   for (const item of cartItems) {
     if (!item.producto.estaActivo) {
@@ -47,34 +51,31 @@ const confirmOrder = async ({ userId, paymentMethod = 'efectivo', notes = '' }) 
   }
   if (stockErrors.length > 0) throw new Error(`Stock insuficiente:\n${stockErrors.join('\n')}`);
 
-  // 3. Calcular total y número de factura ANTES de la transacción
-  //    (menos queries dentro = menos tiempo = no timeout)
+  // 3. Preparar datos
   const total = cartItems.reduce((acc, item) => acc + Number(item.producto.precio) * item.cantidad, 0);
   const metodoPago = mapPaymentMethod(paymentMethod);
-  const invoiceNumber = await generateInvoiceNumber();
+  let invoiceNumber = 'INV-0001';
+  if (lastInvoice) {
+    const lastNum = parseInt(lastInvoice.numeroFactura.replace('INV-', ''), 10);
+    invoiceNumber = `INV-${String(lastNum + 1).padStart(4, '0')}`;
+  }
 
-  // 4. Transacción con timeout extendido (30s para Supabase remoto)
-  const result = await prisma.$transaction(async (tx) => {
+  // 4. Construir las consultas para una Transacción en Lote (Array Transaction)
+  const queries = [];
 
-    // 4a. Descontar stock de todos los productos EN PARALELO
-    const stockUpdates = await Promise.all(
-      cartItems.map(item =>
-        tx.producto.updateMany({
-          where: { id: item.productoId, stock: { gte: item.cantidad } },
-          data: { stock: { decrement: item.cantidad } },
-        })
-      )
+  // 4a. Descontar stock
+  for (const item of cartItems) {
+    queries.push(
+      prisma.producto.update({
+        where: { id: item.productoId },
+        data: { stock: { decrement: item.cantidad } },
+      })
     );
+  }
 
-    // Verificar que todos se actualizaron
-    for (let i = 0; i < stockUpdates.length; i++) {
-      if (stockUpdates[i].count === 0) {
-        throw new Error(`Stock insuficiente para "${cartItems[i].producto.titulo}" al confirmar.`);
-      }
-    }
-
-    // 4b. Crear pedido + detalles en una sola query
-    const order = await tx.pedido.create({
+  // 4b. Crear pedido con detalles Y factura anidada (todo en 1 query interno)
+  queries.push(
+    prisma.pedido.create({
       data: {
         usuarioId: userId,
         estado: 'CONFIRMADO',
@@ -89,6 +90,14 @@ const confirmOrder = async ({ userId, paymentMethod = 'efectivo', notes = '' }) 
             subtotal: Number(item.producto.precio) * item.cantidad,
           })),
         },
+        factura: {
+          create: {
+            numeroFactura: invoiceNumber,
+            usuarioId: userId,
+            total: Number(total.toFixed(2)),
+            metodoPago,
+          },
+        },
       },
       include: {
         detalles: {
@@ -101,38 +110,30 @@ const confirmOrder = async ({ userId, paymentMethod = 'efectivo', notes = '' }) 
             },
           },
         },
+        factura: true,
       },
-    });
+    })
+  );
 
-    // 4c. Crear factura y vaciar carrito EN PARALELO
-    const [invoice] = await Promise.all([
-      tx.factura.create({
-        data: {
-          numeroFactura: invoiceNumber,
-          pedidoId: order.id,
-          usuarioId: userId,
-          total: Number(total.toFixed(2)),
-          metodoPago,
-        },
-      }),
-      tx.itemCarrito.deleteMany({ where: { usuarioId: userId } }),
-    ]);
+  // 4c. Vaciar carrito
+  queries.push(prisma.itemCarrito.deleteMany({ where: { usuarioId: userId } }));
 
-    return { order, invoice };
-  }, {
-    timeout: 30000, // 30 segundos para Supabase remoto
-  });
+  // 5. Ejecutar TODO en un solo viaje de red
+  const results = await prisma.$transaction(queries);
+  
+  // El pedido es el penúltimo resultado en el array (antes del deleteMany)
+  const resultOrder = results[results.length - 2];
 
   return {
     message: 'Compra confirmada exitosamente',
     order: {
-      id: result.order.id,
-      status: result.order.estado,
-      paymentMethod: result.order.metodoPago,
-      total: Number(result.order.total),
-      notes: result.order.notas,
-      createdAt: result.order.creadoEn,
-      items: result.order.detalles.map((item) => ({
+      id: resultOrder.id,
+      status: resultOrder.estado,
+      paymentMethod: resultOrder.metodoPago,
+      total: Number(resultOrder.total),
+      notes: resultOrder.notas,
+      createdAt: resultOrder.creadoEn,
+      items: resultOrder.detalles.map((item) => ({
         productId: item.productoId,
         productName: item.producto?.titulo || 'Producto',
         imageUrl: item.producto?.imagenes?.[0]?.url || null,
@@ -142,10 +143,10 @@ const confirmOrder = async ({ userId, paymentMethod = 'efectivo', notes = '' }) 
       })),
     },
     invoice: {
-      invoiceNumber: result.invoice.numeroFactura,
-      total: Number(result.invoice.total),
-      paymentMethod: result.invoice.metodoPago,
-      issuedAt: result.invoice.emitidaEn,
+      invoiceNumber: resultOrder.factura.numeroFactura,
+      total: Number(resultOrder.factura.total),
+      paymentMethod: resultOrder.factura.metodoPago,
+      issuedAt: resultOrder.factura.emitidaEn,
     },
   };
 };

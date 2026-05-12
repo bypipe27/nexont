@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/api';
 import StripePaymentForm from '../components/StripePaymentForm';
+import AssistedTopBar from '../components/assisted/AssistedTopBar';
 
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,200;0,300;0,400;0,600;1,200;1,300&family=DM+Sans:wght@300;400;500;600&display=swap');
@@ -138,14 +139,14 @@ const STYLES = `
   .nxi-close-btn { height:50px; padding:0 3rem; background:var(--ink); color:var(--cream); font-family:'DM Sans',sans-serif; font-size:0.74rem; letter-spacing:0.16em; text-transform:uppercase; border:none; cursor:pointer; transition:background 0.2s; }
   .nxi-close-btn:hover { background:var(--ink-mid); }
 `;
-if (!document.getElementById('nxo-styles')) { const el=document.createElement('style'); el.id='nxo-styles'; el.textContent=STYLES; document.head.appendChild(el); }
+if (!document.getElementById('nxo-styles')) { const el = document.createElement('style'); el.id = 'nxo-styles'; el.textContent = STYLES; document.head.appendChild(el); }
 
 const ORDERS_PER_PAGE = 10;
 
 function InvoiceModal({ invoice, order, onClose }) {
   if (!invoice || !order) return null;
   return (
-    <div className="nxi-overlay" onClick={e => e.target===e.currentTarget && onClose()}>
+    <div className="nxi-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="nxi-modal">
         <div className="nxi-header">
           <div className="nxi-logo">Nexont</div>
@@ -155,19 +156,19 @@ function InvoiceModal({ invoice, order, onClose }) {
         </div>
         <div className="nxi-body">
           <div className="nxi-meta-grid">
-            {[['Fecha',new Date(invoice.issuedAt).toLocaleDateString('es-CO',{year:'numeric',month:'short',day:'numeric'})],['Método de pago',invoice.paymentMethod?.toLowerCase()],['Orden #',order.id],['Estado',<span style={{color:'#16A34A'}}>{order.status?.toLowerCase()}</span>]].map(([l,v],i) => (
+            {[['Fecha', new Date(invoice.issuedAt).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' })], ['Método de pago', invoice.paymentMethod?.toLowerCase()], ['Orden #', order.id], ['Estado', <span style={{ color: '#16A34A' }}>{order.status?.toLowerCase()}</span>]].map(([l, v], i) => (
               <div key={i} className="nxi-meta"><span className="nxi-meta-lbl">{l}</span><span className="nxi-meta-val">{v}</span></div>
             ))}
           </div>
           <table className="nxi-table">
             <thead><tr><th>Producto</th><th>Cant.</th><th>P. Unit.</th><th>Subtotal</th></tr></thead>
             <tbody>
-              {order.items.map((item,i) => (
+              {order.items.map((item, i) => (
                 <tr key={i}>
                   <td>{item.productName}</td>
-                  <td style={{textAlign:'right'}}>{item.quantity}</td>
-                  <td style={{textAlign:'right'}}>${Number(item.unitPrice).toFixed(2)}</td>
-                  <td style={{textAlign:'right',color:'var(--amber)',fontWeight:600}}>${Number(item.lineTotal).toFixed(2)}</td>
+                  <td style={{ textAlign: 'right' }}>{item.quantity}</td>
+                  <td style={{ textAlign: 'right' }}>${Number(item.unitPrice).toFixed(2)}</td>
+                  <td style={{ textAlign: 'right', color: 'var(--amber)', fontWeight: 600 }}>${Number(item.lineTotal).toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
@@ -186,21 +187,10 @@ function InvoiceModal({ invoice, order, onClose }) {
   );
 }
 
-function OrdBar({ title, backLabel, onBack }) {
-  const navigate = useNavigate();
-  return (
-    <header className="nxo-bar">
-      <div className="nxo-brand" onClick={() => navigate('/')}><img src="/resources/icone.png" alt="Nexont" /><span className="nxo-brand-name">Nexont</span></div>
-      <div className="nxo-sep" /><span className="nxo-bar-title">{title}</span>
-      <div className="nxo-gap" />
-      <button className="nxo-back" onClick={onBack}>← {backLabel}</button>
-    </header>
-  );
-}
 
 const statusStyle = s => {
-  const m = { PENDIENTE:{bg:'#FFFBEB',color:'#D97706',bc:'#D97706'}, CONFIRMADO:{bg:'#F0FDF4',color:'#16A34A',bc:'#16A34A'}, CANCELADO:{bg:'#FEF2F2',color:'#DC2626',bc:'#DC2626'}, ENTREGADO:{bg:'#EFF6FF',color:'#2563EB',bc:'#2563EB'} };
-  return m[s?.toUpperCase()] || { bg:'var(--cream-dark)', color:'var(--ink-soft)', bc:'var(--border)' };
+  const m = { PENDIENTE: { bg: '#FFFBEB', color: '#D97706', bc: '#D97706' }, CONFIRMADO: { bg: '#F0FDF4', color: '#16A34A', bc: '#16A34A' }, CANCELADO: { bg: '#FEF2F2', color: '#DC2626', bc: '#DC2626' }, ENTREGADO: { bg: '#EFF6FF', color: '#2563EB', bc: '#2563EB' } };
+  return m[s?.toUpperCase()] || { bg: 'var(--cream-dark)', color: 'var(--ink-soft)', bc: 'var(--border)' };
 };
 
 // Miniatura de producto con fallback
@@ -214,9 +204,9 @@ function OrderThumbs({ items }) {
           : (
             <div key={i} className="nxo-order-thumb-placeholder">
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <rect x="2" y="2" width="14" height="14" rx="2" stroke="var(--ink-ghost)" strokeWidth="1"/>
-                <circle cx="6.5" cy="6.5" r="1.5" stroke="var(--ink-ghost)" strokeWidth="1"/>
-                <path d="M2 12l4-3 3 3 2-2 5 4" stroke="var(--ink-ghost)" strokeWidth="1" fill="none"/>
+                <rect x="2" y="2" width="14" height="14" rx="2" stroke="var(--ink-ghost)" strokeWidth="1" />
+                <circle cx="6.5" cy="6.5" r="1.5" stroke="var(--ink-ghost)" strokeWidth="1" />
+                <path d="M2 12l4-3 3 3 2-2 5 4" stroke="var(--ink-ghost)" strokeWidth="1" fill="none" />
               </svg>
             </div>
           )
@@ -292,14 +282,14 @@ function Orders() {
   };
 
   useEffect(() => {
-    if (view==='checkout') { setLoadingCart(true); api.get('/cart').then(({data})=>setCart(data)).catch(()=>setCheckoutError('No se pudo cargar el carrito')).finally(()=>setLoadingCart(false)); }
+    if (view === 'checkout') { setLoadingCart(true); api.get('/cart').then(({ data }) => setCart(data)).catch(() => setCheckoutError('No se pudo cargar el carrito')).finally(() => setLoadingCart(false)); }
   }, [view]);
 
   useEffect(() => {
-    if (view==='list') {
+    if (view === 'list') {
       setLoadingOrders(true);
       setCurrentPage(1);
-      api.get('/orders').then(({data})=>setOrders(data)).catch(()=>{}).finally(()=>setLoadingOrders(false));
+      api.get('/orders').then(({ data }) => setOrders(data)).catch(() => { }).finally(() => setLoadingOrders(false));
     }
   }, [view]);
 
@@ -342,15 +332,15 @@ function Orders() {
   const totalPages = Math.ceil(orders.length / ORDERS_PER_PAGE);
   const paginatedOrders = orders.slice((currentPage - 1) * ORDERS_PER_PAGE, currentPage * ORDERS_PER_PAGE);
 
-  if (view==='checkout') {
+  if (view === 'checkout') {
     const hasOverStock = cart?.items?.some(i => i.quantity > (i.product?.stock ?? Infinity));
     return (
       <div className="nxo-root">
-        <OrdBar title="Confirmar compra" backLabel="Volver al carrito" onBack={() => navigate('/cart')} />
+        <AssistedTopBar active="tienda" />
         <div className="nxo-page">
           <div className="nxo-eyebrow">Último paso</div>
           <h1 className="nxo-page-title">Confirmar compra</h1>
-          {loadingCart && <p style={{color:'var(--ink-ghost)',fontSize:'0.78rem',letterSpacing:'0.12em',textTransform:'uppercase'}}>Cargando…</p>}
+          {loadingCart && <p style={{ color: 'var(--ink-ghost)', fontSize: '0.78rem', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Cargando…</p>}
           {checkoutError && <div className="nxo-err">{checkoutError}</div>}
           {cart && cart.items?.length === 0 && <div className="nxo-empty"><div className="nxo-empty-title">Carrito vacío</div></div>}
           {cart && cart.items?.length > 0 && <>
@@ -363,38 +353,38 @@ function Orders() {
                 const overStock = item.quantity > stock;
                 const name = item.product?.titulo || item.product?.name || 'Producto';
                 return (
-                  <div key={item.product?.id ?? item.productId} className="nxo-co-item" style={{background:overStock?'#FEF2F2':'transparent'}}>
+                  <div key={item.product?.id ?? item.productId} className="nxo-co-item" style={{ background: overStock ? '#FEF2F2' : 'transparent' }}>
                     <div>
                       <div className="nxo-co-name">{name}</div>
                       <div className="nxo-co-meta">${unitPrice.toFixed(2)} c/u · Cant: {item.quantity}</div>
-                      {overStock ? <div className="nxo-co-warn">⚠ Stock disponible: {stock}</div> : <div style={{fontSize:'0.7rem',color:'var(--ink-ghost)',marginTop:'0.15rem'}}>Stock: {stock}</div>}
+                      {overStock ? <div className="nxo-co-warn">⚠ Stock disponible: {stock}</div> : <div style={{ fontSize: '0.7rem', color: 'var(--ink-ghost)', marginTop: '0.15rem' }}>Stock: {stock}</div>}
                     </div>
                     <div className="nxo-co-total">${lineTotal.toFixed(2)}</div>
                   </div>
                 );
               })}
-              <div className="nxo-total-row"><span className="nxo-total-lbl">Total</span><span className="nxo-total-val">${Number(cart.subtotal||0).toFixed(2)}</span></div>
+              <div className="nxo-total-row"><span className="nxo-total-lbl">Total</span><span className="nxo-total-val">${Number(cart.subtotal || 0).toFixed(2)}</span></div>
             </div>
             <div className="nxo-panel">
               <div className="nxo-panel-head"><span className="nxo-panel-title">Método de pago</span></div>
-              <label className="nxo-pay-option" style={{cursor:'pointer',transition:'background 0.12s'}} onClick={() => setPaymentMethod('tarjeta')} onMouseEnter={e => e.currentTarget.style.background='var(--cream-dark)'} onMouseLeave={e => e.currentTarget.style.background='transparent'}>
-                <input type="radio" name="paymentMethod" value="tarjeta" checked={paymentMethod==='tarjeta'} onChange={() => setPaymentMethod('tarjeta')} style={{accentColor:'var(--ink)',cursor:'pointer'}} />
-                <span style={{width:32,height:32,border:'1px solid var(--border)',background:'var(--cream-dark)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              <label className="nxo-pay-option" style={{ cursor: 'pointer', transition: 'background 0.12s' }} onClick={() => setPaymentMethod('tarjeta')} onMouseEnter={e => e.currentTarget.style.background = 'var(--cream-dark)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                <input type="radio" name="paymentMethod" value="tarjeta" checked={paymentMethod === 'tarjeta'} onChange={() => setPaymentMethod('tarjeta')} style={{ accentColor: 'var(--ink)', cursor: 'pointer' }} />
+                <span style={{ width: 32, height: 32, border: '1px solid var(--border)', background: 'var(--cream-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="1" y="3.5" width="14" height="9" rx="0.5" stroke="#3D3830" strokeWidth="1"/>
-                    <circle cx="8" cy="8" r="2" stroke="#3D3830" strokeWidth="1"/>
-                    <line x1="3.5" y1="3.5" x2="3.5" y2="12.5" stroke="#3D3830" strokeWidth="1"/>
-                    <line x1="12.5" y1="3.5" x2="12.5" y2="12.5" stroke="#3D3830" strokeWidth="1"/>
+                    <rect x="1" y="3.5" width="14" height="9" rx="0.5" stroke="#3D3830" strokeWidth="1" />
+                    <circle cx="8" cy="8" r="2" stroke="#3D3830" strokeWidth="1" />
+                    <line x1="3.5" y1="3.5" x2="3.5" y2="12.5" stroke="#3D3830" strokeWidth="1" />
+                    <line x1="12.5" y1="3.5" x2="12.5" y2="12.5" stroke="#3D3830" strokeWidth="1" />
                   </svg>
                 </span>
                 <div><div className="nxo-pay-name">Tarjeta de crédito/débito</div><div className="nxo-pay-sub">Procesado por Stripe</div></div>
               </label>
-              <label className="nxo-pay-option" style={{cursor:'pointer',transition:'background 0.12s'}} onClick={() => setPaymentMethod('efectivo')} onMouseEnter={e => e.currentTarget.style.background='var(--cream-dark)'} onMouseLeave={e => e.currentTarget.style.background='transparent'}>
-                <input type="radio" name="paymentMethod" value="efectivo" checked={paymentMethod==='efectivo'} onChange={() => setPaymentMethod('efectivo')} style={{accentColor:'var(--ink)',cursor:'pointer'}} />
-                <span style={{width:32,height:32,border:'1px solid var(--border)',background:'var(--cream-dark)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+              <label className="nxo-pay-option" style={{ cursor: 'pointer', transition: 'background 0.12s' }} onClick={() => setPaymentMethod('efectivo')} onMouseEnter={e => e.currentTarget.style.background = 'var(--cream-dark)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                <input type="radio" name="paymentMethod" value="efectivo" checked={paymentMethod === 'efectivo'} onChange={() => setPaymentMethod('efectivo')} style={{ accentColor: 'var(--ink)', cursor: 'pointer' }} />
+                <span style={{ width: 32, height: 32, border: '1px solid var(--border)', background: 'var(--cream-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M2 5C2 4.45228 2.44772 4 3 4H13C13.5523 4 14 4.45228 14 5V11C14 11.5523 13.5523 12 13 12H3C2.44772 12 2 11.5523 2 11V5Z" stroke="#3D3830" strokeWidth="1"/>
-                    <circle cx="8" cy="8" r="1.5" stroke="#3D3830" strokeWidth="1"/>
+                    <path d="M2 5C2 4.45228 2.44772 4 3 4H13C13.5523 4 14 4.45228 14 5V11C14 11.5523 13.5523 12 13 12H3C2.44772 12 2 11.5523 2 11V5Z" stroke="#3D3830" strokeWidth="1" />
+                    <circle cx="8" cy="8" r="1.5" stroke="#3D3830" strokeWidth="1" />
                   </svg>
                 </span>
                 <div><div className="nxo-pay-name">Efectivo</div><div className="nxo-pay-sub">Pago en el momento de la entrega</div></div>
@@ -402,8 +392,8 @@ function Orders() {
               {paymentMethod === 'tarjeta' && (
                 <div style={{ padding: '1.5rem 1.5rem 0' }}>
                   <div style={{ fontSize: '0.72rem', color: 'var(--ink-soft)', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Detalles de la tarjeta</div>
-                  <StripePaymentForm 
-                    amount={Number(cart.subtotal || 0)} 
+                  <StripePaymentForm
+                    amount={Number(cart.subtotal || 0)}
                     orderId={cart.id || 'new'}
                     onPaymentSuccess={handlePaymentSuccess}
                     onPaymentError={handlePaymentError}
@@ -415,11 +405,11 @@ function Orders() {
             </div>
             <div className="nxo-panel">
               <div className="nxo-panel-head"><span className="nxo-panel-title">Notas del pedido (opcional)</span></div>
-              <textarea className="nxo-notes" value={notes} onChange={e=>setNotes(e.target.value)} placeholder="Instrucciones especiales, dirección de entrega…" rows={3} />
+              <textarea className="nxo-notes" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Instrucciones especiales, dirección de entrega…" rows={3} />
             </div>
             {paymentMethod === 'efectivo' && (
               <>
-                <button className="nxo-confirm-btn" onClick={handleConfirm} disabled={confirming||hasOverStock}>
+                <button className="nxo-confirm-btn" onClick={handleConfirm} disabled={confirming || hasOverStock}>
                   {confirming ? 'Procesando…' : '✓ Confirmar compra'}
                 </button>
                 {hasOverStock && <p className="nxo-confirm-warn">Ajusta las cantidades antes de continuar</p>}
@@ -432,15 +422,15 @@ function Orders() {
     );
   }
 
-  if (view==='list') {
+  if (view === 'list') {
     return (
       <div className="nxo-root">
-        <OrdBar title="Mis Pedidos" backLabel="Volver a tienda" onBack={() => navigate('/')} />
+        <AssistedTopBar active="tienda" />
         <div className="nxo-page">
           <div className="nxo-eyebrow">Historial</div>
           <h1 className="nxo-page-title">Mis Pedidos</h1>
-          {loadingOrders && <p style={{color:'var(--ink-ghost)',fontSize:'0.78rem',letterSpacing:'0.12em',textTransform:'uppercase'}}>Cargando…</p>}
-          {!loadingOrders && orders.length===0 && (
+          {loadingOrders && <p style={{ color: 'var(--ink-ghost)', fontSize: '0.78rem', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Cargando…</p>}
+          {!loadingOrders && orders.length === 0 && (
             <div className="nxo-empty">
               <div className="nxo-empty-title">Aún no has realizado compras</div>
               <p className="nxo-empty-sub">Explora el catálogo y realiza tu primera compra.</p>
@@ -457,11 +447,11 @@ function Orders() {
                     <div>
                       <div className="nxo-order-id">Pedido #{order.id}</div>
                       {order.invoiceNumber && <div className="nxo-order-inv">Factura: {order.invoiceNumber}</div>}
-                      <div className="nxo-order-date">{new Date(order.createdAt).toLocaleDateString('es-CO',{year:'numeric',month:'long',day:'numeric'})}</div>
-                      <div className="nxo-order-meta">{order.items.length} producto{order.items.length!==1?'s':''} · {order.paymentMethod?.toLowerCase()}</div>
+                      <div className="nxo-order-date">{new Date(order.createdAt).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                      <div className="nxo-order-meta">{order.items.length} producto{order.items.length !== 1 ? 's' : ''} · {order.paymentMethod?.toLowerCase()}</div>
                     </div>
-                    <div style={{textAlign:'right'}}>
-                      <div className="nxo-order-status" style={{background:ss.bg,color:ss.color,borderColor:ss.bc}}>{order.status?.toLowerCase()}</div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div className="nxo-order-status" style={{ background: ss.bg, color: ss.color, borderColor: ss.bc }}>{order.status?.toLowerCase()}</div>
                       <div className="nxo-order-total">${Number(order.total).toFixed(2)}</div>
                     </div>
                   </div>
@@ -481,29 +471,29 @@ function Orders() {
     );
   }
 
-  if (view==='detail' && selectedOrder) {
+  if (view === 'detail' && selectedOrder) {
     const ss = statusStyle(selectedOrder.status);
     return (
       <div className="nxo-root">
-        <OrdBar title={`Pedido #${selectedOrder.id}`} backLabel="Mis pedidos" onBack={() => setView('list')} />
+        <AssistedTopBar active="tienda" />
         <div className="nxo-page">
           <div className="nxo-eyebrow">Detalle</div>
           <h1 className="nxo-page-title">Pedido #{selectedOrder.id}</h1>
-          <div className="nxo-panel" style={{marginBottom:'1rem'}}>
+          <div className="nxo-panel" style={{ marginBottom: '1rem' }}>
             <div className="nxo-panel-head"><span className="nxo-panel-title">Información</span></div>
             <div className="nxo-detail-grid">
-              {[['Estado',<span style={{color:ss.color}}>{selectedOrder.status?.toLowerCase()}</span>],['Método de pago',selectedOrder.paymentMethod?.toLowerCase()],['Fecha',new Date(selectedOrder.createdAt).toLocaleString('es-CO')],selectedOrder.invoiceNumber?['Factura',<span style={{color:'var(--amber)'}}>{selectedOrder.invoiceNumber}</span>]:null].filter(Boolean).map(([l,v],i)=>(
+              {[['Estado', <span style={{ color: ss.color }}>{selectedOrder.status?.toLowerCase()}</span>], ['Método de pago', selectedOrder.paymentMethod?.toLowerCase()], ['Fecha', new Date(selectedOrder.createdAt).toLocaleString('es-CO')], selectedOrder.invoiceNumber ? ['Factura', <span style={{ color: 'var(--amber)' }}>{selectedOrder.invoiceNumber}</span>] : null].filter(Boolean).map(([l, v], i) => (
                 <div key={i} className="nxo-detail-field"><span className="nxo-df-lbl">{l}</span><span className="nxo-df-val">{v}</span></div>
               ))}
             </div>
           </div>
-          <div className="nxo-panel" style={{marginBottom:'1rem'}}>
+          <div className="nxo-panel" style={{ marginBottom: '1rem' }}>
             <div className="nxo-panel-head"><span className="nxo-panel-title">Productos</span></div>
-            {selectedOrder.items.map((item,i) => (
+            {selectedOrder.items.map((item, i) => (
               <div key={i} className="nxo-detail-item">
                 {item.imageUrl
                   ? <img src={item.imageUrl} alt={item.productName} className="nxo-order-thumb" />
-                  : <div className="nxo-order-thumb-placeholder"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="2" stroke="var(--ink-ghost)" strokeWidth="1"/><circle cx="6.5" cy="6.5" r="1.5" stroke="var(--ink-ghost)" strokeWidth="1"/><path d="M2 12l4-3 3 3 2-2 5 4" stroke="var(--ink-ghost)" strokeWidth="1" fill="none"/></svg></div>
+                  : <div className="nxo-order-thumb-placeholder"><svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="2" width="14" height="14" rx="2" stroke="var(--ink-ghost)" strokeWidth="1" /><circle cx="6.5" cy="6.5" r="1.5" stroke="var(--ink-ghost)" strokeWidth="1" /><path d="M2 12l4-3 3 3 2-2 5 4" stroke="var(--ink-ghost)" strokeWidth="1" fill="none" /></svg></div>
                 }
                 <div><div className="nxo-di-name">{item.productName}</div><div className="nxo-di-meta">${Number(item.unitPrice).toFixed(2)} c/u · Cant: {item.quantity}</div></div>
                 <div className="nxo-di-total">${Number(item.lineTotal).toFixed(2)}</div>

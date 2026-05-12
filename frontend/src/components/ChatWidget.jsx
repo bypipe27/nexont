@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 
 // Obtiene usuario_id y nombres desde el objeto 'user' en localStorage (como en Home.jsx)
@@ -13,14 +14,21 @@ const getUserContextAndRole = () => {
 };
 
 const ChatWidget = ({ onClose, initialInput = '' }) => {
-  const [messages, setMessages] = useState([
-    { role: 'assistant', content: '¡Hola! ¿En qué puedo ayudarte hoy?' }
-  ]);
+  // Cargar mensajes iniciales desde localStorage o usar el saludo por defecto
+  const [messages, setMessages] = useState(() => {
+    const saved = localStorage.getItem('nexont_chat_history');
+    return saved ? JSON.parse(saved) : [
+      { role: 'assistant', content: '¡Hola! ¿En qué puedo ayudarte hoy?' }
+    ];
+  });
+
   const [input, setInput] = useState(initialInput);
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
+  // Guardar mensajes en localStorage cada vez que cambien
   useEffect(() => {
+    localStorage.setItem('nexont_chat_history', JSON.stringify(messages));
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
@@ -103,7 +111,11 @@ const ChatWidget = ({ onClose, initialInput = '' }) => {
             key={i}
             style={{ ...styles.msg, ...(msg.role === 'user' ? styles.user : styles.assistant) }}
           >
-            {msg.content}
+            <ReactMarkdown components={{
+              p: ({node, ...props}) => <p style={{margin: 0, whiteSpace: 'pre-wrap'}} {...props} />
+            }}>
+              {msg.content}
+            </ReactMarkdown>
           </div>
         ))}
         <div ref={messagesEndRef} />

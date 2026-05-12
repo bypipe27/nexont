@@ -214,7 +214,7 @@ const getMyProducts = async (sellerId) => {
 const getProductsBySellerPublic = async (sellerId) => {
   const id = parseInt(sellerId, 10);
   if (isNaN(id)) throw new Error('ID de vendedor inválido');
- 
+
   const seller = await prisma.usuario.findFirst({
     where: { id, esActivo: true },
     select: {
@@ -225,9 +225,9 @@ const getProductsBySellerPublic = async (sellerId) => {
       fotoPerfil: true,
     },
   });
- 
+
   if (!seller) throw new Error('Vendedor no encontrado');
- 
+
   const products = await prisma.producto.findMany({
     where: { vendedorId: id, estaActivo: true },
     include: {
@@ -238,7 +238,7 @@ const getProductsBySellerPublic = async (sellerId) => {
     },
     orderBy: { creadoEn: 'desc' },
   });
- 
+
   return { seller, products, totalProductos: products.length };
 };
 

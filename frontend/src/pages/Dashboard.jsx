@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/api';
 import { useTheme } from '../context/ThemeContext';
+import AssistedTopBar from '../components/assisted/AssistedTopBar';
 
 const DASHBOARD_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,200;0,300;0,400;0,600;0,700;1,200;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap');
@@ -519,18 +520,6 @@ function Dashboard() {
     }
   }, [loading, dashboard, navigate]);
 
-  const handleLogout = async () => {
-    try {
-      await api.post('/auth/logout');
-    } catch {
-      // Ignorar error en logout
-    } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('user');
-      navigate('/login');
-    }
-  };
 
   const handleDeleteProduct = async (product) => {
     setMutationLoading(true);
@@ -572,16 +561,7 @@ function Dashboard() {
 
   return (
     <div className="sd-root" data-theme={theme}>
-      <header className="sd-nav">
-        <Link to="/" className="sd-brand">
-          <img src="/resources/icon.png" alt="Nexont" />
-          <span className="sd-brand-name">Nexont</span>
-        </Link>
-        <div className="sd-nav-gap" />
-        <Link to="/profile" className="sd-nav-link">Mi perfil</Link>
-        <Link to="/my-products" className="sd-nav-link">Mis productos</Link>
-        <button className="sd-nav-link" onClick={handleLogout}>Cerrar sesión</button>
-      </header>
+      <AssistedTopBar active="tienda" />
 
       <main className="sd-page">
         {error && <div className="sd-error">{error}</div>}

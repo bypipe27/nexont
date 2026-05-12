@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/api';
 import { useTheme } from '../context/ThemeContext';
 import ChatWidget from '../components/ChatWidget';
+import AssistedTopBar from '../components/assisted/AssistedTopBar';
 
 // ─── Estilos nxmp ─────────────────────────────────────────────────────────────
 const STYLES = `
@@ -27,37 +28,6 @@ const STYLES = `
   [data-theme="dark"] .nxmp-card { background:#111111; }
   [data-theme="dark"] .nxmp-card:hover { background:#161410; }
   [data-theme="dark"] .nxmp-stat { background:#111111; }
-
-
-  .nxmp-root { min-height:100vh; background:var(--cream); font-family:'DM Sans',sans-serif; color:var(--ink); }
-
-  .nxmp-bar { position:sticky; top:0; z-index:200; height:68px; background:rgba(245,240,232,0.96); backdrop-filter:blur(16px); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 3rem; gap:1rem; }
-  .nxmp-brand { display:flex; align-items:center; gap:0.75rem; text-decoration:none; cursor:pointer; }
-  .nxmp-brand img { height:28px; }
-  .nxmp-brand-name { font-family:'Cormorant Garamond',serif; font-size:1.65rem; font-weight:600; color:var(--ink); letter-spacing:0.06em; }
-  .nxmp-sep { width:1px; height:20px; background:var(--border); }
-  .nxmp-bar-title { font-size:0.62rem; font-weight:600; letter-spacing:0.22em; text-transform:uppercase; color:var(--ink-soft); }
-  .nxmp-gap { flex:1; }
-  .nxmp-bar-right { display:flex; align-items:center; gap:0.6rem; }
-  .nxmp-pub-btn { height:38px; padding:0 1.35rem; background:var(--ink); color:var(--cream); font-family:'DM Sans',sans-serif; font-weight:500; font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; border:none; cursor:pointer; transition:background 0.2s; }
-  .nxmp-pub-btn:hover { background:var(--ink-mid); }
-
-  .nxmp-theme-btn { height:38px; width:38px; background:transparent; border:1px solid var(--border); color:var(--ink-soft); cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; transition:all 0.18s; }
-  .nxmp-theme-btn:hover { background:var(--ink); color:var(--cream); border-color:var(--ink); }
-
-  .nxmp-user-pill { display:flex; align-items:center; gap:0.5rem; height:38px; padding:0 0.85rem 0 0.45rem; background:transparent; border:1px solid var(--border); cursor:pointer; transition:all 0.18s; position:relative; }
-  .nxmp-user-pill:hover { background:var(--ink); border-color:var(--ink); }
-  .nxmp-user-pill:hover .nxmp-uname, .nxmp-user-pill:hover .nxmp-chev { color:var(--cream) !important; }
-  .nxmp-user-pill:hover .nxmp-av { background:rgba(255,255,255,0.2); color:var(--cream); }
-  .nxmp-av { width:26px; height:26px; border-radius:50%; background:var(--ink); color:var(--cream); display:flex; align-items:center; justify-content:center; font-size:0.62rem; font-weight:600; transition:all 0.18s; }
-  .nxmp-uname { font-size:0.82rem; color:var(--ink); font-weight:500; transition:color 0.18s; }
-  .nxmp-chev { font-size:0.6rem; color:var(--ink-ghost); transition:color 0.18s; }
-  .nxmp-dd { position:absolute; top:calc(100% + 6px); right:0; background:var(--white); border:1px solid var(--border); min-width:210px; z-index:1000; box-shadow:0 12px 40px rgba(26,23,20,0.12); }
-  .nxmp-dd-sec { border-bottom:1px solid rgba(26,23,20,0.06); }
-  .nxmp-dd-lbl { padding:0.6rem 1rem 0.2rem; font-size:0.58rem; font-weight:600; letter-spacing:0.18em; text-transform:uppercase; color:var(--ink-ghost); }
-  .nxmp-dd-item { display:flex; align-items:center; gap:0.55rem; padding:0.65rem 1rem; cursor:pointer; font-size:0.82rem; color:var(--ink-mid); transition:all 0.12s; }
-  .nxmp-dd-item:hover { background:var(--cream-dark); color:var(--ink); }
-  .nxmp-dd-item.danger:hover { background:#FEF2F2; color:#DC2626; }
 
   .nxmp-page { max-width:1200px; margin:0 auto; padding:4rem 3rem 6rem; }
   .nxmp-eyebrow { font-size:0.6rem; font-weight:600; letter-spacing:0.24em; text-transform:uppercase; color:var(--ink-soft); display:flex; align-items:center; gap:0.65rem; margin-bottom:0.65rem; }
@@ -233,8 +203,8 @@ function PublishModal({ isOpen, onClose, onPublished }) {
   const fileInputRef = useRef(null);
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
-  const handleImage  = e => { const f = e.target.files[0]; if (f) { setImageFile(f); setImagePreview(URL.createObjectURL(f)); } };
-  const handleClose  = () => {
+  const handleImage = e => { const f = e.target.files[0]; if (f) { setImageFile(f); setImagePreview(URL.createObjectURL(f)); } };
+  const handleClose = () => {
     setForm({ titulo: '', descripcion: '', precio: '', stock: '', condicion: 'NUEVO', categoria: 'SERVICIOS_OTROS' });
     setImageFile(null); setImagePreview(null); setError(''); setSuccess('');
     onClose();
@@ -275,7 +245,7 @@ function PublishModal({ isOpen, onClose, onPublished }) {
           <button className="nxpm-close" onClick={handleClose}>✕</button>
         </div>
         <div className="nxpm-body">
-          {error   && <div className="nxpm-modal-err">{error}</div>}
+          {error && <div className="nxpm-modal-err">{error}</div>}
           {success && <div className="nxpm-modal-ok">{success}</div>}
           <form onSubmit={handleSubmit}>
             <div className="nxpm-f"><label>Nombre del producto *</label><input name="titulo" value={form.titulo} onChange={handleChange} required placeholder="Ej: Silla Eames vintage" /></div>
@@ -341,8 +311,8 @@ function EditProductModal({ isOpen, onClose, product, onProductUpdated }) {
   }, [product]);
 
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
-  const handleImage  = e => { const f = e.target.files[0]; if (f) { setImageFile(f); setImagePreview(URL.createObjectURL(f)); } };
-  const handleClose  = () => { setError(''); onClose(); };
+  const handleImage = e => { const f = e.target.files[0]; if (f) { setImageFile(f); setImagePreview(URL.createObjectURL(f)); } };
+  const handleClose = () => { setError(''); onClose(); };
 
   const handleSubmit = async e => {
     e.preventDefault(); setError(''); setLoading(true);
@@ -452,27 +422,27 @@ function MyProducts() {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
 
-  const [products, setProducts]         = useState([]);
-  const [loading, setLoading]           = useState(true);
-  const [error, setError]               = useState('');
-  const [searchTerm, setSearch]         = useState('');
-  const [fCond, setFCond]               = useState('');
-  const [fMaxPrice, setFMaxPrice]       = useState(1000);
-  const [showModal, setShowModal]       = useState(false);
-  const [sortBy, setSortBy]             = useState('newest');
-  const [ddOpen, setDdOpen]             = useState(false);
-  const [fetching, setFetching]         = useState(false);
-  const [editProduct, setEditProduct]   = useState(null);
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [searchTerm, setSearch] = useState('');
+  const [fCond, setFCond] = useState('');
+  const [fMaxPrice, setFMaxPrice] = useState(1000);
+  const [showModal, setShowModal] = useState(false);
+  const [sortBy, setSortBy] = useState('newest');
+  const [ddOpen, setDdOpen] = useState(false);
+  const [fetching, setFetching] = useState(false);
+  const [editProduct, setEditProduct] = useState(null);
   const [deleteProduct, setDeleteProduct] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [toast, setToast]               = useState(null);
-  const [showChat, setShowChat]         = useState(false);
+  const [toast, setToast] = useState(null);
+  const [showChat, setShowChat] = useState(false);
   const aiPrefill = 'Necesito ayuda para impulsar ventas. Analiza mi producto y dame precio bajo (venta rapida), precio promedio y precio alto (mayor ganancia), y sugerencias de titulo y descripcion. Detalles del producto: [pega aqui].';
 
-  const token    = localStorage.getItem('token');
-  const user     = JSON.parse(localStorage.getItem('user') || 'null');
+  const token = localStorage.getItem('token');
+  const user = JSON.parse(localStorage.getItem('user') || 'null');
   const initials = user ? `${(user.nombres || '')[0] || ''}${(user.apellidos || '')[0] || ''}`.toUpperCase() : '';
-  const stars    = n => '★'.repeat(Math.round(n || 0)) + '☆'.repeat(5 - Math.round(n || 0));
+  const stars = n => '★'.repeat(Math.round(n || 0)) + '☆'.repeat(5 - Math.round(n || 0));
 
   const fetchMyProducts = async (params = {}) => {
     if (fetching) return;
@@ -488,14 +458,9 @@ function MyProducts() {
   };
 
   useEffect(() => { if (!token || !user?.esVendedorVerificado) { navigate('/'); return; } fetchMyProducts(); }, [token]);
-  useEffect(() => {
-    const h = e => { if (!e.target.closest('.nxmp-user-pill')) setDdOpen(false); };
-    document.addEventListener('click', h);
-    return () => document.removeEventListener('click', h);
-  }, []);
 
   const doSearch = () => fetchMyProducts({ search: searchTerm || undefined, condition: fCond || undefined, maxPrice: fMaxPrice });
-  const doClear  = () => { setSearch(''); setFCond(''); setFMaxPrice(1000); fetchMyProducts(); };
+  const doClear = () => { setSearch(''); setFCond(''); setFMaxPrice(1000); fetchMyProducts(); };
 
   const handleConfirmDelete = async () => {
     if (!deleteProduct) return;
@@ -511,74 +476,19 @@ function MyProducts() {
   };
 
   const sorted = [...products].sort((a, b) => {
-    if (sortBy === 'price-low')  return (a.precio || 0) - (b.precio || 0);
+    if (sortBy === 'price-low') return (a.precio || 0) - (b.precio || 0);
     if (sortBy === 'price-high') return (b.precio || 0) - (a.precio || 0);
-    if (sortBy === 'rating')     return (b.promedioCalificacion || 0) - (a.promedioCalificacion || 0);
+    if (sortBy === 'rating') return (b.promedioCalificacion || 0) - (a.promedioCalificacion || 0);
     return 0;
   });
 
-  const inStock    = products.filter(p => p.stock > 0).length;
-  const outStock   = products.filter(p => p.stock === 0).length;
+  const inStock = products.filter(p => p.stock > 0).length;
+  const outStock = products.filter(p => p.stock === 0).length;
   const totalStock = products.reduce((s, p) => s + (p.stock || 0), 0);
 
   return (
     <div className="nxmp-root">
-
-      {/* ── Header ── */}
-      <header className="nxmp-bar">
-        <div className="nxmp-brand" onClick={() => navigate('/')}>
-          <img src="/resources/icone.png" alt="Nexont" />
-          <span className="nxmp-brand-name">Nexont</span>
-        </div>
-        <div className="nxmp-sep" />
-        <span className="nxmp-bar-title">Mis Productos</span>
-        <div className="nxmp-gap" />
-        <div className="nxmp-bar-right">
-          {/* Toggle tema */}
-          <button
-            className="nxmp-theme-btn"
-            onClick={toggleTheme}
-            title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
-          >
-            {theme === 'dark' ? '☀️' : '🌙'}
-          </button>
-
-          <Link
-            to="/"
-            style={{ height: 38, padding: '0 1rem', background: 'transparent', border: '1px solid var(--border)', color: 'var(--ink-soft)', fontSize: '0.72rem', letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', fontFamily: "'DM Sans',sans-serif", transition: 'all 0.18s' }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'var(--ink)'; e.currentTarget.style.color = 'var(--cream)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--ink-soft)'; }}
-          >
-            ← Tienda
-          </Link>
-
-          <button className="nxmp-pub-btn" onClick={() => setShowModal(true)}>+ Publicar</button>
-
-          <div className="nxmp-user-pill" onClick={() => setDdOpen(o => !o)}>
-            <div className="nxmp-av">{initials}</div>
-            <span className="nxmp-uname">{user?.nombres}</span>
-            <span className="nxmp-chev">▾</span>
-            {ddOpen && (
-              <div className="nxmp-dd">
-                <div className="nxmp-dd-sec">
-                  <div className="nxmp-dd-lbl">Mi cuenta</div>
-                  <div className="nxmp-dd-item">👤 Mi perfil</div>
-                  <div className="nxmp-dd-item" onClick={() => navigate('/orders')}>📦 Mis órdenes</div>
-                </div>
-                <div className="nxmp-dd-sec">
-                  <div className="nxmp-dd-lbl">Vendedor</div>
-                  <div className="nxmp-dd-item" onClick={() => navigate('/dashboard')}>📊 Mi dashboard</div>
-                  <div className="nxmp-dd-item" onClick={() => setShowModal(true)}>➕ Nuevo producto</div>
-                  <div className="nxmp-dd-item" onClick={() => navigate('/')}>🏪 Ver catálogo</div>
-                </div>
-                <div className="nxmp-dd-sec">
-                  <div className="nxmp-dd-item danger" onClick={() => { localStorage.removeItem('token'); localStorage.removeItem('user'); window.location.reload(); }}>🚪 Cerrar sesión</div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
+      <AssistedTopBar active="tienda" />
 
       {/* ── Contenido ── */}
       <div className="nxmp-page">

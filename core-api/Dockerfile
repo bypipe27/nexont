@@ -19,7 +19,7 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 WORKDIR /app
 
-COPY --from=builder /app .
+COPY --from=builder --chown=appuser:appgroup /app .
 
 USER appuser
 

@@ -140,6 +140,9 @@ model Producto {
   detallesPedido     DetallePedido[]
   resenas            Resena[]
 
+  @@index([vendedorId])
+  @@index([estaActivo, creadoEn])
+  @@index([categoria])
   @@map("productos")
 }
 
@@ -153,6 +156,7 @@ model ProductoImagen {
 
   producto   Producto @relation(fields: [productoId], references: [id], onDelete: Cascade)
 
+  @@index([productoId, esPrincipal])
   @@map("productos_imagenes")
 }
 
@@ -191,6 +195,8 @@ model Pedido {
   factura       Factura?
   // ...existing code...
 
+  @@index([usuarioId])
+  @@index([estado])
   @@map("pedidos")
 }
 
@@ -205,6 +211,8 @@ model DetallePedido {
   pedido         Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
   producto       Producto @relation(fields: [productoId], references: [id])
 
+  @@index([pedidoId])
+  @@index([productoId])
   @@map("pedidos_detalles")
 }
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/api';
+import AssistedTopBar from '../components/assisted/AssistedTopBar';
 
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,200;0,300;0,400;0,600;1,200;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap');
@@ -8,10 +9,6 @@ const STYLES = `
 
   .nx-reg-root { min-height:100vh; background:var(--cream); font-family:'DM Sans',sans-serif; display:flex; flex-direction:column; }
 
-  .nx-reg-bar { height:68px; background:var(--white); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 3rem; }
-  .nx-reg-brand { display:flex; align-items:center; gap:0.75rem; text-decoration:none; }
-  .nx-reg-brand img { height:28px; }
-  .nx-reg-brand-name { font-family:'Cormorant Garamond',serif; font-size:1.65rem; font-weight:600; color:var(--ink); letter-spacing:0.06em; }
 
   .nx-reg-body { flex:1; display:grid; grid-template-columns:5fr 7fr; min-height:calc(100vh - 68px); }
 
@@ -84,33 +81,28 @@ const STYLES = `
 
   @media (max-width:900px) { .nx-reg-body { grid-template-columns:1fr; } .nx-reg-left { display:none; } .nx-reg-right { padding:2.5rem 1.5rem; min-height:calc(100vh - 68px); align-items:flex-start; padding-top:3rem; } }
 `;
-if (!document.getElementById('nx-reg-styles')) { const el = document.createElement('style'); el.id='nx-reg-styles'; el.textContent=STYLES; document.head.appendChild(el); }
+if (!document.getElementById('nx-reg-styles')) { const el = document.createElement('style'); el.id = 'nx-reg-styles'; el.textContent = STYLES; document.head.appendChild(el); }
 
 const parseError = err => { const d = err.response?.data; if (!d) return 'Error de conexión.'; if (d.details?.length) return d.details.join(' · '); return d.error || 'Error al registrar.'; };
 
 function Register() {
-  const [form, setForm] = useState({ nombres:'', apellidos:'', correo:'', contrasena:'' });
+  const [form, setForm] = useState({ nombres: '', apellidos: '', correo: '', contrasena: '' });
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [loading, setLoading] = useState(false);
-  const handleChange = e => setForm({...form, [e.target.name]: e.target.value});
+  const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
   const handleSubmit = async e => {
     e.preventDefault(); setError(null); setSuccess(null); setLoading(true);
     try {
       const { data } = await api.post('/auth/register', form);
       setSuccess(data.message || '¡Cuenta creada! Revisa tu correo para verificarla.');
-      setForm({ nombres:'', apellidos:'', correo:'', contrasena:'' });
+      setForm({ nombres: '', apellidos: '', correo: '', contrasena: '' });
     } catch (err) { setError(parseError(err)); }
     finally { setLoading(false); }
   };
   return (
     <div className="nx-reg-root">
-      <header className="nx-reg-bar">
-        <Link to="/" className="nx-reg-brand">
-          <img src="/resources/icone.png" alt="Nexont" />
-          <span className="nx-reg-brand-name">Nexont</span>
-        </Link>
-      </header>
+      <AssistedTopBar />
       <div className="nx-reg-body">
         <div className="nx-reg-left">
           <div className="nx-reg-left-tag">Únete hoy</div>
@@ -120,7 +112,7 @@ function Register() {
           </h2>
           <p className="nx-reg-left-sub">Crea tu cuenta gratis y conecta con miles de compradores en Colombia.</p>
           <div className="nx-reg-steps">
-            {[['1','Crea tu cuenta','Regístrate en menos de 2 minutos'],['2','Verifica tu correo','Confirma tu identidad'],['3','Publica y vende','Llega a miles de compradores']].map(([n,t,s]) => (
+            {[['1', 'Crea tu cuenta', 'Regístrate en menos de 2 minutos'], ['2', 'Verifica tu correo', 'Confirma tu identidad'], ['3', 'Publica y vende', 'Llega a miles de compradores']].map(([n, t, s]) => (
               <div key={n} className="nx-reg-step">
                 <div className="nx-reg-step-n">{n}</div>
                 <div><div className="nx-reg-step-title">{t}</div><div className="nx-reg-step-sub">{s}</div></div>
@@ -139,14 +131,14 @@ function Register() {
             <p className="nx-reg-card-sub">Únete al marketplace colombiano</p>
             <form onSubmit={handleSubmit}>
               <div className="nx-rf-row">
-                <div className="nx-rf"><label>Nombre</label><input type="text" name="nombres" value={form.nombres} onChange={handleChange} required placeholder="Tu nombre" className={error?'err':''} /></div>
-                <div className="nx-rf"><label>Apellido</label><input type="text" name="apellidos" value={form.apellidos} onChange={handleChange} required placeholder="Tu apellido" className={error?'err':''} /></div>
+                <div className="nx-rf"><label>Nombre</label><input type="text" name="nombres" value={form.nombres} onChange={handleChange} required placeholder="Tu nombre" className={error ? 'err' : ''} /></div>
+                <div className="nx-rf"><label>Apellido</label><input type="text" name="apellidos" value={form.apellidos} onChange={handleChange} required placeholder="Tu apellido" className={error ? 'err' : ''} /></div>
               </div>
-              <div className="nx-rf"><label>Correo electrónico</label><input type="email" name="correo" value={form.correo} onChange={handleChange} required placeholder="tu@email.com" className={error?'err':''} /></div>
-              <div className="nx-rf"><label>Contraseña</label><input type="password" name="contrasena" value={form.contrasena} onChange={handleChange} required placeholder="Mínimo 8 caracteres" className={error?'err':''} /></div>
-              {error   && <div className="nx-reg-err"><span className="nx-reg-err-icon">⚠</span><span className="nx-reg-err-text">{error}</span></div>}
+              <div className="nx-rf"><label>Correo electrónico</label><input type="email" name="correo" value={form.correo} onChange={handleChange} required placeholder="tu@email.com" className={error ? 'err' : ''} /></div>
+              <div className="nx-rf"><label>Contraseña</label><input type="password" name="contrasena" value={form.contrasena} onChange={handleChange} required placeholder="Mínimo 8 caracteres" className={error ? 'err' : ''} /></div>
+              {error && <div className="nx-reg-err"><span className="nx-reg-err-icon">⚠</span><span className="nx-reg-err-text">{error}</span></div>}
               {success && <div className="nx-reg-ok"><span className="nx-reg-ok-icon">✓</span><span className="nx-reg-ok-text">{success}</span></div>}
-              <button type="submit" className="nx-reg-submit" disabled={loading}>{loading?'Creando cuenta…':'Crear cuenta →'}</button>
+              <button type="submit" className="nx-reg-submit" disabled={loading}>{loading ? 'Creando cuenta…' : 'Crear cuenta →'}</button>
             </form>
             <p className="nx-reg-terms">Al registrarte aceptas nuestros Términos y Política de privacidad.</p>
             <p className="nx-reg-foot">¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link></p>

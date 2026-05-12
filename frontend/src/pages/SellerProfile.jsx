@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api/api';
 import { useHybridCart } from '../hooks/useHybridCart';
 import { useTheme } from '../context/ThemeContext';
+import AssistedTopBar from '../components/assisted/AssistedTopBar';
 
 const SELLER_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,200;0,300;0,400;0,600;0,700;1,200;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap');
@@ -375,22 +376,7 @@ export default function SellerProfile() {
   return (
     <div className="sp-root" data-theme={theme}>
 
-      {/* NAV */}
-      <nav className="sp-nav">
-        <Link to="/" className="sp-nav-brand">
-          <img src="/resources/icon.png" alt="Nexont" />
-          <span className="sp-nav-wordmark">Nexont</span>
-        </Link>
-        <button className="sp-nav-back" onClick={() => navigate(-1)}>← Volver</button>
-        {token && cart.totalItems > 0 && (
-          <button
-            onClick={() => navigate('/cart')}
-            style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '0.4rem', height: 36, padding: '0 1rem', background: 'var(--ink)', color: 'var(--cream)', border: 'none', cursor: 'pointer', fontSize: '0.75rem', letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: 'DM Sans, sans-serif' }}
-          >
-            🛒 {cart.totalItems}
-          </button>
-        )}
-      </nav>
+      <AssistedTopBar active="tienda" />
 
       {/* HERO DEL VENDEDOR */}
       <section className="sp-hero">
@@ -423,7 +409,7 @@ export default function SellerProfile() {
                 ⌨  Miembro desde <strong style={{ marginLeft: 4 }}>{formatDate(seller?.creadoEn)}</strong>
               </div>
               <div className="sp-meta-item">
-                 ✔ <strong style={{ marginLeft: 4 }}>{products.length}</strong>&nbsp;productos activos
+                ✔ <strong style={{ marginLeft: 4 }}>{products.length}</strong>&nbsp;productos activos
               </div>
             </div>
 
@@ -465,7 +451,7 @@ export default function SellerProfile() {
         </div>
 
         {cartErr && <div className="sp-alert-err">{cartErr}</div>}
-        {cartOk  && <div className="sp-alert-ok">{cartOk}</div>}
+        {cartOk && <div className="sp-alert-ok">{cartOk}</div>}
 
         {products.length === 0 ? (
           <div className="sp-empty">

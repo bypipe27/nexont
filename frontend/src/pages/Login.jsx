@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/api';
+import AssistedTopBar from '../components/assisted/AssistedTopBar';
 
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,200;0,300;0,400;0,600;1,200;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap');
@@ -8,10 +9,6 @@ const STYLES = `
 
   .nx-login-root { min-height:100vh; background:var(--cream); font-family:'DM Sans',sans-serif; display:flex; flex-direction:column; }
 
-  .nx-login-bar { height:68px; background:var(--white); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 3rem; }
-  .nx-login-brand { display:flex; align-items:center; gap:0.75rem; text-decoration:none; }
-  .nx-login-brand img { height:28px; }
-  .nx-login-brand-name { font-family:'Cormorant Garamond',serif; font-size:1.65rem; font-weight:600; color:var(--ink); letter-spacing:0.06em; }
 
   .nx-login-body { flex:1; display:grid; grid-template-columns:1fr 1fr; min-height:calc(100vh - 68px); }
 
@@ -81,16 +78,16 @@ const STYLES = `
 
   @media (max-width:820px) { .nx-login-body { grid-template-columns:1fr; } .nx-login-left { display:none; } .nx-login-right { padding:2.5rem 1.5rem; min-height:calc(100vh - 68px); } }
 `;
-if (!document.getElementById('nx-login-styles')) { const el = document.createElement('style'); el.id='nx-login-styles'; el.textContent=STYLES; document.head.appendChild(el); }
+if (!document.getElementById('nx-login-styles')) { const el = document.createElement('style'); el.id = 'nx-login-styles'; el.textContent = STYLES; document.head.appendChild(el); }
 
 const parseError = err => { const d = err.response?.data; if (!d) return 'Error de conexión. Verifica tu internet.'; if (d.details?.length) return d.details.join(' · '); return d.error || 'Credenciales inválidas.'; };
 
 function Login() {
-  const [form, setForm] = useState({ correo:'', contrasena:'' });
+  const [form, setForm] = useState({ correo: '', contrasena: '' });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const handleChange = e => setForm({...form, [e.target.name]: e.target.value});
+  const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
   const handleSubmit = async e => {
     e.preventDefault(); setError(null); setLoading(true);
     try {
@@ -104,12 +101,7 @@ function Login() {
   };
   return (
     <div className="nx-login-root">
-      <header className="nx-login-bar">
-        <Link to="/" className="nx-login-brand">
-          <img src="/resources/icone.png" alt="Nexont" />
-          <span className="nx-login-brand-name">Nexont</span>
-        </Link>
-      </header>
+      <AssistedTopBar />
       <div className="nx-login-body">
         <div className="nx-login-left">
           <div className="nx-login-left-img" />
@@ -122,7 +114,7 @@ function Login() {
             </h1>
             <p className="nx-login-desc">Accede a tu cuenta para explorar productos únicos y conectar con vendedores verificados.</p>
             <div className="nx-login-feats">
-              {[['Miles de productos únicos','Catálogo curado de vendedores verificados'],['Compras 100% seguras','Transacciones protegidas en todo momento'],['Soporte 24/7','Estamos aquí cuando nos necesites']].map(([t,s]) => (
+              {[['Miles de productos únicos', 'Catálogo curado de vendedores verificados'], ['Compras 100% seguras', 'Transacciones protegidas en todo momento'], ['Soporte 24/7', 'Estamos aquí cuando nos necesites']].map(([t, s]) => (
                 <div key={t} className="nx-login-feat">
                   <div className="nx-login-feat-dot" />
                   <div className="nx-login-feat-txt"><b>{t}</b> — {s}</div>
@@ -139,14 +131,14 @@ function Login() {
             <form onSubmit={handleSubmit}>
               <div className="nx-lf">
                 <label>Correo electrónico</label>
-                <input type="email" name="correo" value={form.correo} onChange={handleChange} required placeholder="tu@email.com" className={error?'err':''} />
+                <input type="email" name="correo" value={form.correo} onChange={handleChange} required placeholder="tu@email.com" className={error ? 'err' : ''} />
               </div>
               <div className="nx-lf">
                 <label>Contraseña</label>
-                <input type="password" name="contrasena" value={form.contrasena} onChange={handleChange} required placeholder="••••••••" className={error?'err':''} />
+                <input type="password" name="contrasena" value={form.contrasena} onChange={handleChange} required placeholder="••••••••" className={error ? 'err' : ''} />
               </div>
               {error && <div className="nx-login-err"><span className="nx-login-err-icon">⚠</span><span className="nx-login-err-text">{error}</span></div>}
-              <button type="submit" className="nx-login-submit" disabled={loading}>{loading?'Verificando…':'Iniciar sesión →'}</button>
+              <button type="submit" className="nx-login-submit" disabled={loading}>{loading ? 'Verificando…' : 'Iniciar sesión →'}</button>
             </form>
             <p className="nx-login-foot">¿No tienes cuenta? <Link to="/register">Regístrate gratis</Link></p>
           </div>

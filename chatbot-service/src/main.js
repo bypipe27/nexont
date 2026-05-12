@@ -64,6 +64,13 @@ export async function chat({ rol, historial = [], mensaje, contexto = {} }) {
     const choice  = response.choices[0];
     const message = choice.message;
 
+    // Limpieza agresiva de cualquier etiqueta <function...> o similar que el modelo intente inyectar en el texto
+    if (message.content) {
+      message.content = message.content.replace(/<function=.*?>.*?<\/function>/gi, '');
+      message.content = message.content.replace(/<function=.*?>/gi, ''); // Por si no cerró la etiqueta
+      message.content = message.content.trim();
+    }
+
     if (choice.finish_reason === 'stop' || !message.tool_calls?.length) {
       respuestaFinal = message.content || '';
       mensajes.push({ role: 'assistant', content: respuestaFinal });
