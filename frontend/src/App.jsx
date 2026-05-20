@@ -13,6 +13,7 @@ import AssistedRecommendations from './pages/AssistedRecommendations';
 import Profile from './pages/Profile';
 import PrivateRoute from './components/PrivateRoute';
 import ChatWidget from './components/ChatWidget';
+import HelpCenter from './components/HelpCenter';
 import SellerProfile from './pages/SellerProfile';
 
 function App() {
@@ -69,6 +70,8 @@ function App() {
           <Route path="/cart" element={<PrivateRoute><Elements stripe={stripePromise}><Cart /></Elements></PrivateRoute>} />
         </Routes>
       </BrowserRouter>
+
+      <HelpCenter />
 
       {!showChat && (
         <button

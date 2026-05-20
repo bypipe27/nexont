@@ -126,6 +126,34 @@ const SELLER_STYLES = `
     text-transform: uppercase; letter-spacing: 0.14em; display: block;
   }
 
+  .sp-review-section {
+    margin-top: 1.5rem;
+    border: 1px solid var(--border);
+    background: var(--white);
+    padding: 1.25rem;
+  }
+  .sp-review-head {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;
+  }
+  .sp-review-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.35rem; font-weight: 300; color: var(--ink);
+  }
+  .sp-review-sub { font-size: 0.72rem; color: var(--ink-soft); }
+  .sp-review-list { display: grid; gap: 0.75rem; }
+  .sp-review-card {
+    padding: 0.95rem 1rem;
+    border: 1px solid var(--border);
+    background: var(--cream);
+  }
+  .sp-review-row { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 0.35rem; flex-wrap: wrap; }
+  .sp-review-name { font-size: 0.82rem; font-weight: 600; color: var(--ink); }
+  .sp-review-date { font-size: 0.68rem; color: var(--ink-ghost); text-transform: uppercase; letter-spacing: 0.12em; }
+  .sp-review-stars { color: var(--amber); font-size: 0.72rem; margin-bottom: 0.45rem; }
+  .sp-review-comment { font-size: 0.84rem; color: var(--ink-mid); line-height: 1.75; }
+  .sp-review-empty { font-size: 0.85rem; color: var(--ink-soft); line-height: 1.8; }
+
   /* PRODUCTS SECTION */
   .sp-section { padding: 3rem; }
   .sp-section-head {
@@ -282,6 +310,7 @@ export default function SellerProfile() {
 
   const [seller, setSeller] = useState(null);
   const [products, setProducts] = useState([]);
+  const [reviewSummary, setReviewSummary] = useState({ averageRating: 0, totalReviews: 0, recentReviews: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [qtys, setQtys] = useState({});
@@ -298,6 +327,7 @@ export default function SellerProfile() {
       .then(({ data }) => {
         setSeller(data.seller);
         setProducts(data.products || []);
+        setReviewSummary(data.reviewSummary || data.seller?.reviewSummary || { averageRating: 0, totalReviews: 0, recentReviews: [] });
       })
       .catch(err => setError(err.response?.data?.error || 'No se pudo cargar el perfil del vendedor'))
       .finally(() => setLoading(false));
@@ -421,18 +451,51 @@ export default function SellerProfile() {
               </div>
               <div className="sp-stat">
                 <span className="sp-stat-val">
-                  {products.length > 0
-                    ? (products.reduce((acc, p) => acc + (parseFloat(p.promedioCalificacion) || 0), 0) / products.length).toFixed(1)
-                    : '—'}
+                  {reviewSummary.totalReviews > 0 ? reviewSummary.averageRating.toFixed(1) : '—'}
                 </span>
                 <span className="sp-stat-lbl">Cal. promedio</span>
               </div>
               <div className="sp-stat">
                 <span className="sp-stat-val">
-                  {products.filter(p => p.stock > 0).length}
+                  {reviewSummary.totalReviews}
                 </span>
-                <span className="sp-stat-lbl">En stock</span>
+                <span className="sp-stat-lbl">Reseñas</span>
               </div>
+            </div>
+
+            <div className="sp-review-section">
+              <div className="sp-review-head">
+                <div>
+                  <div className="sp-review-title">Opiniones de compradores</div>
+                  <div className="sp-review-sub">
+                    {reviewSummary.totalReviews > 0
+                      ? `${reviewSummary.totalReviews} reseña${reviewSummary.totalReviews !== 1 ? 's' : ''} registradas`
+                      : 'Aún no hay reseñas para este vendedor.'}
+                  </div>
+                </div>
+                {reviewSummary.totalReviews > 0 && (
+                  <div style={{ color: 'var(--amber)', fontSize: '0.85rem', letterSpacing: '0.08em' }}>
+                    {stars(reviewSummary.averageRating)}
+                  </div>
+                )}
+              </div>
+
+              {reviewSummary.recentReviews?.length > 0 ? (
+                <div className="sp-review-list">
+                  {reviewSummary.recentReviews.map((review) => (
+                    <div key={review.id} className="sp-review-card">
+                      <div className="sp-review-row">
+                        <div className="sp-review-name">{review.reviewerName}</div>
+                        <div className="sp-review-date">{new Date(review.createdAt).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
+                      </div>
+                      <div className="sp-review-stars">{stars(review.rating)}</div>
+                      <div className="sp-review-comment">{review.comment || 'Sin comentario'}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="sp-review-empty">Todavía no hay comentarios visibles para este vendedor.</div>
+              )}
             </div>
           </div>
         </div>

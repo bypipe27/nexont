@@ -1,5 +1,6 @@
 const productsService = require('./products.service');
 const cloudinary = require('cloudinary').v2;
+const reviewsService = require('../reviews/reviews.service');
 
 // ─── Configuración de Cloudinary ──────────────────────────────────────────────
 cloudinary.config({ cloudinary_url: process.env.CLOUDINARY_URL });
@@ -67,6 +68,7 @@ const getProductById = async (req, res) => {
     if (isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
 
     const product = await productsService.getProductById(id);
+    const reviewSummary = await reviewsService.getSellerReviewSummary(product.vendedor.id);
 
     res.json({
       product: {
@@ -79,7 +81,7 @@ const getProductById = async (req, res) => {
         condition: product.condicion?.toLowerCase() || 'nuevo',
         rating: product.promedioCalificacion || 0,
         imagenes: product.imagenes || [],
-        seller: product.vendedor,
+        seller: { ...product.vendedor, reviewSummary },
         creadoEn: product.creadoEn,
       },
     });

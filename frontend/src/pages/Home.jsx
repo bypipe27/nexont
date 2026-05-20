@@ -547,6 +547,7 @@ function ProductDetailModal({ productId, onClose }) {
               {product.seller && (() => {
                 const v = product.seller;
                 const initials = `${(v.nombres?.[0] || '').toUpperCase()}${(v.apellidos?.[0] || '').toUpperCase()}`;
+                const sellerRating = v.reviewSummary?.totalReviews > 0 ? v.reviewSummary.averageRating : 0;
                 return (
                   <div className="nx-seller-card">
                     <div className="nx-seller-av">
@@ -555,6 +556,11 @@ function ProductDetailModal({ productId, onClose }) {
                     <div className="nx-seller-info">
                       <span className="nx-seller-name">{v.nombres} {v.apellidos}</span>
                       <div className="nx-seller-date">Vendedor verificado</div>
+                      <div style={{ marginTop: '0.35rem', fontSize: '0.76rem', color: 'var(--ar-on-surface-variant)' }}>
+                        {v.reviewSummary?.totalReviews > 0
+                          ? <>Calificación del vendedor: <span style={{ color: 'var(--amber)' }}>{stars(sellerRating)}</span> <span style={{ marginLeft: 6 }}>{sellerRating.toFixed(1)} · {v.reviewSummary.totalReviews} reseñas</span></>
+                          : 'Aún no tiene reseñas'}
+                      </div>
                     </div>
                     <button className="nx-seller-link" onClick={() => goToSeller(v.id)}>Ver tienda</button>
                   </div>
