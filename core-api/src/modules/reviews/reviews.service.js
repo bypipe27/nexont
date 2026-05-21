@@ -6,17 +6,28 @@ const normalizeReviewComment = (comment) => {
   return value.length ? value.slice(0, 300) : null;
 };
 
+const getSellerReviewModel = () => prisma.resenaVendedor;
+
 const getSellerReviewSummary = async (sellerId) => {
   const id = parseInt(sellerId, 10);
   if (Number.isNaN(id)) throw new Error('ID de vendedor inválido');
 
+  const reviewModel = getSellerReviewModel();
+  if (!reviewModel?.aggregate || !reviewModel?.findMany) {
+    return {
+      averageRating: 0,
+      totalReviews: 0,
+      recentReviews: [],
+    };
+  }
+
   const [aggregate, recentReviews] = await Promise.all([
-    prisma.resenaVendedor.aggregate({
+    reviewModel.aggregate({
       where: { vendedorId: id },
       _avg: { calificacion: true },
       _count: { _all: true },
     }),
-    prisma.resenaVendedor.findMany({
+    reviewModel.findMany({
       where: { vendedorId: id },
       orderBy: { creadoEn: 'desc' },
       take: 5,
@@ -54,7 +65,12 @@ const recalculateSellerRatings = async (sellerId) => {
   const id = parseInt(sellerId, 10);
   if (Number.isNaN(id)) throw new Error('ID de vendedor inválido');
 
-  const aggregate = await prisma.resenaVendedor.aggregate({
+  const reviewModel = getSellerReviewModel();
+  if (!reviewModel?.aggregate) {
+    return { averageRating: 0, totalReviews: 0 };
+  }
+
+  const aggregate = await reviewModel.aggregate({
     where: { vendedorId: id },
     _avg: { calificacion: true },
     _count: { _all: true },
@@ -87,6 +103,11 @@ const createSellerReview = async ({ userId, sellerId, orderId, calificacion, com
 
   const cleanComment = normalizeReviewComment(comentario);
 
+  const reviewModel = getSellerReviewModel();
+  if (!reviewModel?.findUnique || !reviewModel?.create) {
+    throw new Error('El módulo de reseñas no está disponible en este entorno');
+  }
+
   const order = await prisma.pedido.findFirst({
     where: { id: orderIdInt, usuarioId: buyerId },
     select: {
@@ -114,7 +135,7 @@ const createSellerReview = async ({ userId, sellerId, orderId, calificacion, com
     throw new Error('El vendedor no pertenece a este pedido');
   }
 
-  const existing = await prisma.resenaVendedor.findUnique({
+  const existing = await reviewModel.findUnique({
     where: {
       usuarioId_vendedorId_pedidoId: {
         usuarioId: buyerId,
@@ -128,7 +149,7 @@ const createSellerReview = async ({ userId, sellerId, orderId, calificacion, com
     throw new Error('Ya dejaste una reseña para este vendedor en este pedido');
   }
 
-  const review = await prisma.resenaVendedor.create({
+  const review = await reviewModel.create({
     data: {
       usuarioId: buyerId,
       vendedorId: sellerIdInt,
