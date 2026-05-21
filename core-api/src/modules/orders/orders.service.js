@@ -106,6 +106,7 @@ const confirmOrder = async ({ userId, paymentMethod = 'efectivo', notes = '' }) 
               select: {
                 id: true, titulo: true,
                 imagenes: { where: { esPrincipal: true }, select: { url: true } },
+                vendedor: { select: { id: true, nombres: true, apellidos: true } },
               },
             },
           },
@@ -137,6 +138,8 @@ const confirmOrder = async ({ userId, paymentMethod = 'efectivo', notes = '' }) 
         productId: item.productoId,
         productName: item.producto?.titulo || 'Producto',
         imageUrl: item.producto?.imagenes?.[0]?.url || null,
+        sellerId: item.producto?.vendedor?.id || null,
+        sellerName: `${item.producto?.vendedor?.nombres || ''} ${item.producto?.vendedor?.apellidos || ''}`.trim() || null,
         quantity: item.cantidad,
         unitPrice: Number(item.precioUnitario),
         lineTotal: Number(item.subtotal),
@@ -162,6 +165,7 @@ const getOrdersByUser = async (userId) => {
             select: {
               id: true, titulo: true,
               imagenes: { where: { esPrincipal: true }, select: { url: true } },
+              vendedor: { select: { id: true, nombres: true, apellidos: true } },
             },
           },
         },
@@ -184,6 +188,8 @@ const getOrdersByUser = async (userId) => {
       productId: item.productoId,
       productName: item.producto?.titulo || 'Producto eliminado',
       imageUrl: item.producto?.imagenes?.[0]?.url || null,
+      sellerId: item.producto?.vendedor?.id || null,
+      sellerName: `${item.producto?.vendedor?.nombres || ''} ${item.producto?.vendedor?.apellidos || ''}`.trim() || null,
       quantity: item.cantidad,
       unitPrice: Number(item.precioUnitario),
       lineTotal: Number(item.subtotal),
@@ -202,6 +208,7 @@ const getOrderById = async (orderId, userId) => {
             select: {
               id: true, titulo: true,
               imagenes: { where: { esPrincipal: true }, select: { url: true } },
+              vendedor: { select: { id: true, nombres: true, apellidos: true } },
             },
           },
         },
@@ -211,6 +218,36 @@ const getOrderById = async (orderId, userId) => {
   });
 
   if (!order) throw new Error('Orden no encontrada');
+
+  const reviews = await prisma.resenaVendedor.findMany({
+    where: { pedidoId: order.id, usuarioId: userId },
+    select: {
+      vendedorId: true,
+      calificacion: true,
+      comentario: true,
+      creadoEn: true,
+    },
+  });
+
+  const reviewBySellerId = new Map(reviews.map((review) => [review.vendedorId, review]));
+  const sellers = [];
+  const seenSellerIds = new Set();
+  order.detalles.forEach((item) => {
+    const seller = item.producto?.vendedor;
+    if (!seller || seenSellerIds.has(seller.id)) return;
+    seenSellerIds.add(seller.id);
+    sellers.push({
+      id: seller.id,
+      name: `${seller.nombres || ''} ${seller.apellidos || ''}`.trim() || 'Vendedor',
+      review: reviewBySellerId.get(seller.id)
+        ? {
+            rating: reviewBySellerId.get(seller.id).calificacion,
+            comment: reviewBySellerId.get(seller.id).comentario,
+            createdAt: reviewBySellerId.get(seller.id).creadoEn,
+          }
+        : null,
+    });
+  });
 
   return {
     id: order.id,
@@ -229,10 +266,13 @@ const getOrderById = async (orderId, userId) => {
       productId: item.productoId,
       productName: item.producto?.titulo || 'Producto eliminado',
       imageUrl: item.producto?.imagenes?.[0]?.url || null,
+      sellerId: item.producto?.vendedor?.id || null,
+      sellerName: `${item.producto?.vendedor?.nombres || ''} ${item.producto?.vendedor?.apellidos || ''}`.trim() || null,
       quantity: item.cantidad,
       unitPrice: Number(item.precioUnitario),
       lineTotal: Number(item.subtotal),
     })),
+    sellers,
   };
 };
 

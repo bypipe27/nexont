@@ -3,181 +3,58 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/api';
 import { useTheme } from '../context/ThemeContext';
 import AssistedTopBar from '../components/assisted/AssistedTopBar';
+import { ensureSellerStyles } from '../components/seller/sellerStyles';
 
-const DASHBOARD_STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,200;0,300;0,400;0,600;0,700;1,200;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap');
-
-  .sd-root { min-height: 100vh; background: var(--cream); color: var(--ink); font-family: 'DM Sans', sans-serif; }
-  .sd-nav { position: sticky; top: 0; z-index: 200; height: 68px; background: rgba(245,240,232,0.94); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 3rem; gap: 1rem; }
-  [data-theme='dark'] .sd-nav { background: rgba(14,12,10,0.94); }
-  .sd-brand { display: flex; align-items: center; gap: 0.75rem; text-decoration: none; }
-  .sd-brand img { height: 28px; }
-  .sd-brand-name { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 600; letter-spacing: 0.06em; color: var(--ink); }
-  .sd-nav-gap { flex: 1; }
-  .sd-nav-link { height: 36px; padding: 0 0.95rem; display: inline-flex; align-items: center; border: 1px solid var(--border); color: var(--ink-soft); text-decoration: none; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; transition: all 0.18s; background: transparent; }
-  .sd-nav-link:hover { background: var(--ink); color: var(--cream); border-color: var(--ink); }
-  .sd-page { max-width: 1240px; margin: 0 auto; padding: 3.5rem 3rem 5rem; }
-  .sd-hero { display: flex; justify-content: space-between; gap: 2rem; align-items: flex-start; margin-bottom: 2.5rem; }
-  .sd-eyebrow { font-size: 0.6rem; font-weight: 600; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink-soft); display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.7rem; }
-  .sd-eyebrow::before { content: ''; display: block; width: 22px; height: 1px; background: var(--ink-soft); }
-  .sd-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(2.8rem, 5vw, 4.4rem); font-weight: 200; line-height: 0.95; letter-spacing: -0.025em; margin-bottom: 0.75rem; }
-  .sd-sub { font-size: 0.9rem; line-height: 1.7; color: var(--ink-soft); max-width: 720px; }
-  .sd-status { padding: 0.75rem 1rem; border: 1px solid var(--border); background: var(--white); min-width: 230px; }
-  .sd-status-label { font-size: 0.58rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-ghost); margin-bottom: 0.35rem; }
-  .sd-status-value { font-size: 0.85rem; color: var(--ink); }
-  .sd-status-pill { display: inline-flex; align-items: center; gap: 0.35rem; margin-top: 0.55rem; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.14em; color: #16A34A; }
-  .sd-status-dot { width: 7px; height: 7px; border-radius: 50%; background: #16A34A; }
-  .sd-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.25rem; }
-  .sd-btn, .sd-btn-outline { height: 40px; padding: 0 1.25rem; display: inline-flex; align-items: center; justify-content: center; border: none; text-decoration: none; cursor: pointer; font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; transition: all 0.18s; }
-  .sd-btn { background: var(--ink); color: var(--cream); }
-  .sd-btn:hover { background: var(--ink-mid); }
-  .sd-btn-outline { background: transparent; border: 1px solid var(--border); color: var(--ink-soft); }
-  .sd-btn-outline:hover { background: var(--cream-dark); color: var(--ink); border-color: var(--ink); }
-  .sd-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin-bottom: 2rem; }
-  .sd-card { background: var(--white); border: 1px solid var(--border); padding: 1.25rem 1.35rem; }
-  .sd-card-lbl { font-size: 0.58rem; text-transform: uppercase; letter-spacing: 0.16em; color: var(--ink-ghost); margin-bottom: 0.6rem; }
-  .sd-card-val { font-family: 'Cormorant Garamond', serif; font-size: 2.1rem; font-weight: 200; line-height: 1; color: var(--ink); margin-bottom: 0.3rem; }
-  .sd-card-note { font-size: 0.76rem; color: var(--ink-soft); line-height: 1.5; }
-  .sd-chart-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 1rem; }
-  .sd-chart { background: var(--white); border: 1px solid var(--border); padding: 1.2rem 1.25rem 1.35rem; }
-  .sd-chart-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
-  .sd-chart-title { font-family: 'Cormorant Garamond', serif; font-size: 1.45rem; font-weight: 300; color: var(--ink); }
-  .sd-chart-sub { font-size: 0.72rem; color: var(--ink-soft); line-height: 1.5; }
-  .sd-chart-bars { display: grid; gap: 0.8rem; }
-  .sd-chart-row { display: grid; grid-template-columns: 98px 1fr 42px; gap: 0.75rem; align-items: center; }
-  .sd-chart-label { font-size: 0.72rem; color: var(--ink-mid); line-height: 1.25; }
-  .sd-chart-track { height: 10px; background: rgba(26,23,20,0.06); border: 1px solid rgba(26,23,20,0.06); overflow: hidden; }
-  .sd-chart-fill { height: 100%; background: linear-gradient(90deg, var(--ink), var(--amber)); min-width: 0; }
-  .sd-chart-value { text-align: right; font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; color: var(--ink); }
-  .sd-chart-empty { padding: 1.4rem 0; color: var(--ink-soft); font-size: 0.82rem; line-height: 1.7; }
-  .sd-section { margin-top: 2rem; }
-  .sd-section-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); margin-bottom: 1.25rem; }
-  .sd-section-title { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 200; color: var(--ink); }
-  .sd-section-link { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-soft); text-decoration: none; }
-  .sd-section-link:hover { color: var(--ink); }
-  .sd-product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0; border-top: 1px solid var(--border); border-left: 1px solid var(--border); }
-  .sd-product { border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); background: var(--white); padding: 1rem; display: flex; flex-direction: column; }
-  .sd-product-thumb { aspect-ratio: 1; border: 1px solid var(--border); background: var(--cream-dark); margin-bottom: 0.85rem; overflow: hidden; display: flex; align-items: center; justify-content: center; color: var(--ink-ghost); font-size: 0.75rem; }
-  .sd-product-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .sd-product-name { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; font-weight: 300; line-height: 1.15; margin-bottom: 0.3rem; }
-  .sd-product-meta { font-size: 0.72rem; color: var(--ink-soft); line-height: 1.5; }
-  .sd-product-price { margin-top: 0.55rem; font-family: 'Cormorant Garamond', serif; font-size: 1.35rem; color: var(--amber); }
-  .sd-product-actions { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.8rem; }
-  .sd-mini-btn { height: 30px; padding: 0 0.7rem; border: 1px solid var(--border); background: transparent; color: var(--ink-soft); cursor: pointer; font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
-  .sd-mini-btn:hover { background: var(--ink); color: var(--cream); border-color: var(--ink); }
-  .sd-mini-btn.danger:hover { background: #DC2626; color: #fff; border-color: #DC2626; }
-  .sd-sales-list { display: grid; gap: 0.75rem; }
-  .sd-sale { display: flex; align-items: center; gap: 1rem; padding: 0.95rem 1rem; background: var(--white); border: 1px solid var(--border); }
-  .sd-sale-thumb { width: 54px; height: 54px; background: var(--cream-dark); border: 1px solid var(--border); flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; color: var(--ink-ghost); }
-  .sd-sale-thumb img { width: 100%; height: 100%; object-fit: cover; }
-  .sd-sale-main { flex: 1; min-width: 0; }
-  .sd-sale-title { font-size: 0.9rem; color: var(--ink); font-weight: 500; margin-bottom: 0.15rem; }
-  .sd-sale-sub { font-size: 0.72rem; color: var(--ink-soft); line-height: 1.5; }
-  .sd-sale-amt { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; color: var(--ink); }
-  .sd-empty { padding: 3rem 1.5rem; text-align: center; border: 1px dashed var(--border); background: rgba(255,255,255,0.4); }
-  .sd-empty-title { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 200; margin-bottom: 0.5rem; }
-  .sd-empty-text { font-size: 0.84rem; line-height: 1.8; color: var(--ink-soft); max-width: 560px; margin: 0 auto; }
-  .sd-error { padding: 0.85rem 1rem; border: 1px solid #FCA5A5; background: #FEF2F2; color: #DC2626; font-size: 0.82rem; margin-bottom: 1rem; }
-  .sd-loading { padding: 4rem 2rem; text-align: center; color: var(--ink-soft); }
-
-  .sd-overlay { position: fixed; inset: 0; background: rgba(26,23,20,0.6); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 3000; padding: 1rem; }
-  .sd-modal { width: 100%; max-width: 780px; max-height: 92vh; overflow-y: auto; position: relative; background: var(--white); border: 1px solid var(--border); box-shadow: 0 24px 60px rgba(26,23,20,0.2); }
-  .sd-modal.compact { max-width: 500px; }
-  .sd-modal-head { padding: 1.75rem 2rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; justify-content: space-between; background: var(--cream-dark); }
-  .sd-modal-tag { font-size: 0.6rem; font-weight: 600; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.5rem; }
-  .sd-modal-tag::before { content: ''; display: block; width: 16px; height: 1px; background: var(--ink-soft); }
-  .sd-modal-title { font-family: 'Cormorant Garamond', serif; font-size: 1.75rem; font-weight: 200; color: var(--ink); letter-spacing: -0.015em; }
-  .sd-close { width: 30px; height: 30px; background: transparent; border: 1px solid var(--border); color: var(--ink-soft); cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; justify-content: center; transition: all 0.15s; margin-top: 2px; }
-  .sd-close:hover { background: var(--ink); color: var(--cream); border-color: var(--ink); }
-  .sd-modal-body { padding: 1.75rem 2rem 2rem; }
-  .sd-detail { display: grid; grid-template-columns: 1fr 1.15fr; gap: 1.5rem; align-items: start; }
-  .sd-detail-media { border: 1px solid var(--border); background: var(--cream-dark); overflow: hidden; }
-  .sd-detail-media img { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
-  .sd-detail-media-empty { width: 100%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; color: var(--ink-ghost); font-size: 0.8rem; }
-  .sd-detail-name { font-family: 'Cormorant Garamond', serif; font-size: 2rem; line-height: 1; font-weight: 200; margin-bottom: 0.55rem; }
-  .sd-detail-desc { color: var(--ink-soft); font-size: 0.88rem; line-height: 1.75; margin-bottom: 1.1rem; }
-  .sd-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.75rem; margin-bottom: 1rem; }
-  .sd-detail-stat { border: 1px solid var(--border); background: var(--cream); padding: 0.8rem 0.9rem; }
-  .sd-detail-stat-lbl { display: block; font-size: 0.58rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-ghost); margin-bottom: 0.25rem; }
-  .sd-detail-stat-val { font-size: 0.86rem; color: var(--ink); }
-  .sd-detail-seller { border: 1px solid var(--border); background: var(--white); padding: 0.9rem 1rem; margin-top: 1rem; }
-  .sd-detail-seller-lbl { font-size: 0.58rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-ghost); margin-bottom: 0.45rem; }
-  .sd-detail-seller-name { font-size: 0.92rem; font-weight: 500; color: var(--ink); margin-bottom: 0.2rem; }
-  .sd-detail-seller-meta { font-size: 0.76rem; color: var(--ink-soft); line-height: 1.5; }
-  .sd-detail-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; }
-  .sd-form { margin-top: 0.25rem; }
-  .sd-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
-  .sd-field { margin-bottom: 1rem; }
-  .sd-field label { display: block; font-size: 0.6rem; font-weight: 600; color: var(--ink-soft); margin-bottom: 0.45rem; letter-spacing: 0.16em; text-transform: uppercase; }
-  .sd-field input:not([type=file]), .sd-field textarea, .sd-field select { width: 100%; padding: 0 0.95rem; background: var(--cream); border: 1px solid var(--border); color: var(--ink); font-size: 0.88rem; font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.2s; box-sizing: border-box; }
-  .sd-field input:not([type=file]), .sd-field select { height: 40px; }
-  .sd-field textarea { padding: 0.75rem 0.95rem; height: 90px; resize: vertical; line-height: 1.6; }
-  .sd-field input:not([type=file]):focus, .sd-field textarea:focus, .sd-field select:focus { border-color: var(--ink); }
-  .sd-field input::placeholder, .sd-field textarea::placeholder { color: var(--ink-ghost); }
-  .sd-file-hidden { display: none; }
-  .sd-img-zone { border: 1px dashed rgba(26,23,20,0.18); background: var(--cream); padding: 1.3rem; text-align: center; cursor: pointer; transition: all 0.2s; }
-  .sd-img-zone:hover { border-color: var(--ink); background: var(--cream-dark); }
-  .sd-img-icon { font-size: 1.4rem; opacity: 0.3; display: block; margin-bottom: 0.45rem; }
-  .sd-img-txt { font-size: 0.75rem; color: var(--ink-soft); }
-  .sd-img-txt b { color: var(--ink); }
-  .sd-img-preview { margin-top: 0.85rem; position: relative; }
-  .sd-img-preview img { width: 100%; max-height: 180px; object-fit: cover; display: block; border: 1px solid var(--border); }
-  .sd-img-remove { position: absolute; top: 0.4rem; right: 0.4rem; background: var(--white); border: 1px solid var(--border); color: var(--ink-soft); cursor: pointer; font-size: 0.7rem; padding: 0.2rem 0.5rem; transition: all 0.15s; }
-  .sd-img-remove:hover { background: var(--ink); color: var(--cream); }
-  .sd-modal-error { background: #FEF2F2; border: 1px solid #FCA5A5; padding: 0.65rem 0.9rem; margin-bottom: 1rem; color: #DC2626; font-size: 0.8rem; }
-  .sd-modal-success { background: #F0FDF4; border: 1px solid #86EFAC; padding: 0.65rem 0.9rem; margin-bottom: 1rem; color: #16A34A; font-size: 0.8rem; }
-  .sd-modal-foot { display: flex; gap: 0.75rem; justify-content: flex-end; padding-top: 1.25rem; border-top: 1px solid var(--border); margin-top: 1.5rem; }
-  .sd-modal-cancel { height: 40px; padding: 0 1.4rem; background: transparent; color: var(--ink-soft); border: 1px solid var(--border); cursor: pointer; font-size: 0.72rem; font-family: 'DM Sans', sans-serif; transition: all 0.18s; letter-spacing: 0.08em; text-transform: uppercase; }
-  .sd-modal-cancel:hover { border-color: var(--ink); color: var(--ink); }
-  .sd-modal-submit { height: 40px; padding: 0 1.75rem; background: var(--ink); color: var(--cream); font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; border: none; cursor: pointer; transition: background 0.2s; }
-  .sd-modal-submit:hover:not(:disabled) { background: var(--ink-mid); }
-  .sd-modal-submit:disabled { opacity: 0.35; cursor: not-allowed; }
-  .sd-modal-submit.danger { background: #DC2626; }
-  .sd-modal-submit.danger:hover:not(:disabled) { background: #B91C1C; }
-
-  @media (max-width: 900px) { .sd-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .sd-hero { flex-direction: column; } .sd-status { width: 100%; } .sd-detail { grid-template-columns: 1fr; } }
-  @media (max-width: 640px) { .sd-nav, .sd-page { padding-left: 1.25rem; padding-right: 1.25rem; } .sd-grid { grid-template-columns: 1fr; } .sd-form-row, .sd-detail-grid { grid-template-columns: 1fr; } }
-`;
-
-const CATEGORY_OPTIONS = [
-  { value: 'ELECTRONICA_TECNOLOGIA', label: 'Electrónica y Tecnología' },
-  { value: 'HOGAR_DECORACION', label: 'Hogar y Decoración' },
-  { value: 'MODA_ACCESORIOS', label: 'Moda y Accesorios' },
-  { value: 'SALUD_BELLEZA', label: 'Salud y Belleza' },
-  { value: 'DEPORTES_FITNESS', label: 'Deportes y Fitness' },
-  { value: 'JUGUETES_BEBES', label: 'Juguetes y Bebés' },
-  { value: 'AUTOMOTRIZ', label: 'Automotriz' },
-  { value: 'LIBROS_MUSICA_ENTRETENIMIENTO', label: 'Libros, Música y Entretenimiento' },
-  { value: 'ALIMENTOS_BEBIDAS', label: 'Alimentos y Bebidas' },
-  { value: 'SERVICIOS_OTROS', label: 'Servicios y Otros' },
-];
-
-function formatMoney(value) {
-  return new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(value || 0);
-}
-
-function formatDate(value) {
-  if (!value) return 'Sin fecha';
-  return new Intl.DateTimeFormat('es-CO', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date(value));
-}
-
-function getCategoryLabel(value) {
-  return CATEGORY_OPTIONS.find((option) => option.value === value)?.label || 'Servicios y Otros';
-}
-
-function getConditionLabel(value) {
-  if (!value) return 'Nuevo';
-  return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
-}
-
-function stars(value) {
-  const count = Math.max(0, Math.min(5, Math.round(Number(value) || 0)));
-  return '★'.repeat(count) + '☆'.repeat(5 - count);
-}
+ensureSellerStyles();
 
 function getBarWidth(value, maxValue) {
   if (!maxValue) return '0%';
   return `${Math.max(0, Math.round((value / maxValue) * 100))}%`;
+}
+
+function formatMoney(value) {
+  const amount = Number(value) || 0;
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+function getConditionLabel(value) {
+  const normalized = String(value || '').toUpperCase();
+  if (normalized === 'USADO') return 'Usado';
+  if (normalized === 'REACONDICIONADO') return 'Reacondicionado';
+  return 'Nuevo';
+}
+
+function getCategoryLabel(value) {
+  const normalized = String(value || '').toUpperCase();
+  const labels = {
+    ELECTRONICA_TECNOLOGIA: 'Electrónica y Tecnología',
+    HOGAR_DECORACION: 'Hogar y Decoración',
+    MODA_ACCESORIOS: 'Moda y Accesorios',
+    SALUD_BELLEZA: 'Salud y Belleza',
+    DEPORTES_FITNESS: 'Deportes y Fitness',
+    JUGUETES_BEBES: 'Juguetes y Bebés',
+    AUTOMOTRIZ: 'Automotriz',
+    LIBROS_MUSICA_ENTRETENIMIENTO: 'Libros, Música y Entretenimiento',
+    ALIMENTOS_BEBIDAS: 'Alimentos y Bebidas',
+    SERVICIOS_OTROS: 'Servicios y Otros',
+  };
+
+  return labels[normalized] || 'Servicios y Otros';
+}
+
+function stars(value = 0) {
+  const rating = Math.max(0, Math.min(5, Math.round(Number(value) || 0)));
+  return '★'.repeat(rating) + '☆'.repeat(5 - rating);
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('es-CO', { year: 'numeric', month: 'long' });
 }
 
 function ChartCard({ title, subtitle, series, emptyText }) {
@@ -468,15 +345,6 @@ function Dashboard() {
   const [deletingProduct, setDeletingProduct] = useState(null);
   const [mutationLoading, setMutationLoading] = useState(false);
 
-  useEffect(() => {
-    if (!document.getElementById('sd-styles')) {
-      const el = document.createElement('style');
-      el.id = 'sd-styles';
-      el.textContent = DASHBOARD_STYLES;
-      document.head.appendChild(el);
-    }
-  }, []);
-
   const fetchDashboard = useCallback(async () => {
     try {
       setError('');
@@ -535,7 +403,17 @@ function Dashboard() {
   };
 
   if (loading) {
-    return <div className="sd-loading" data-theme={theme}>Cargando dashboard...</div>;
+    return (
+      <div className="sd-root" data-theme={theme}>
+        <AssistedTopBar active="tienda" />
+        <main className="sd-page">
+          <div className="sd-empty" style={{ minHeight: '42vh', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div className="sd-empty-title">Cargando dashboard...</div>
+            <div className="sd-empty-text">Estamos preparando tus métricas, productos y ventas recientes.</div>
+          </div>
+        </main>
+      </div>
+    );
   }
 
   const seller = dashboard?.seller;

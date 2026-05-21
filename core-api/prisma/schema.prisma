@@ -89,6 +89,8 @@ model Usuario {
   pedidos              Pedido[]
   // ...existing code...
   resenas              Resena[]
+  resenasEmitidas      ResenaVendedor[] @relation("ResenasEmitidas")
+  resenasRecibidas     ResenaVendedor[] @relation("ResenasRecibidas")
   eventos              EventoUsuario[]
   interaccionesIA      InteraccionIA[]
 
@@ -193,6 +195,7 @@ model Pedido {
   usuario       Usuario       @relation(fields: [usuarioId], references: [id])
   detalles      DetallePedido[]
   factura       Factura?
+  resenasVendedor ResenaVendedor[]
   // ...existing code...
 
   @@index([usuarioId])
@@ -249,6 +252,25 @@ model Resena {
 
   @@unique([usuarioId, productoId])
   @@map("resenas")
+}
+
+model ResenaVendedor {
+  id          Int      @id @default(autoincrement())
+  usuarioId   Int
+  vendedorId  Int
+  pedidoId    Int
+  calificacion Int
+  comentario  String?  @db.VarChar(300)
+  creadoEn    DateTime @default(now())
+
+  usuario     Usuario  @relation("ResenasEmitidas", fields: [usuarioId], references: [id], onDelete: Cascade)
+  vendedor    Usuario  @relation("ResenasRecibidas", fields: [vendedorId], references: [id], onDelete: Cascade)
+  pedido      Pedido   @relation(fields: [pedidoId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, vendedorId, pedidoId])
+  @@index([vendedorId, creadoEn])
+  @@index([pedidoId])
+  @@map("resenas_vendedores")
 }
 
 model EventoUsuario {

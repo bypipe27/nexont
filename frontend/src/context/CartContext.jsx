@@ -1,10 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import axios from 'axios';
 import api from '../api/api';
 
 const CartContext = createContext();
 
 const EMPTY_CART = { items: [], totalItems: 0, subtotal: 0 };
 const CART_UPDATED_EVENT = 'nexont:cart-updated';
+const cartApi = axios.create({
+  baseURL: '/api/v1',
+  headers: { 'Content-Type': 'application/json' },
+});
 
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState(EMPTY_CART);
@@ -72,7 +77,9 @@ export const CartProvider = ({ children }) => {
     try {
       setLoading(true);
       setError('');
-      const { data } = await api.get('/cart');
+      const { data } = await cartApi.get('/cart', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setCartState(normalizeBackendCart(data), { clearLocal: true });
     } catch (err) {
       if (err.response?.status === 401) {
@@ -90,11 +97,11 @@ export const CartProvider = ({ children }) => {
     if (localCart.items.length === 0) return;
     try {
       for (const item of localCart.items) {
-        await api.post('/cart', { productId: item.productId, quantity: item.quantity }, {
+        await cartApi.post('/cart/items', { productId: item.productId, quantity: item.quantity }, {
           headers: { Authorization: `Bearer ${authToken}` }
         });
       }
-      const { data } = await api.get('/cart', { headers: { Authorization: `Bearer ${authToken}` } });
+      const { data } = await cartApi.get('/cart', { headers: { Authorization: `Bearer ${authToken}` } });
       setCartState(normalizeBackendCart(data), { clearLocal: true });
     } catch (err) {
       console.error('Error syncing cart:', err);
@@ -129,7 +136,7 @@ export const CartProvider = ({ children }) => {
         setCartState({ ...localCart, totalItems }, { persistLocal: true });
         setSuccess('Producto añadido al carrito');
       } else {
-        await api.post('/cart', { productId, quantity });
+        await api.post('/cart/items', { productId, quantity });
         await fetchCart();
         setSuccess('Producto añadido al carrito');
       }
@@ -149,7 +156,7 @@ export const CartProvider = ({ children }) => {
           setCartState(localCart, { persistLocal: true });
         }
       } else {
-        await api.put(`/cart/${productId}`, { quantity });
+        await api.patch(`/cart/items/${productId}`, { quantity });
         await fetchCart();
       }
     } catch (err) {
@@ -165,7 +172,7 @@ export const CartProvider = ({ children }) => {
         localCart.items = localCart.items.filter(i => i.productId !== productId);
         setCartState(localCart, { persistLocal: true });
       } else {
-        await api.delete(`/cart/${productId}`);
+        await api.delete(`/cart/items/${productId}`);
         await fetchCart();
       }
     } catch (err) {
@@ -179,7 +186,7 @@ export const CartProvider = ({ children }) => {
       if (!token) {
         setCartState(EMPTY_CART, { persistLocal: true });
       } else {
-        await api.delete('/cart/clear');
+        await api.delete('/cart');
         setCartState(EMPTY_CART);
       }
     } catch (err) {

@@ -99,6 +99,23 @@ const STYLES = `
   .nxo-di-meta { font-size:0.72rem; color:var(--ink-soft); }
   .nxo-di-total { font-family:'Cormorant Garamond',serif; font-weight:300; color:var(--ink); font-size:1.05rem; }
 
+  .nxo-review-wrap { margin-top: 1rem; }
+  .nxo-review-card { border-top:1px solid var(--border); padding:1rem 1.5rem 1.25rem; background:var(--cream); }
+  .nxo-review-head { display:flex; justify-content:space-between; gap:1rem; align-items:flex-start; margin-bottom:0.9rem; flex-wrap:wrap; }
+  .nxo-review-title { font-family:'Cormorant Garamond',serif; font-size:1.15rem; font-weight:300; color:var(--ink); }
+  .nxo-review-sub { font-size:0.72rem; color:var(--ink-soft); margin-top:0.25rem; }
+  .nxo-review-stars { display:flex; gap:0.35rem; margin-bottom:0.75rem; }
+  .nxo-review-star { width:34px; height:34px; border:1px solid var(--border); background:var(--white); color:var(--ink-soft); cursor:pointer; font-size:0.9rem; transition:all 0.15s; }
+  .nxo-review-star.active { background:var(--ink); color:var(--cream); border-color:var(--ink); }
+  .nxo-review-text { width:100%; min-height:92px; background:var(--white); border:1px solid var(--border); color:var(--ink); font-size:0.84rem; padding:0.85rem 1rem; resize:vertical; outline:none; font-family:'DM Sans',sans-serif; line-height:1.65; }
+  .nxo-review-text:focus { border-color:var(--ink); }
+  .nxo-review-meta { display:flex; justify-content:space-between; gap:1rem; align-items:center; margin-top:0.75rem; flex-wrap:wrap; }
+  .nxo-review-btn { height:42px; padding:0 1.25rem; background:var(--ink); color:var(--cream); border:none; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:0.72rem; letter-spacing:0.12em; text-transform:uppercase; }
+  .nxo-review-btn:disabled { opacity:0.45; cursor:not-allowed; }
+  .nxo-review-note { font-size:0.72rem; color:var(--ink-soft); }
+  .nxo-review-ok { font-size:0.75rem; color:#16A34A; margin-top:0.7rem; }
+  .nxo-review-err { font-size:0.75rem; color:#DC2626; margin-top:0.7rem; }
+
   .nxo-notes-box { margin:0 1.5rem 1.5rem; background:var(--cream); border:1px solid var(--border); padding:0.9rem 1.1rem; }
   .nxo-notes-lbl { font-size:0.58rem; font-weight:600; text-transform:uppercase; letter-spacing:0.14em; color:var(--amber); margin-bottom:0.35rem; display:block; }
   .nxo-notes-txt { font-size:0.85rem; color:var(--ink-soft); line-height:1.7; }
@@ -266,6 +283,9 @@ function Orders() {
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [reviewDrafts, setReviewDrafts] = useState({});
+  const [reviewLoading, setReviewLoading] = useState({});
+  const [reviewMessage, setReviewMessage] = useState('');
   const validPaymentMethods = new Set(['efectivo', 'tarjeta']);
 
   const finalizeOrder = async (selectedPaymentMethod) => {
@@ -326,6 +346,61 @@ function Orders() {
 
   const handlePaymentError = (error) => {
     setCheckoutError(error);
+  };
+
+  const handleReviewChange = (sellerId, field, value) => {
+    setReviewDrafts((prev) => ({
+      ...prev,
+      [sellerId]: {
+        rating: 5,
+        comment: '',
+        ...(prev[sellerId] || {}),
+        [field]: value,
+      },
+    }));
+  };
+
+  const submitReview = async (seller) => {
+    if (!selectedOrder?.id || !seller?.id) return;
+
+    const draft = reviewDrafts[seller.id] || { rating: 5, comment: '' };
+    const rating = Number(draft.rating || 0);
+    const comment = String(draft.comment || '').trim();
+
+    if (!rating || rating < 1 || rating > 5) {
+      setReviewMessage('Selecciona una calificación entre 1 y 5');
+      return;
+    }
+
+    setReviewLoading((prev) => ({ ...prev, [seller.id]: true }));
+    setReviewMessage('');
+
+    try {
+      const { data } = await api.post(`/reviews/sellers/${seller.id}/orders/${selectedOrder.id}`, {
+        calificacion: rating,
+        comentario: comment,
+      });
+
+      setSelectedOrder((prev) => {
+        if (!prev) return prev;
+        const updatedSellers = (prev.sellers || []).map((item) => (
+          item.id === seller.id
+            ? { ...item, review: { rating: data.review.rating, comment: data.review.comment, createdAt: data.review.createdAt } }
+            : item
+        ));
+        return { ...prev, sellers: updatedSellers };
+      });
+
+      setReviewDrafts((prev) => ({
+        ...prev,
+        [seller.id]: { rating: 5, comment: '' },
+      }));
+      setReviewMessage('Reseña guardada correctamente');
+    } catch (err) {
+      setReviewMessage(err.response?.data?.error || err.message || 'No se pudo guardar la reseña');
+    } finally {
+      setReviewLoading((prev) => ({ ...prev, [seller.id]: false }));
+    }
   };
 
   // Paginación calculada
@@ -440,7 +515,7 @@ function Orders() {
           {paginatedOrders.map(order => {
             const ss = statusStyle(order.status);
             return (
-              <div key={order.id} className="nxo-order-card" onClick={() => { setSelectedOrder(order); setView('detail'); }}>
+              <div key={order.id} className="nxo-order-card" onClick={() => { setSelectedOrder(order); setReviewMessage(''); setReviewDrafts({}); setView('detail'); }}>
                 <OrderThumbs items={order.items} />
                 <div className="nxo-order-body">
                   <div className="nxo-order-top">
@@ -473,6 +548,10 @@ function Orders() {
 
   if (view === 'detail' && selectedOrder) {
     const ss = statusStyle(selectedOrder.status);
+    const sellers = selectedOrder.sellers?.length
+      ? selectedOrder.sellers
+      : [...new Map(selectedOrder.items.map((item) => [item.sellerId, { id: item.sellerId, name: item.sellerName, review: null }]).filter(([id]) => id)).values()];
+    const canReview = ['CONFIRMADO', 'ENTREGADO'].includes(String(selectedOrder.status || '').toUpperCase());
     return (
       <div className="nxo-root">
         <AssistedTopBar active="tienda" />
@@ -503,6 +582,83 @@ function Orders() {
           </div>
           {selectedOrder.notes && (
             <div className="nxo-notes-box"><span className="nxo-notes-lbl">Notas</span><p className="nxo-notes-txt">{selectedOrder.notes}</p></div>
+          )}
+
+          {sellers.length > 0 && (
+            <div className="nxo-panel">
+              <div className="nxo-panel-head"><span className="nxo-panel-title">Reseñas del vendedor</span></div>
+              <div className="nxo-review-wrap">
+                {sellers.map((seller) => {
+                  const draft = reviewDrafts[seller.id] || { rating: 5, comment: '' };
+                  const hasReview = Boolean(seller.review);
+                  return (
+                    <div key={seller.id} className="nxo-review-card">
+                      <div className="nxo-review-head">
+                        <div>
+                          <div className="nxo-review-title">{seller.name || 'Vendedor'}</div>
+                          <div className="nxo-review-sub">{hasReview ? 'Ya dejaste una reseña para este vendedor en este pedido.' : 'Comparte tu experiencia con este vendedor.'}</div>
+                        </div>
+                        {hasReview && (
+                          <div style={{ fontSize: '0.72rem', color: 'var(--amber)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                            {seller.review.rating}/5
+                          </div>
+                        )}
+                      </div>
+
+                      {hasReview ? (
+                        <div style={{ fontSize: '0.84rem', color: 'var(--ink-mid)', lineHeight: 1.7 }}>
+                          {seller.review.comment || 'Sin comentario'}
+                        </div>
+                      ) : canReview ? (
+                        <>
+                          <div className="nxo-review-stars">
+                            {[1, 2, 3, 4, 5].map((value) => (
+                              <button
+                                key={value}
+                                type="button"
+                                className={`nxo-review-star ${Number(draft.rating) >= value ? 'active' : ''}`}
+                                onClick={() => handleReviewChange(seller.id, 'rating', value)}
+                                aria-label={`Calificar con ${value} estrellas`}
+                              >
+                                ★
+                              </button>
+                            ))}
+                          </div>
+                          <textarea
+                            className="nxo-review-text"
+                            value={draft.comment}
+                            onChange={(e) => handleReviewChange(seller.id, 'comment', e.target.value.slice(0, 300))}
+                            placeholder="Comentario opcional de máximo 300 caracteres"
+                            maxLength={300}
+                            rows={3}
+                          />
+                          <div className="nxo-review-meta">
+                            <div className="nxo-review-note">Tu opinión ayuda a otros compradores.</div>
+                            <button
+                              type="button"
+                              className="nxo-review-btn"
+                              onClick={() => submitReview(seller)}
+                              disabled={reviewLoading[seller.id]}
+                            >
+                              {reviewLoading[seller.id] ? 'Guardando…' : 'Enviar reseña'}
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <div style={{ fontSize: '0.84rem', color: 'var(--ink-soft)', lineHeight: 1.7 }}>
+                          La reseña estará disponible cuando el pedido esté confirmado.
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {reviewMessage && (
+                <div className={reviewMessage.includes('correctamente') ? 'nxo-review-ok' : 'nxo-review-err'} style={{ padding: '0 1.5rem 1rem' }}>
+                  {reviewMessage}
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
