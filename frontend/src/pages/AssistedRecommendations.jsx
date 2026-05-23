@@ -8,9 +8,43 @@ const SURVEY_RECO_CACHE_KEY = 'survey_recommendations_cache_v1';
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
   @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@200..700&display=swap');
-  :root { --ar-bg: #f7f9fd; --ar-surface: #ffffff; --ar-surface-low: #f2f4f8; --ar-surface-container: #eceef2; --ar-on-surface: #191c1f; --ar-on-surface-variant: #45464c; --ar-outline-variant: #c6c6cd; --ar-primary: #000000; --ar-primary-contrast: #ffffff; --ar-secondary: #5c5f60; --ar-error: #ba1a1a; --ar-success: #157f3b; --ar-shadow: rgba(0, 0, 0, 0.08); }
-  [data-theme='dark'] .ar-root { --ar-bg: #2d3134; --ar-surface: #191c1e; --ar-surface-low: #2d3134; --ar-surface-container: #191c1e; --ar-on-surface: #eff1f5; --ar-on-surface-variant: #c6c6cd; --ar-outline-variant: #45464c; --ar-primary: #c0c6db; --ar-primary-contrast: #191c1f; --ar-secondary: #e1e3e4; --ar-shadow: rgba(0, 0, 0, 0.35); }
-  .ar-root { min-height: 100vh; background: var(--ar-bg); color: var(--ar-on-surface); font-family: 'Inter', sans-serif; }
+  :root {
+    --ar-bg: #f7f9fd;
+    --ar-surface: #ffffff;
+    --ar-surface-low: #f2f4f8;
+    --ar-surface-container: #eceef2;
+    --ar-on-surface: #191c1f;
+    --ar-on-surface-variant: #45464c;
+    --ar-outline-variant: #e2e4e9;
+    --ar-primary: #000000;
+    --ar-primary-contrast: #ffffff;
+    --ar-secondary: #5c5f60;
+    --ar-error: #ba1a1a;
+    --ar-success: #157f3b;
+    --ar-shadow: rgba(0, 0, 0, 0.08);
+  }
+
+  [data-theme='dark'] {
+    --ar-bg: #09090b;
+    --ar-surface: #18181b;
+    --ar-surface-low: #09090b;
+    --ar-surface-container: #18181b;
+    --ar-on-surface: #fafafa;
+    --ar-on-surface-variant: #a1a1aa;
+    --ar-outline-variant: #27272a;
+    --ar-primary: #ffffff;
+    --ar-primary-contrast: #09090b;
+    --ar-secondary: #71717a;
+    --ar-shadow: rgba(0, 0, 0, 0.6);
+  }
+
+  .ar-root {
+    min-height: 100vh;
+    background: var(--ar-bg);
+    color: var(--ar-on-surface);
+    font-family: 'Inter', sans-serif;
+    transition: background-color 0.25s ease;
+  }
   .ar-icon { font-family: 'Material Symbols Outlined'; font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; font-size: 20px; line-height: 1; }
   .ar-option .ar-icon { font-size: 26px; }
   .ar-nav { position: sticky; top: 0; z-index: 20; background: var(--ar-surface); border-bottom: 1px solid var(--ar-outline-variant); }
@@ -33,8 +67,8 @@ const STYLES = `
   .ar-progress-bar { height: 100%; background: var(--ar-primary); transition: width 0.4s ease; }
   .ar-quiz-body { padding: 40px; }
   .ar-quiz-head { text-align: center; margin-bottom: 32px; }
-  .ar-quiz-step { display: inline-block; font-size: 12px; letter-spacing: 0.24em; text-transform: uppercase; color: var(--ar-secondary); margin-bottom: 12px; }
-  .ar-quiz-title { font-size: 44px; font-weight: 600; margin-bottom: 12px; }
+  .ar-quiz-step { display: inline-block; font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ar-secondary); margin-bottom: 12px; }
+  .ar-quiz-title { font-size: clamp(2rem, 5vw, 44px); font-weight: 600; margin-bottom: 12px; }
   .ar-quiz-sub { font-size: 18px; color: var(--ar-on-surface-variant); max-width: 640px; margin: 0 auto; }
   .ar-options-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; margin-bottom: 32px; }
   .ar-option { border: 1px solid var(--ar-outline-variant); border-radius: 16px; padding: 24px; text-align: center; background: var(--ar-surface); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; cursor: pointer; transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease; }
@@ -52,9 +86,23 @@ const STYLES = `
   .ar-results { margin-top: 48px; }
   .ar-results-kicker { font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ar-secondary); margin-bottom: 16px; }
   .ar-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; }
-  .ar-card { border: 1px solid var(--ar-outline-variant); border-radius: 16px; background: var(--ar-surface); overflow: hidden; display: flex; flex-direction: column; cursor: pointer; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+  .ar-card { border: 1px solid var(--ar-outline-variant); border-radius: 16px; background: var(--ar-surface); overflow: hidden; display: flex; flex-direction: column; transition: transform 0.2s ease, box-shadow 0.2s ease; }
   .ar-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px var(--ar-shadow); }
-  .ar-card-media { position: relative; height: 190px; background: var(--ar-surface-low); }
+  .ar-card-trigger {
+    border: none;
+    background: transparent;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+    font-family: inherit;
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+  }
+  .ar-card-trigger:focus-visible { outline: 2px solid var(--ar-primary); outline-offset: -2px; }
+  .ar-card-media { position: relative; height: 190px; width: 100%; background: var(--ar-surface-low); }
   .ar-card-media img { width: 100%; height: 100%; object-fit: cover; }
   .ar-card-badge { position: absolute; top: 12px; left: 12px; background: var(--ar-surface); border: 1px solid var(--ar-outline-variant); padding: 4px 8px; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; }
   .ar-card-fav { position: absolute; top: 12px; right: 12px; border: 1px solid var(--ar-outline-variant); background: var(--ar-surface); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; }
@@ -72,7 +120,8 @@ const STYLES = `
   .ar-empty p { color: var(--ar-on-surface-variant); margin: 0; }
   .ar-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); display: flex; align-items: center; justify-content: center; padding: 24px; z-index: 50; }
   .ar-modal { background: var(--ar-surface); border: 1px solid var(--ar-outline-variant); border-radius: 16px; width: 100%; max-width: 520px; overflow: hidden; box-shadow: 0 24px 48px var(--ar-shadow); position: relative; }
-  .ar-modal-x { position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--ar-outline-variant); background: var(--ar-surface); cursor: pointer; }
+  .ar-modal-x { position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--ar-outline-variant); background: var(--ar-surface); cursor: pointer; color: var(--ar-on-surface); display: flex; align-items: center; justify-content: center; z-index: 10; }
+  .ar-modal-x:hover { background: var(--ar-surface-low); }
   .ar-modal-img { width: 100%; height: 220px; object-fit: cover; }
   .ar-modal-noimg { height: 220px; display: flex; align-items: center; justify-content: center; background: var(--ar-surface-low); color: var(--ar-on-surface-variant); }
   .ar-modal-body { padding: 24px; display: grid; gap: 12px; }
@@ -135,10 +184,12 @@ const getOptionIcon = (label = '') => {
 
 
 // ── Modal detalle ─────────────────────────────────────────────────────────────
-function ProductDetailModal({ productId, onClose }) {
+function ProductDetailModal({ productId, onClose, favorites, toggleFav }) {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [qty, setQty] = useState(1);
+  const { addToCart, success: cartOk, error: cartErr } = useHybridCart();
 
   useEffect(() => {
     api.get(`/products/${productId}`)
@@ -155,20 +206,40 @@ function ProductDetailModal({ productId, onClose }) {
 
   const stars = n => '★'.repeat(Math.round(n || 0)) + '☆'.repeat(5 - Math.round(n || 0));
 
+  const handleAddToCart = () => {
+    if (product) {
+      addToCart(product.id, qty, { name: product.titulo, price: product.precio });
+    }
+  };
+
   return (
-    <div className="ar-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+    <div className="ar-overlay" onClick={e => e.target === e.currentTarget && onClose()} role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <div className="ar-modal">
-        <button className="ar-modal-x" onClick={onClose}>✕</button>
-        {loading && <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--ar-on-surface-variant)', fontSize: '0.85rem' }}>Cargando…</div>}
-        {error && <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--ar-error)', fontSize: '0.85rem' }}>{error}</div>}
+        <button className="ar-modal-x" onClick={onClose} aria-label="Cerrar detalle" title="Cerrar"><span className="ar-icon" role="none">close</span></button>
+        {loading && <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--ar-on-surface-variant)', fontSize: '0.85rem' }} role="status">Cargando…</div>}
+        {error && <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--ar-error)', fontSize: '0.85rem' }} role="alert">{error}</div>}
         {!loading && !error && product && <>
-          {product.imagenes?.[0]?.url
-            ? <img src={product.imagenes[0].url} alt={product.titulo} className="ar-modal-img" />
-            : <div className="ar-modal-noimg">Sin imagen</div>}
+          <div style={{ position: 'relative' }}>
+            {product.imagenes?.[0]?.url
+              ? <img src={product.imagenes[0].url} alt={`Imagen de ${product.titulo}`} className="ar-modal-img" />
+              : <div className="ar-modal-noimg" role="presentation">Sin imagen</div>
+            }
+            <button 
+              className="ar-card-fav" 
+              style={{ top: 16, right: 16 }}
+              onClick={() => toggleFav(product.id)}
+              aria-label={favorites.includes(product.id) ? "Quitar de favoritos" : "Añadir a favoritos"}
+            >
+              <span className="ar-icon" style={{ color: favorites.includes(product.id) ? '#ba1a1a' : 'inherit' }} role="none">
+                {favorites.includes(product.id) ? 'favorite' : 'favorite_border'}
+              </span>
+            </button>
+          </div>
           <div className="ar-modal-body">
-            <div className="ar-modal-title">{product.titulo}</div>
+            <div className="ar-modal-title" id="modal-title">{product.titulo}</div>
             {product.descripcion && <div className="ar-modal-desc">{product.descripcion}</div>}
-            <div className="ar-modal-grid">
+            
+            <div className="ar-modal-grid" role="group" aria-label="Especificaciones">
               <div className="ar-modal-stat">
                 <span className="ar-modal-lbl">Precio</span>
                 <span className="ar-modal-val">${parseFloat(product.precio).toFixed(2)}</span>
@@ -183,11 +254,33 @@ function ProductDetailModal({ productId, onClose }) {
               </div>
               <div className="ar-modal-stat">
                 <span className="ar-modal-lbl">Calificación</span>
-                <span className="ar-modal-val" style={{ fontSize: '0.85rem' }}>{stars(product.promedioCalificacion)}</span>
+                <span className="ar-modal-val" style={{ fontSize: '0.85rem' }} aria-label={`${product.promedioCalificacion || 0} de 5 estrellas`}>{stars(product.promedioCalificacion)}</span>
               </div>
             </div>
+
+            {cartOk && <div className="ar-alert success" style={{ marginBottom: 12 }}>{cartOk}</div>}
+            {cartErr && <div className="ar-alert error" style={{ marginBottom: 12 }}>{cartErr}</div>}
+
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginTop: '12px' }}>
+              <input 
+                type="number" min="1" className="ar-qty" 
+                value={qty} 
+                onChange={e => setQty(parseInt(e.target.value) || 1)} 
+                aria-label="Cantidad para añadir"
+                style={{ height: '48px', width: '64px' }}
+              />
+              <button 
+                className="ar-add-btn" 
+                disabled={product.stock === 0}
+                onClick={handleAddToCart}
+                style={{ height: '48px', fontSize: '14px' }}
+              >
+                {product.stock === 0 ? 'Agotado' : '+ Añadir al carrito'}
+              </button>
+            </div>
+
             {product.vendedor && (
-              <div className="ar-modal-seller">
+              <div className="ar-modal-seller" style={{ marginTop: '12px' }}>
                 <span className="ar-modal-lbl" style={{ display: 'block', marginBottom: '0.3rem' }}>Vendedor</span>
                 <div style={{ fontSize: '0.88rem', color: 'var(--ar-on-surface)', fontWeight: 600 }}>{product.vendedor.nombres} {product.vendedor.apellidos}</div>
                 {product.vendedor.correo && <div style={{ fontSize: '0.75rem', color: 'var(--ar-on-surface-variant)', marginTop: '0.15rem' }}>{product.vendedor.correo}</div>}
@@ -529,55 +622,33 @@ function AssistedRecommendations() {
                   {recommendations.map(rec => {
                     const p = rec.producto;
                     return (
-                      <article
-                        key={p.id}
-                        className="ar-card"
-                        onClick={() => setSelectedId(p.id)}
-                      >
-                        <div className="ar-card-media">
-                          <img
-                            src={p.imagenes?.[0]?.url || `https://via.placeholder.com/300/EDE8DF/7A7268?text=${encodeURIComponent(p.titulo)}`}
-                            alt={p.titulo}
-                            onError={e => {
-                              e.target.src = `https://via.placeholder.com/300/EDE8DF/7A7268?text=${encodeURIComponent(p.titulo)}`;
-                            }}
-                          />
-                          <span className="ar-card-badge">{p.condicion || 'NUEVO'}</span>
-                          <button
-                            className="ar-card-fav"
-                            onClick={e => {
-                              e.stopPropagation();
-                              toggleFav(p.id);
-                            }}
-                          >
-                            {favorites.includes(p.id) ? '❤️' : '♡'}
-                          </button>
-                        </div>
-                        <div className="ar-card-body">
-                          <div className="ar-card-title">{p.titulo}</div>
-                          <div className="ar-card-price">${(parseFloat(p.precio) || 0).toFixed(2)}</div>
-                          <div className="ar-card-stars">{stars(p.promedioCalificacion)}</div>
-                          <div className="ar-card-actions" onClick={e => e.stopPropagation()}>
-                            <input
-                              type="number"
-                              min="1"
-                              className="ar-qty"
-                              value={qtys[p.id] || 1}
-                              onChange={e => setQtys(prev => ({
-                                ...prev,
-                                [p.id]: e.target.value,
-                              }))}
+                      <article key={p.id} className="ar-card">
+                        <button 
+                          type="button" 
+                          className="ar-card-trigger" 
+                          onClick={() => setSelectedId(p.id)}
+                          aria-label={`Ver detalles de ${p.titulo}`}
+                        >
+                          <div className="ar-card-media" role="presentation">
+                            <img
+                              src={p.imagenes?.[0]?.url || `https://via.placeholder.com/300/EDE8DF/7A7268?text=${encodeURIComponent(p.titulo)}`}
+                              alt=""
+                              role="presentation"
+                              onError={e => {
+                                e.target.src = `https://via.placeholder.com/300/EDE8DF/7A7268?text=${encodeURIComponent(p.titulo)}`;
+                              }}
                             />
-                            <button
-                              className="ar-add-btn"
-                              disabled={p.stock === 0}
-                              onClick={e => doAddToCart(rec, e)}
-                            >
-                              {p.stock === 0 ? 'Agotado' : '+ Agregar'}
-                            </button>
+                            <span className="ar-card-badge">{p.condicion || 'NUEVO'}</span>
                           </div>
-                          <div className="ar-card-seller">{p.vendedor?.nombres} {p.vendedor?.apellidos}</div>
-                        </div>
+                          <div className="ar-card-body">
+                            <div className="ar-card-title">{p.titulo}</div>
+                            <div className="ar-card-price">${(parseFloat(p.precio) || 0).toFixed(2)}</div>
+                            <div className="ar-card-stars" aria-label={`Calificación: ${p.promedioCalificacion || 0} de 5 estrellas`}>
+                              {stars(p.promedioCalificacion)}
+                            </div>
+                            <div className="ar-card-seller">Vendedor: {p.vendedor?.nombres} {p.vendedor?.apellidos}</div>
+                          </div>
+                        </button>
                       </article>
                     );
                   })}
@@ -592,6 +663,8 @@ function AssistedRecommendations() {
         <ProductDetailModal
           productId={selectedId}
           onClose={() => setSelectedId(null)}
+          favorites={favorites}
+          toggleFav={toggleFav}
         />
       )}
     </div>

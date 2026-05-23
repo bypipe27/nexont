@@ -82,46 +82,46 @@ function PublishModal({ isOpen, onClose, onPublished }) {
 
   if (!isOpen) return null;
   return (
-    <div className="nxpm-overlay" onClick={e => e.target === e.currentTarget && handleClose()}>
+    <div className="nxpm-overlay" onClick={e => e.target === e.currentTarget && handleClose()} role="dialog" aria-modal="true" aria-labelledby="modal-title-pub">
       <div className="nxpm-modal">
         <div className="nxpm-head">
-          <div><div className="nxpm-head-tag">Nuevo producto</div><div className="nxpm-head-title">Publicar producto</div></div>
-          <button className="nxpm-close" onClick={handleClose}>✕</button>
+          <div><div className="nxpm-head-tag">Nuevo producto</div><h2 className="nxpm-head-title" id="modal-title-pub">Publicar producto</h2></div>
+          <button className="nxpm-close" onClick={handleClose} aria-label="Cerrar modal">✕</button>
         </div>
         <div className="nxpm-body">
-          {error && <div className="nxpm-modal-err">{error}</div>}
-          {success && <div className="nxpm-modal-ok">{success}</div>}
+          {error && <div className="nxpm-modal-err" role="alert">{error}</div>}
+          {success && <div className="nxpm-modal-ok" role="status">{success}</div>}
           <form onSubmit={handleSubmit}>
-            <div className="nxpm-f"><label>Nombre del producto *</label><input name="titulo" value={form.titulo} onChange={handleChange} required placeholder="Ej: Silla Eames vintage" /></div>
-            <div className="nxpm-f"><label>Descripción</label><textarea name="descripcion" value={form.descripcion} onChange={handleChange} placeholder="Describe las características principales…" /></div>
+            <div className="nxpm-f"><label htmlFor="pub-titulo">Nombre del producto *</label><input id="pub-titulo" name="titulo" value={form.titulo} onChange={handleChange} required placeholder="Ej: Silla Eames vintage" /></div>
+            <div className="nxpm-f"><label htmlFor="pub-desc">Descripción</label><textarea id="pub-desc" name="descripcion" value={form.descripcion} onChange={handleChange} placeholder="Describe las características principales…" /></div>
             <div className="nxpm-f-row">
-              <div className="nxpm-f"><label>Precio (USD) *</label><input type="number" name="precio" value={form.precio} onChange={handleChange} step="0.01" min="0.01" required placeholder="0.00" /></div>
-              <div className="nxpm-f"><label>Stock *</label><input type="number" name="stock" value={form.stock} onChange={handleChange} min="0" required placeholder="0" /></div>
+              <div className="nxpm-f"><label htmlFor="pub-price">Precio (USD) *</label><input type="number" id="pub-price" name="precio" value={form.precio} onChange={handleChange} step="0.01" min="0.01" required placeholder="0.00" /></div>
+              <div className="nxpm-f"><label htmlFor="pub-stock">Stock *</label><input type="number" id="pub-stock" name="stock" value={form.stock} onChange={handleChange} min="0" required placeholder="0" /></div>
             </div>
-            <div className="nxpm-f"><label>Estado</label>
-              <select name="condicion" value={form.condicion} onChange={handleChange}>
+            <div className="nxpm-f"><label htmlFor="pub-cond">Estado</label>
+              <select id="pub-cond" name="condicion" value={form.condicion} onChange={handleChange}>
                 <option value="NUEVO">Nuevo</option><option value="USADO">Usado</option><option value="REACONDICIONADO">Reacondicionado</option>
               </select>
             </div>
-            <div className="nxpm-f"><label>Categoría</label>
-              <select name="categoria" value={form.categoria} onChange={handleChange}>
+            <div className="nxpm-f"><label htmlFor="pub-cat">Categoría</label>
+              <select id="pub-cat" name="categoria" value={form.categoria} onChange={handleChange}>
                 {CATEGORY_OPTIONS.map(option => (
                   <option key={option.value} value={option.value}>{option.label}</option>
                 ))}
               </select>
             </div>
             <div className="nxpm-f">
-              <label>Imagen del producto</label>
-              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImage} className="nxpm-file-hidden" ref={fileInputRef} />
-              <div className="nxpm-img-zone" onClick={() => fileInputRef.current?.click()}>
-                <span className="nxpm-img-icon">📷</span>
+              <label htmlFor="pub-file">Imagen del producto</label>
+              <input type="file" id="pub-file" accept="image/jpeg,image/png,image/webp" onChange={handleImage} className="nxpm-file-hidden" ref={fileInputRef} aria-label="Seleccionar imagen" />
+              <div className="nxpm-img-zone" onClick={() => fileInputRef.current?.click()} role="button" tabIndex="0" onKeyDown={e => e.key === 'Enter' && fileInputRef.current?.click()} aria-label="Subir imagen">
+                <span className="nxpm-img-icon" aria-hidden="true">📷</span>
                 <div className="nxpm-img-txt">{imageFile ? <b>{imageFile.name}</b> : <><b>Haz clic o arrastra</b> una imagen<br /><span style={{ fontSize: '0.68rem', opacity: 0.6 }}>JPG, PNG o WEBP · Máx. 5MB</span></>}</div>
               </div>
-              {imagePreview && <div className="nxpm-img-preview"><img src={imagePreview} alt="preview" /><button type="button" className="nxpm-img-remove" onClick={() => { setImageFile(null); setImagePreview(null); }}>✕ Quitar</button></div>}
+              {imagePreview && <div className="nxpm-img-preview"><img src={imagePreview} alt="Vista previa del producto" /><button type="button" className="nxpm-img-remove" onClick={() => { setImageFile(null); setImagePreview(null); }} aria-label="Quitar imagen">✕ Quitar</button></div>}
             </div>
             <div className="nxpm-foot">
               <button type="button" className="nxpm-cancel" onClick={handleClose}>Cancelar</button>
-              <button type="submit" className="nxpm-submit" disabled={loading}>{loading ? 'Publicando…' : 'Publicar producto →'}</button>
+              <button type="submit" className="nxpm-submit" disabled={loading} aria-busy={loading}>{loading ? 'Publicando…' : 'Publicar producto →'}</button>
             </div>
           </form>
         </div>
@@ -183,45 +183,45 @@ function EditProductModal({ isOpen, onClose, product, onProductUpdated }) {
 
   if (!isOpen) return null;
   return (
-    <div className="nxpm-overlay" onClick={e => e.target === e.currentTarget && handleClose()}>
+    <div className="nxpm-overlay" onClick={e => e.target === e.currentTarget && handleClose()} role="dialog" aria-modal="true" aria-labelledby="modal-title-edit">
       <div className="nxpm-modal">
         <div className="nxpm-head">
-          <div><div className="nxpm-head-tag">Editar producto</div><div className="nxpm-head-title">{product?.titulo || 'Producto'}</div></div>
-          <button className="nxpm-close" onClick={handleClose}>✕</button>
+          <div><div className="nxpm-head-tag">Editar producto</div><h2 className="nxpm-head-title" id="modal-title-edit">{product?.titulo || 'Producto'}</h2></div>
+          <button className="nxpm-close" onClick={handleClose} aria-label="Cerrar modal">✕</button>
         </div>
         <div className="nxpm-body">
-          {error && <div className="nxpm-modal-err">{error}</div>}
+          {error && <div className="nxpm-modal-err" role="alert">{error}</div>}
           <form onSubmit={handleSubmit}>
-            <div className="nxpm-f"><label>Nombre del producto *</label><input name="titulo" value={form.titulo} onChange={handleChange} required /></div>
-            <div className="nxpm-f"><label>Descripción</label><textarea name="descripcion" value={form.descripcion} onChange={handleChange} /></div>
+            <div className="nxpm-f"><label htmlFor="edit-titulo">Nombre del producto *</label><input id="edit-titulo" name="titulo" value={form.titulo} onChange={handleChange} required /></div>
+            <div className="nxpm-f"><label htmlFor="edit-desc">Descripción</label><textarea id="edit-desc" name="descripcion" value={form.descripcion} onChange={handleChange} /></div>
             <div className="nxpm-f-row">
-              <div className="nxpm-f"><label>Precio (USD) *</label><input type="number" name="precio" value={form.precio} onChange={handleChange} step="0.01" min="0.01" required /></div>
-              <div className="nxpm-f"><label>Stock *</label><input type="number" name="stock" value={form.stock} onChange={handleChange} min="0" required /></div>
+              <div className="nxpm-f"><label htmlFor="edit-price">Precio (USD) *</label><input type="number" id="edit-price" name="precio" value={form.precio} onChange={handleChange} step="0.01" min="0.01" required /></div>
+              <div className="nxpm-f"><label htmlFor="edit-stock">Stock *</label><input type="number" id="edit-stock" name="stock" value={form.stock} onChange={handleChange} min="0" required /></div>
             </div>
-            <div className="nxpm-f"><label>Estado</label>
-              <select name="condicion" value={form.condicion} onChange={handleChange}>
+            <div className="nxpm-f"><label htmlFor="edit-cond">Estado</label>
+              <select id="edit-cond" name="condicion" value={form.condicion} onChange={handleChange}>
                 <option value="NUEVO">Nuevo</option><option value="USADO">Usado</option><option value="REACONDICIONADO">Reacondicionado</option>
               </select>
             </div>
-            <div className="nxpm-f"><label>Categoría</label>
-              <select name="categoria" value={form.categoria} onChange={handleChange}>
+            <div className="nxpm-f"><label htmlFor="edit-cat">Categoría</label>
+              <select id="edit-cat" name="categoria" value={form.categoria} onChange={handleChange}>
                 {CATEGORY_OPTIONS.map(option => (
                   <option key={option.value} value={option.value}>{option.label}</option>
                 ))}
               </select>
             </div>
             <div className="nxpm-f">
-              <label>Imagen del producto</label>
-              <input type="file" accept="image/jpeg,image/png,image/webp" onChange={handleImage} className="nxpm-file-hidden" ref={fileInputRef} />
-              <div className="nxpm-img-zone" onClick={() => fileInputRef.current?.click()}>
-                <span className="nxpm-img-icon">📷</span>
+              <label htmlFor="edit-file">Imagen del producto</label>
+              <input type="file" id="edit-file" accept="image/jpeg,image/png,image/webp" onChange={handleImage} className="nxpm-file-hidden" ref={fileInputRef} aria-label="Cambiar imagen" />
+              <div className="nxpm-img-zone" onClick={() => fileInputRef.current?.click()} role="button" tabIndex="0" onKeyDown={e => e.key === 'Enter' && fileInputRef.current?.click()}>
+                <span className="nxpm-img-icon" aria-hidden="true">📷</span>
                 <div className="nxpm-img-txt">{imageFile ? <b>{imageFile.name}</b> : <><b>Haz clic o arrastra</b> para cambiar la imagen</>}</div>
               </div>
-              {imagePreview && <div className="nxpm-img-preview"><img src={imagePreview} alt="preview" /><button type="button" className="nxpm-img-remove" onClick={() => { setImageFile(null); setImagePreview(null); }}>✕ Quitar</button></div>}
+              {imagePreview && <div className="nxpm-img-preview"><img src={imagePreview} alt="Vista previa" /><button type="button" className="nxpm-img-remove" onClick={() => { setImageFile(null); setImagePreview(null); }} aria-label="Quitar imagen">✕ Quitar</button></div>}
             </div>
             <div className="nxpm-foot">
               <button type="button" className="nxpm-cancel" onClick={handleClose}>Cancelar</button>
-              <button type="submit" className="nxpm-submit" disabled={loading}>{loading ? 'Guardando…' : 'Guardar cambios →'}</button>
+              <button type="submit" className="nxpm-submit" disabled={loading} aria-busy={loading}>{loading ? 'Guardando…' : 'Guardar cambios →'}</button>
             </div>
           </form>
         </div>
@@ -240,20 +240,20 @@ function DeleteConfirmModal({ isOpen, onClose, onConfirm, productName, loading }
 
   if (!isOpen) return null;
   return (
-    <div className="nxpm-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+    <div className="nxpm-overlay" onClick={e => e.target === e.currentTarget && onClose()} role="dialog" aria-modal="true" aria-labelledby="del-title">
       <div className="nxpm-modal" style={{ maxWidth: 420 }}>
         <div className="nxpm-head">
-          <div><div className="nxpm-head-tag">Acción irreversible</div><div className="nxpm-head-title">Eliminar producto</div></div>
-          <button className="nxpm-close" onClick={onClose}>✕</button>
+          <div><div className="nxpm-head-tag">Acción irreversible</div><h2 className="nxpm-head-title" id="del-title">Eliminar producto</h2></div>
+          <button className="nxpm-close" onClick={onClose} aria-label="Cerrar modal">✕</button>
         </div>
         <div className="nxpm-body" style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>⚠️</div>
+          <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }} aria-hidden="true">⚠️</div>
           <p style={{ color: 'var(--ink-soft)', lineHeight: 1.7, marginBottom: '1.5rem' }}>
             Estás a punto de eliminar <strong>"{productName}"</strong>. Esta acción no se puede deshacer y la imagen también será borrada de Cloudinary.
           </p>
           <div className="nxpm-foot" style={{ justifyContent: 'center' }}>
             <button className="nxpm-cancel" onClick={onClose} disabled={loading}>Cancelar</button>
-            <button className="nxpm-submit danger" onClick={onConfirm} disabled={loading}>{loading ? 'Eliminando…' : 'Sí, eliminar →'}</button>
+            <button className="nxpm-submit danger" onClick={onConfirm} disabled={loading} aria-busy={loading}>{loading ? 'Eliminando…' : 'Sí, eliminar →'}</button>
           </div>
         </div>
       </div>
@@ -271,7 +271,6 @@ function MyProducts() {
   const [error, setError] = useState('');
   const [searchTerm, setSearch] = useState('');
   const [fCond, setFCond] = useState('');
-  const [fMaxPrice, setFMaxPrice] = useState(1000);
   const [showModal, setShowModal] = useState(false);
   const [sortBy, setSortBy] = useState('newest');
   const [ddOpen, setDdOpen] = useState(false);
@@ -287,6 +286,11 @@ function MyProducts() {
   const user = JSON.parse(localStorage.getItem('user') || 'null');
   const initials = user ? `${(user.nombres || '')[0] || ''}${(user.apellidos || '')[0] || ''}`.toUpperCase() : '';
   const stars = n => '★'.repeat(Math.round(n || 0)) + '☆'.repeat(5 - Math.round(n || 0));
+  const getStockStatus = (stock) => {
+    if (stock === 0) return { key: 'out', label: 'Sin stock' };
+    if (stock <= 3) return { key: 'low', label: 'Stock bajo' };
+    return { key: 'ok', label: 'Disponible' };
+  };
 
   const fetchMyProducts = async (params = {}) => {
     if (fetching) return;
@@ -303,8 +307,8 @@ function MyProducts() {
 
   useEffect(() => { if (!token || !user?.esVendedorVerificado) { navigate('/'); return; } fetchMyProducts(); }, [token]);
 
-  const doSearch = () => fetchMyProducts({ search: searchTerm || undefined, condition: fCond || undefined, maxPrice: fMaxPrice });
-  const doClear = () => { setSearch(''); setFCond(''); setFMaxPrice(1000); fetchMyProducts(); };
+  const doSearch = () => fetchMyProducts({ search: searchTerm || undefined, condition: fCond || undefined });
+  const doClear = () => { setSearch(''); setFCond(''); fetchMyProducts(); };
 
   const handleConfirmDelete = async () => {
     if (!deleteProduct) return;
@@ -335,129 +339,162 @@ function MyProducts() {
       <AssistedTopBar active="tienda" />
 
       {/* ── Contenido ── */}
-      <div className="nxmp-page">
-        <div className="nxmp-eyebrow">Panel de vendedor</div>
-        <h1 className="nxmp-page-title">Mis Productos</h1>
-        <p className="nxmp-page-sub">Gestiona y visualiza todos los productos que has publicado</p>
+      <main className="nxmp-page" id="main-content">
+        <header className="nxmp-summary">
+          <div className="nxmp-eyebrow">Panel de vendedor</div>
+          <h1 className="nxmp-page-title">Mis productos</h1>
+          <div className="nxmp-summary-grid" role="region" aria-label="Resumen de inventario">
+            <div className="nxmp-summary-card">
+              <span className="nxmp-summary-label">Productos activos</span>
+              <span className="nxmp-summary-value">{products.length}</span>
+            </div>
+            <div className="nxmp-summary-card">
+              <span className="nxmp-summary-label">Con stock</span>
+              <span className="nxmp-summary-value">{inStock}</span>
+            </div>
+            <div className="nxmp-summary-card">
+              <span className="nxmp-summary-label">Sin stock</span>
+              <span className="nxmp-summary-value">{outStock}</span>
+            </div>
+            <div className="nxmp-summary-card">
+              <span className="nxmp-summary-label">Stock total</span>
+              <span className="nxmp-summary-value">{totalStock}</span>
+            </div>
+          </div>
+        </header>
 
-        {/* Stats */}
-        <div className="nxmp-stats">
-          <div className="nxmp-stat"><span className="nxmp-stat-val">{products.length}</span><span className="nxmp-stat-lbl">Publicados</span></div>
-          <div className="nxmp-stat"><span className="nxmp-stat-val green">{inStock}</span><span className="nxmp-stat-lbl">Con stock</span></div>
-          <div className="nxmp-stat"><span className="nxmp-stat-val red">{outStock}</span><span className="nxmp-stat-lbl">Sin stock</span></div>
-          <div className="nxmp-stat"><span className="nxmp-stat-val amber">{totalStock}</span><span className="nxmp-stat-lbl">Unidades</span></div>
-        </div>
-
-        <section className="nxmp-ai">
+        <section className="nxmp-ai" aria-labelledby="ai-title">
           <div>
-            <div className="nxmp-ai-title">Impulsa ventas con IA</div>
+            <div className="nxmp-ai-title" id="ai-title">Impulsa ventas con IA</div>
             <div className="nxmp-ai-text">Consulta precios recomendados, mejora tus descripciones y descubre que elementos potencian tus publicaciones.</div>
           </div>
-          <button className="nxmp-ai-btn" onClick={() => setShowChat(true)}>Hablar con Cardel</button>
+          <button className="nxmp-ai-btn" onClick={() => setShowChat(true)} aria-label="Abrir chat con el asistente de IA Cardel">Hablar con Cardel</button>
         </section>
 
-        <div className="nxmp-layout">
-          {/* Sidebar filtros */}
-          <aside className="nxmp-sidebar">
-            <div className="nxmp-sb-head"><span className="nxmp-sb-title">Filtros</span></div>
-            <div className="nxmp-sb-sec">
-              <span className="nxmp-sb-sec-title">Buscar</span>
-              <input className="nxmp-sb-search" placeholder="Nombre del producto…" value={searchTerm} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && doSearch()} />
+        <div className="nxmp-controls">
+          <div>
+            <h2 className="nxmp-section-title">Inventario de productos</h2>
+            <p className="nxmp-section-sub">Gestiona y organiza tu catalogo publicado.</p>
+          </div>
+          <div className="nxmp-controls-actions">
+            <div className="nxmp-search" role="search">
+              <input
+                placeholder="Buscar producto"
+                aria-label="Buscar producto por nombre"
+                value={searchTerm}
+                onChange={e => setSearch(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && doSearch()}
+              />
+              <span className="material-symbols-outlined nxmp-search-icon" aria-hidden="true">search</span>
             </div>
-            <div className="nxmp-sb-sec">
-              <span className="nxmp-sb-sec-title">Estado</span>
-              {['', 'NUEVO', 'USADO', 'REACONDICIONADO'].map(c => (
-                <label key={c} className="nxmp-radio">
-                  <input type="radio" name="mpcond" value={c} checked={fCond === c} onChange={() => setFCond(c)} />
-                  <span>{c === '' ? 'Todos' : c.charAt(0) + c.slice(1).toLowerCase()}</span>
-                </label>
-              ))}
-            </div>
-            <div className="nxmp-sb-sec">
-              <span className="nxmp-sb-sec-title">Precio máximo</span>
-              <input type="range" min="0" max="1000" step="10" value={fMaxPrice} onChange={e => setFMaxPrice(Number(e.target.value))} className="nxmp-range" />
-              <div className="nxmp-range-row"><span>$0</span><span className="nxmp-range-val">${fMaxPrice}</span><span>$1000+</span></div>
-            </div>
-            <div className="nxmp-sb-btns">
-              <button className="nxmp-sb-apply" onClick={doSearch}>Aplicar filtros</button>
-              <button className="nxmp-sb-clear" onClick={doClear}>Limpiar</button>
-              <button className="nxmp-sb-new" onClick={() => setShowModal(true)}>+ Nuevo producto</button>
-            </div>
-          </aside>
-
-          {/* Grid de productos */}
-          <div className="nxmp-main">
-            {error && <div className="nxmp-err">{error}</div>}
-            <div className="nxmp-toolbar">
-              <div className="nxmp-count">Total: <b>{sorted.length}</b> producto{sorted.length !== 1 ? 's' : ''}</div>
-              <select className="nxmp-sortsel" value={sortBy} onChange={e => setSortBy(e.target.value)}>
-                <option value="newest">Más reciente</option>
-                <option value="price-low">Menor precio</option>
-                <option value="price-high">Mayor precio</option>
-                <option value="rating">Mejor calificación</option>
-              </select>
-            </div>
-
-            {loading
-              ? <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--ink-ghost)', fontSize: '0.78rem', letterSpacing: '0.12em', textTransform: 'uppercase' }}>Cargando…</div>
-              : sorted.length === 0
-                ? (
-                  <div className="nxmp-empty">
-                    <div className="nxmp-empty-title">Aún no tienes productos</div>
-                    <p className="nxmp-empty-sub">Publica tu primer producto y empieza a vender en Nexont.</p>
-                    <button className="nxmp-pub-btn" onClick={() => setShowModal(true)}>+ Publicar primer producto</button>
-                  </div>
-                )
-                : (
-                  <div className="nxmp-grid">
-                    {sorted.map(p => (
-                      <div key={p.id} className="nxmp-card">
-                        <div className="nxmp-card-img">
-                          {p.imagenes?.[0]?.url
-                            ? <img src={p.imagenes[0].url} alt={p.titulo} />
-                            : <div className="nxmp-card-noimg">Sin imagen</div>}
-                          <span className="nxmp-card-stock-badge">Stock: {p.stock}</span>
-                        </div>
-                        <div className="nxmp-card-body">
-                          <div className="nxmp-card-cond">{p.condicion || 'NUEVO'}</div>
-                          <div className="nxmp-card-cat">{getCategoryLabel(p.categoria)}</div>
-                          <div className="nxmp-card-name">{p.titulo}</div>
-                          <div className="nxmp-card-price">${(parseFloat(p.precio) || 0).toFixed(2)}</div>
-                          <div className="nxmp-card-stars">{stars(p.promedioCalificacion)}</div>
-                          <div className="nxmp-card-foot">
-                            <span className={`nxmp-avail ${p.stock > 0 ? 'ok' : 'out'}`}>{p.stock > 0 ? '● Disponible' : '● Agotado'}</span>
-                            <div className="nxmp-card-actions">
-                              <button className="nxmp-btn-edit" onClick={() => setEditProduct(p)}>Editar</button>
-                              <button className="nxmp-btn-del" onClick={() => setDeleteProduct(p)}>Eliminar</button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )
-            }
+            <button className="nxmp-new-btn" onClick={() => setShowModal(true)} aria-label="Publicar un nuevo producto">
+              + Nuevo producto
+            </button>
           </div>
         </div>
-      </div>
 
-      {/* Modales */}
-      <PublishModal isOpen={showModal} onClose={() => setShowModal(false)} onPublished={() => fetchMyProducts()} />
-      <EditProductModal
-        isOpen={!!editProduct}
-        onClose={() => setEditProduct(null)}
-        product={editProduct}
-        onProductUpdated={() => { fetchMyProducts(); setToast({ message: 'Producto actualizado correctamente', type: 'success' }); }}
-      />
-      <DeleteConfirmModal
-        isOpen={!!deleteProduct}
-        onClose={() => setDeleteProduct(null)}
-        onConfirm={handleConfirmDelete}
+        <section className="nxmp-filterbar" aria-label="Filtros y ordenación">
+          <div className="nxmp-filter">
+            <label id="lbl-fcond">Estado</label>
+            <select value={fCond} onChange={e => setFCond(e.target.value)} aria-labelledby="lbl-fcond">
+              <option value="">Todos</option>
+              <option value="NUEVO">Nuevo</option>
+              <option value="USADO">Usado</option>
+              <option value="REACONDICIONADO">Reacondicionado</option>
+            </select>
+          </div>
+          <div className="nxmp-filter-actions">
+            <button className="nxmp-filter-btn" onClick={doSearch} aria-label="Aplicar filtros de búsqueda">Aplicar</button>
+            <button className="nxmp-filter-btn ghost" onClick={doClear} aria-label="Limpiar filtros de búsqueda">Limpiar</button>
+          </div>
+        </section>
+
+        <section className="nxmp-list" aria-label="Lista de mis productos">
+          {error && <div className="nxmp-err" role="alert">{error}</div>}
+          <div className="nxmp-toolbar">
+            <div className="nxmp-count" aria-live="polite">Total: <b>{sorted.length}</b> producto{sorted.length !== 1 ? 's' : ''}</div>
+            <select className="nxmp-sortsel" value={sortBy} onChange={e => setSortBy(e.target.value)} aria-label="Ordenar por">
+              <option value="newest">Mas reciente</option>
+              <option value="price-low">Menor precio</option>
+              <option value="price-high">Mayor precio</option>
+              <option value="rating">Mejor calificacion</option>
+            </select>
+          </div>
+
+          {loading ? (
+            <div className="nxmp-loading" role="status">Cargando…</div>
+          ) : sorted.length === 0 ? (
+            <div className="nxmp-empty">
+              <div className="nxmp-empty-title">Aun no tienes productos</div>
+              <p className="nxmp-empty-sub">Publica tu primer producto y empieza a vender en Nexont.</p>
+              <button className="nxmp-pub-btn" onClick={() => setShowModal(true)} aria-label="Publicar mi primer producto">
+                + Publicar primer producto
+              </button>
+            </div>
+          ) : (
+            <div className="nxmp-rows">
+              {sorted.map(p => {
+                const status = getStockStatus(p.stock || 0);
+                const pId = `p-title-${p.id}`;
+                return (
+                  <article key={p.id} className="nxmp-row" aria-labelledby={pId}>
+                    <div className="nxmp-row-media">
+                      {p.imagenes?.[0]?.url
+                        ? <img src={p.imagenes[0].url} alt={p.titulo} />
+                        : <div className="nxmp-row-noimg" aria-hidden="true">Sin imagen</div>}
+                    </div>
+                    <div className="nxmp-row-grid">
+                      <div className="nxmp-row-main">
+                        <div className="nxmp-row-title" id={pId}>{p.titulo}</div>
+                        <div className="nxmp-row-meta">{getCategoryLabel(p.categoria)} · {p.condicion || 'NUEVO'}</div>
+                      </div>
+                      <div className="nxmp-row-block">
+                        <span className="nxmp-row-label">Precio y stock</span>
+                        <div className="nxmp-row-value">
+                          <span className="nxmp-row-price">${(parseFloat(p.precio) || 0).toFixed(2)}</span>
+                          <span className="nxmp-row-stock">/ {p.stock} unidades</span>
+                        </div>
+                      </div>
+                      <div className="nxmp-row-block">
+                        <span className="nxmp-row-label">Estado</span>
+                        <div className={`nxmp-row-status ${status.key}`} aria-label={`Estado del stock: ${status.label}`}>
+                          <span className="nxmp-status-dot" aria-hidden="true" />
+                          <span>{status.label}</span>
+                        </div>
+                      </div>
+                      <div className="nxmp-row-actions">
+                        <button className="nxmp-btn-edit" onClick={() => setEditProduct(p)} aria-label={`Editar ${p.titulo}`} title="Editar producto">Editar</button>
+                        <button className="nxmp-btn-del" onClick={() => setDeleteProduct(p)} aria-label={`Eliminar ${p.titulo}`} title="Eliminar producto">Eliminar</button>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      </main>
+
+      {/* ── Modales ── */}
+      <PublishModal isOpen={showModal} onClose={() => setShowModal(false)} onPublished={fetchMyProducts} />
+      {editProduct && (
+        <EditProductModal 
+          isOpen={!!editProduct} 
+          onClose={() => setEditProduct(null)} 
+          product={editProduct} 
+          onProductUpdated={() => { fetchMyProducts(); setToast({ message: 'Producto actualizado correctamente', type: 'success' }); }}
+        />
+      )}
+      <DeleteConfirmModal 
+        isOpen={!!deleteProduct} 
+        onClose={() => setDeleteProduct(null)} 
         productName={deleteProduct?.titulo || ''}
+        onConfirm={handleConfirmDelete}
         loading={deleteLoading}
       />
+
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-      {showChat && <ChatWidget onClose={() => setShowChat(false)} initialInput={aiPrefill} />}
+      {showChat && <ChatWidget onClose={() => setShowChat(false)} initialMessage={aiPrefill} />}
     </div>
   );
 }

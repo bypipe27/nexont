@@ -3,17 +3,64 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../api/api';
 import StripePaymentForm from '../components/StripePaymentForm';
 import AssistedTopBar from '../components/assisted/AssistedTopBar';
+import { useTheme } from '../context/ThemeContext';
 
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-  :root { --nxo-bg:#f6f7fb; --nxo-surface:#ffffff; --nxo-surface-2:#f3f6fb; --nxo-ink:#111827; --nxo-ink-soft:#5b6475; --nxo-ink-ghost:#8b95a7; --nxo-border:rgba(17,24,39,0.10); --nxo-accent:#7c3aed; --nxo-accent-2:#2563eb; --nxo-success:#16a34a; --nxo-danger:#dc2626; --cream:#f6f7fb; --cream-dark:#eef2f7; --ink:#111827; --ink-mid:#374151; --ink-soft:#5b6475; --ink-ghost:#8b95a7; --amber:#7c3aed; --white:#ffffff; --border:rgba(17,24,39,0.10); }
+  :root { 
+    --nxo-bg:#f6f7fb; 
+    --nxo-surface:#ffffff; 
+    --nxo-surface-2:#f3f6fb; 
+    --nxo-ink:#111827; 
+    --nxo-ink-soft:#5b6475; 
+    --nxo-ink-ghost:#8b95a7; 
+    --nxo-border:rgba(17,24,39,0.10); 
+    --nxo-accent:#7c3aed; 
+    --nxo-accent-2:#2563eb; 
+    --nxo-success:#16a34a; 
+    --nxo-danger:#dc2626; 
+    --cream:#f6f7fb; 
+    --cream-dark:#eef2f7; 
+    --ink:#111827; 
+    --ink-mid:#374151; 
+    --ink-soft:#5b6475; 
+    --ink-ghost:#8b95a7; 
+    --amber:#7c3aed; 
+    --white:#ffffff; 
+    --border:rgba(17,24,39,0.10); 
+    --nxo-bar-bg: rgba(246, 247, 251, 0.88);
+  }
+
+  [data-theme='dark'] {
+    --nxo-bg: #121416;
+    --nxo-surface: #1a1d20;
+    --nxo-surface-2: #24282c;
+    --nxo-ink: #f3f4f6;
+    --nxo-ink-soft: #9ca3af;
+    --nxo-ink-ghost: #6b7280;
+    --nxo-border: rgba(255, 255, 255, 0.08);
+    --nxo-accent: #a78bfa;
+    --nxo-accent-2: #60a5fa;
+    --nxo-success: #22c55e;
+    --nxo-danger: #f87171;
+    --cream: #121416;
+    --cream-dark: #1f2225;
+    --ink: #f3f4f6;
+    --ink-mid: #e5e7eb;
+    --ink-soft: #9ca3af;
+    --ink-ghost: #6b7280;
+    --amber: #a78bfa;
+    --white: #1a1d20;
+    --border: rgba(255, 255, 255, 0.08);
+    --nxo-bar-bg: rgba(18, 20, 22, 0.88);
+  }
 
   .nxo-root { min-height:100vh; background:
       radial-gradient(circle at top left, rgba(124,58,237,0.12), transparent 30%),
       radial-gradient(circle at bottom right, rgba(37,99,235,0.10), transparent 26%),
-      var(--nxo-bg); font-family:'Inter',sans-serif; color:var(--nxo-ink); }
+      var(--nxo-bg); font-family:'Inter',sans-serif; color:var(--nxo-ink); transition: background-color 0.25s ease, color 0.25s ease; }
 
-  .nxo-bar { position:sticky; top:0; z-index:100; height:72px; background:rgba(246,247,251,0.88); backdrop-filter:blur(18px); border-bottom:1px solid var(--nxo-border); display:flex; align-items:center; padding:0 2rem; gap:1rem; }
+  .nxo-bar { position:sticky; top:0; z-index:100; height:72px; background:var(--nxo-bar-bg); backdrop-filter:blur(18px); border-bottom:1px solid var(--nxo-border); display:flex; align-items:center; padding:0 2rem; gap:1rem; }
   .nxo-brand { display:flex; align-items:center; gap:0.75rem; text-decoration:none; cursor:pointer; }
   .nxo-brand img { height:28px; }
   .nxo-brand-name { font-size:1.08rem; font-weight:900; color:var(--nxo-ink); letter-spacing:-0.03em; }
@@ -21,7 +68,7 @@ const STYLES = `
   .nxo-bar-title { font-size:0.62rem; font-weight:800; letter-spacing:0.24em; text-transform:uppercase; color:var(--nxo-ink-soft); }
   .nxo-gap { flex:1; }
   .nxo-back { height:38px; padding:0 1rem; background:transparent; border:1px solid var(--nxo-border); color:var(--nxo-ink-soft); font-size:0.68rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; cursor:pointer; transition:all 0.18s; font-family:'Inter',sans-serif; }
-  .nxo-back:hover { background:var(--nxo-ink); color:#fff; border-color:var(--nxo-ink); }
+  .nxo-back:hover { background:var(--nxo-ink); color:var(--nxo-surface); border-color:var(--nxo-ink); }
 
   .nxo-page { max-width:860px; margin:0 auto; padding:3rem 1.5rem 5rem; }
 
@@ -30,11 +77,11 @@ const STYLES = `
 
   .nxo-page-title { font-size:clamp(2.4rem, 5vw, 4rem); font-weight:900; color:var(--nxo-ink); margin-bottom:2rem; letter-spacing:-0.05em; line-height:0.98; }
 
-  .nxo-panel { background:rgba(255,255,255,0.92); border:1px solid var(--nxo-border); margin-bottom:1rem; box-shadow:0 10px 30px rgba(17,24,39,0.06); overflow:hidden; }
+  .nxo-panel { background:var(--nxo-surface); border:1px solid var(--nxo-border); margin-bottom:1rem; box-shadow:0 10px 30px rgba(17,24,39,0.06); overflow:hidden; }
   .nxo-panel-head { padding:1rem 1.25rem; border-bottom:1px solid var(--nxo-border); display:flex; align-items:center; justify-content:space-between; background:linear-gradient(135deg, rgba(124,58,237,0.05), rgba(37,99,235,0.03)); }
   .nxo-panel-title { font-size:0.6rem; font-weight:800; letter-spacing:0.22em; text-transform:uppercase; color:var(--nxo-ink-soft); }
 
-  .nxo-co-item { display:grid; grid-template-columns:1fr auto; gap:1rem; padding:1.05rem 1.25rem; border-bottom:1px solid rgba(17,24,39,0.06); align-items:center; }
+  .nxo-co-item { display:grid; grid-template-columns:1fr auto; gap:1rem; padding:1.05rem 1.25rem; border-bottom:1px solid var(--nxo-border); align-items:center; }
   .nxo-co-item:last-child { border-bottom:none; }
   .nxo-co-name { font-size:1rem; font-weight:700; color:var(--nxo-ink); margin-bottom:0.2rem; letter-spacing:-0.02em; }
   .nxo-co-meta { font-size:0.74rem; color:var(--nxo-ink-soft); }
@@ -54,13 +101,13 @@ const STYLES = `
   .nxo-notes:focus { border-color:var(--nxo-accent); box-shadow:0 0 0 4px rgba(124,58,237,0.12); }
   .nxo-notes::placeholder { color:var(--nxo-ink-ghost); }
 
-  .nxo-confirm-btn { width:100%; height:52px; background:linear-gradient(135deg, var(--nxo-ink), var(--nxo-accent)); color:#fff; font-family:'Inter',sans-serif; font-weight:800; font-size:0.76rem; letter-spacing:0.14em; text-transform:uppercase; border:none; cursor:pointer; transition:transform 0.18s, box-shadow 0.18s, opacity 0.18s; margin-top:0.85rem; }
+  .nxo-confirm-btn { width:100%; height:52px; background:linear-gradient(135deg, var(--nxo-accent-2), var(--nxo-accent)); color:#fff; font-family:'Inter',sans-serif; font-weight:800; font-size:0.76rem; letter-spacing:0.14em; text-transform:uppercase; border:none; cursor:pointer; transition:transform 0.18s, box-shadow 0.18s, opacity 0.18s; margin-top:0.85rem; }
   .nxo-confirm-btn:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 12px 26px rgba(124,58,237,0.18); }
   .nxo-confirm-btn:disabled { opacity:0.35; cursor:not-allowed; transform:none; box-shadow:none; }
   .nxo-confirm-warn { color:var(--nxo-danger); font-size:0.78rem; text-align:center; margin-top:0.5rem; }
   .nxo-err { background:rgba(220,38,38,0.08); border:1px solid rgba(220,38,38,0.2); padding:0.8rem 1rem; margin-bottom:1rem; color:var(--nxo-danger); font-size:0.84rem; }
 
-  .nxo-order-card { background:rgba(255,255,255,0.92); border:1px solid var(--nxo-border); padding:1.1rem 1.25rem; margin-bottom:0.85rem; cursor:pointer; transition:transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease; display:flex; align-items:flex-start; gap:1rem; box-shadow:0 10px 28px rgba(17,24,39,0.05); }
+  .nxo-order-card { background:var(--nxo-surface); border:1px solid var(--nxo-border); padding:1.1rem 1.25rem; margin-bottom:0.85rem; cursor:pointer; transition:transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease; display:flex; align-items:flex-start; gap:1rem; box-shadow:0 10px 28px rgba(17,24,39,0.05); }
   .nxo-order-card:hover { transform:translateY(-1px); border-color:rgba(124,58,237,0.28); box-shadow:0 16px 34px rgba(17,24,39,0.08); }
   .nxo-order-thumbs { display:flex; gap:0.35rem; flex-shrink:0; }
   .nxo-order-thumb { width:52px; height:52px; object-fit:cover; border:1px solid var(--nxo-border); background:var(--nxo-surface-2); flex-shrink:0; border-radius:12px; }
@@ -75,36 +122,36 @@ const STYLES = `
   .nxo-order-meta { font-size:0.72rem; color:var(--nxo-ink-ghost); margin-top:0.35rem; }
 
   .nxo-pagination { display:flex; align-items:center; justify-content:center; gap:0.5rem; margin-top:2rem; flex-wrap:wrap; }
-  .nxo-page-btn { height:38px; min-width:38px; padding:0 0.85rem; background:rgba(255,255,255,0.9); border:1px solid var(--nxo-border); color:var(--nxo-ink-soft); font-size:0.72rem; font-weight:700; letter-spacing:0.08em; cursor:pointer; transition:all 0.15s; font-family:'Inter',sans-serif; border-radius:12px; }
-  .nxo-page-btn:hover:not(:disabled) { background:var(--nxo-ink); color:#fff; border-color:var(--nxo-ink); }
+  .nxo-page-btn { height:38px; min-width:38px; padding:0 0.85rem; background:var(--nxo-surface); border:1px solid var(--nxo-border); color:var(--nxo-ink-soft); font-size:0.72rem; font-weight:700; letter-spacing:0.08em; cursor:pointer; transition:all 0.15s; font-family:'Inter',sans-serif; border-radius:12px; }
+  .nxo-page-btn:hover:not(:disabled) { background:var(--nxo-ink); color:var(--nxo-surface); border-color:var(--nxo-ink); }
   .nxo-page-btn:disabled { opacity:0.35; cursor:not-allowed; }
-  .nxo-page-btn.active { background:var(--nxo-ink); color:#fff; border-color:var(--nxo-ink); }
+  .nxo-page-btn.active { background:var(--nxo-ink); color:var(--nxo-surface); border-color:var(--nxo-ink); }
   .nxo-page-info { font-size:0.72rem; color:var(--nxo-ink-soft); letter-spacing:0.06em; }
 
   .nxo-detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:0; }
-  .nxo-detail-field { padding:1rem 1.25rem; border-bottom:1px solid rgba(17,24,39,0.06); border-right:1px solid rgba(17,24,39,0.06); }
+  .nxo-detail-field { padding:1rem 1.25rem; border-bottom:1px solid var(--nxo-border); border-right:1px solid var(--nxo-border); }
   .nxo-detail-field:nth-child(2n) { border-right:none; }
   .nxo-df-lbl { font-size:0.58rem; color:var(--nxo-ink-ghost); text-transform:uppercase; letter-spacing:0.16em; margin-bottom:0.35rem; display:block; font-weight:800; }
   .nxo-df-val { font-size:0.96rem; font-weight:700; color:var(--nxo-ink); text-transform:capitalize; }
 
-  .nxo-detail-item { display:grid; grid-template-columns:52px 1fr auto; gap:0.85rem; padding:1rem 1.25rem; border-bottom:1px solid rgba(17,24,39,0.06); align-items:center; }
+  .nxo-detail-item { display:grid; grid-template-columns:52px 1fr auto; gap:0.85rem; padding:1rem 1.25rem; border-bottom:1px solid var(--nxo-border); align-items:center; }
   .nxo-detail-item:last-child { border-bottom:none; }
   .nxo-di-name { font-size:0.92rem; font-weight:700; color:var(--nxo-ink); margin-bottom:0.15rem; }
   .nxo-di-meta { font-size:0.72rem; color:var(--nxo-ink-soft); }
   .nxo-di-total { font-size:1rem; font-weight:800; color:var(--nxo-ink); }
 
   .nxo-review-wrap { margin-top: 1rem; }
-  .nxo-review-card { border-top:1px solid var(--nxo-border); padding:1rem 1.25rem 1.25rem; background:linear-gradient(180deg, rgba(124,58,237,0.03), rgba(255,255,255,0.9)); }
+  .nxo-review-card { border-top:1px solid var(--nxo-border); padding:1rem 1.25rem 1.25rem; background:linear-gradient(180deg, rgba(124,58,237,0.03), var(--nxo-surface)); }
   .nxo-review-head { display:flex; justify-content:space-between; gap:1rem; align-items:flex-start; margin-bottom:0.9rem; flex-wrap:wrap; }
   .nxo-review-title { font-size:1rem; font-weight:800; color:var(--nxo-ink); }
   .nxo-review-sub { font-size:0.72rem; color:var(--nxo-ink-soft); margin-top:0.25rem; }
   .nxo-review-stars { display:flex; gap:0.35rem; margin-bottom:0.75rem; }
   .nxo-review-star { width:36px; height:36px; border:1px solid var(--nxo-border); background:var(--nxo-surface); color:var(--nxo-ink-soft); cursor:pointer; font-size:0.9rem; transition:all 0.15s; border-radius:10px; }
-  .nxo-review-star.active { background:var(--nxo-ink); color:#fff; border-color:var(--nxo-ink); }
+  .nxo-review-star.active { background:var(--nxo-ink); color:var(--nxo-surface); border-color:var(--nxo-ink); }
   .nxo-review-text { width:100%; min-height:92px; background:var(--nxo-surface); border:1px solid var(--nxo-border); color:var(--nxo-ink); font-size:0.86rem; padding:0.9rem 1rem; resize:vertical; outline:none; font-family:'Inter',sans-serif; line-height:1.65; border-radius:14px; }
   .nxo-review-text:focus { border-color:var(--nxo-accent); box-shadow:0 0 0 4px rgba(124,58,237,0.12); }
   .nxo-review-meta { display:flex; justify-content:space-between; gap:1rem; align-items:center; margin-top:0.75rem; flex-wrap:wrap; }
-  .nxo-review-btn { height:42px; padding:0 1.15rem; background:var(--nxo-ink); color:#fff; border:none; cursor:pointer; font-family:'Inter',sans-serif; font-size:0.7rem; font-weight:800; letter-spacing:0.12em; text-transform:uppercase; border-radius:12px; }
+  .nxo-review-btn { height:42px; padding:0 1.15rem; background:var(--nxo-ink); color:var(--nxo-surface); border:none; cursor:pointer; font-family:'Inter',sans-serif; font-size:0.7rem; font-weight:800; letter-spacing:0.12em; text-transform:uppercase; border-radius:12px; }
   .nxo-review-btn:disabled { opacity:0.45; cursor:not-allowed; }
   .nxo-review-note { font-size:0.72rem; color:var(--nxo-ink-soft); }
   .nxo-review-ok { font-size:0.75rem; color:var(--nxo-success); margin-top:0.7rem; }
@@ -114,14 +161,14 @@ const STYLES = `
   .nxo-notes-lbl { font-size:0.58rem; font-weight:800; text-transform:uppercase; letter-spacing:0.16em; color:var(--nxo-accent); margin-bottom:0.35rem; display:block; }
   .nxo-notes-txt { font-size:0.85rem; color:var(--nxo-ink-soft); line-height:1.7; }
 
-  .nxo-empty { padding:4.5rem 1.5rem; text-align:center; border:1px solid var(--nxo-border); background:rgba(255,255,255,0.92); box-shadow:0 10px 30px rgba(17,24,39,0.06); }
+  .nxo-empty { padding:4.5rem 1.5rem; text-align:center; border:1px solid var(--nxo-border); background:var(--nxo-surface); box-shadow:0 10px 30px rgba(17,24,39,0.06); }
   .nxo-empty-title { font-size:2rem; font-weight:900; color:var(--nxo-ink); margin-bottom:0.65rem; letter-spacing:-0.04em; }
   .nxo-empty-sub { font-size:0.88rem; color:var(--nxo-ink-soft); margin-bottom:1.5rem; }
-  .nxo-cta { height:44px; padding:0 1.8rem; background:linear-gradient(135deg, var(--nxo-ink), var(--nxo-accent)); color:#fff; font-family:'Inter',sans-serif; font-size:0.72rem; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; border:none; cursor:pointer; border-radius:12px; }
+  .nxo-cta { height:44px; padding:0 1.8rem; background:linear-gradient(135deg, var(--nxo-accent-2), var(--nxo-accent)); color:#fff; font-family:'Inter',sans-serif; font-size:0.72rem; font-weight:800; letter-spacing:0.14em; text-transform:uppercase; border:none; cursor:pointer; border-radius:12px; }
 
   .nxi-overlay { position:fixed; inset:0; background:rgba(17,24,39,0.68); backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; z-index:2000; padding:1rem; }
   .nxi-modal { background:var(--nxo-surface); border:1px solid var(--nxo-border); width:100%; max-width:560px; max-height:92vh; overflow-y:auto; box-shadow:0 32px 80px rgba(17,24,39,0.24); border-radius:24px; }
-  .nxi-header { background:linear-gradient(135deg, var(--nxo-ink), var(--nxo-accent)); padding:3rem 2.25rem 2.25rem; text-align:center; }
+  .nxi-header { background:linear-gradient(135deg, var(--nxo-accent-2), var(--nxo-accent)); padding:3rem 2.25rem 2.25rem; text-align:center; }
   .nxi-logo { font-size:2.6rem; font-weight:900; color:#fff; letter-spacing:-0.05em; line-height:1; margin-bottom:0.35rem; }
   .nxi-logo-sub { font-size:0.56rem; letter-spacing:0.32em; text-transform:uppercase; color:rgba(255,255,255,0.65); margin-bottom:1.25rem; display:block; }
   .nxi-num { font-size:1rem; font-weight:800; letter-spacing:0.18em; color:#f5d06f; text-transform:uppercase; margin-bottom:0.9rem; display:block; }
@@ -145,10 +192,15 @@ const STYLES = `
   .nxi-total-val { font-size:2rem; font-weight:900; color:var(--nxo-accent); letter-spacing:-0.04em; line-height:1; }
   .nxi-footer { border-top:1px solid var(--nxo-border); padding:1.75rem 1.5rem 2rem; text-align:center; background:var(--nxo-surface-2); }
   .nxi-footer-txt { font-size:0.78rem; color:var(--nxo-ink-soft); line-height:1.8; margin-bottom:1.25rem; }
-  .nxi-close-btn { height:48px; padding:0 2rem; background:linear-gradient(135deg, var(--nxo-ink), var(--nxo-accent)); color:#fff; font-family:'Inter',sans-serif; font-size:0.72rem; font-weight:800; letter-spacing:0.16em; text-transform:uppercase; border:none; cursor:pointer; border-radius:12px; }
+  .nxi-close-btn { height:48px; padding:0 2rem; background:linear-gradient(135deg, var(--nxo-accent-2), var(--nxo-accent)); color:#fff; font-family:'Inter',sans-serif; font-size:0.72rem; font-weight:800; letter-spacing:0.16em; text-transform:uppercase; border:none; cursor:pointer; border-radius:12px; }
   .nxi-close-btn:hover { opacity:0.95; }
 `;
-if (!document.getElementById('nxo-styles')) { const el = document.createElement('style'); el.id = 'nxo-styles'; el.textContent = STYLES; document.head.appendChild(el); }
+{
+  const el = document.getElementById('nxo-styles') || document.createElement('style');
+  el.id = 'nxo-styles';
+  el.textContent = STYLES;
+  if (!el.parentNode) document.head.appendChild(el);
+}
 
 const ORDERS_PER_PAGE = 10;
 
@@ -257,6 +309,7 @@ function Pagination({ currentPage, totalPages, onPageChange }) {
 }
 
 function Orders() {
+  const { theme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const fromCheckout = location.state?.fromCheckout || false;
@@ -278,6 +331,7 @@ function Orders() {
   const [reviewDrafts, setReviewDrafts] = useState({});
   const [reviewLoading, setReviewLoading] = useState({});
   const [reviewMessage, setReviewMessage] = useState('');
+  const [loadingOrderDetail, setLoadingOrderDetail] = useState(false);
   const validPaymentMethods = new Set(['efectivo', 'tarjeta']);
 
   const finalizeOrder = async (selectedPaymentMethod) => {
@@ -352,6 +406,24 @@ function Orders() {
     }));
   };
 
+  const openOrderDetail = async (order) => {
+    setReviewMessage('');
+    setReviewDrafts({});
+    setSelectedOrder(null);
+    setLoadingOrderDetail(true);
+    setView('detail');
+
+    try {
+      const { data } = await api.get(`/orders/${order.id}`);
+      setSelectedOrder(data);
+    } catch (err) {
+      setReviewMessage(err.response?.data?.error || err.message || 'No se pudo cargar el detalle del pedido');
+      setSelectedOrder(order);
+    } finally {
+      setLoadingOrderDetail(false);
+    }
+  };
+
   const submitReview = async (seller) => {
     if (!selectedOrder?.id || !seller?.id) return;
 
@@ -402,7 +474,7 @@ function Orders() {
   if (view === 'checkout') {
     const hasOverStock = cart?.items?.some(i => i.quantity > (i.product?.stock ?? Infinity));
     return (
-      <div className="nxo-root">
+      <div className="nxo-root" data-theme={theme}>
         <AssistedTopBar active="tienda" />
         <div className="nxo-page">
           <div className="nxo-eyebrow">Último paso</div>
@@ -491,7 +563,7 @@ function Orders() {
 
   if (view === 'list') {
     return (
-      <div className="nxo-root">
+      <div className="nxo-root" data-theme={theme}>
         <AssistedTopBar active="tienda" />
         <div className="nxo-page">
           <div className="nxo-eyebrow">Historial</div>
@@ -507,7 +579,7 @@ function Orders() {
           {paginatedOrders.map(order => {
             const ss = statusStyle(order.status);
             return (
-              <div key={order.id} className="nxo-order-card" onClick={() => { setSelectedOrder(order); setReviewMessage(''); setReviewDrafts({}); setView('detail'); }}>
+              <div key={order.id} className="nxo-order-card" onClick={() => { openOrderDetail(order); }}>
                 <OrderThumbs items={order.items} />
                 <div className="nxo-order-body">
                   <div className="nxo-order-top">
@@ -545,7 +617,7 @@ function Orders() {
       : [...new Map(selectedOrder.items.map((item) => [item.sellerId, { id: item.sellerId, name: item.sellerName, review: null }]).filter(([id]) => id)).values()];
     const canReview = ['CONFIRMADO', 'ENTREGADO'].includes(String(selectedOrder.status || '').toUpperCase());
     return (
-      <div className="nxo-root">
+      <div className="nxo-root" data-theme={theme}>
         <AssistedTopBar active="tienda" />
         <div className="nxo-page">
           <div className="nxo-eyebrow">Detalle</div>
@@ -656,6 +728,19 @@ function Orders() {
       </div>
     );
   }
+
+  if (view === 'detail' && loadingOrderDetail) {
+    return (
+      <div className="nxo-root" data-theme={theme}>
+        <AssistedTopBar active="tienda" />
+        <div className="nxo-page">
+          <div className="nxo-eyebrow">Detalle</div>
+          <h1 className="nxo-page-title">Cargando pedido…</h1>
+        </div>
+      </div>
+    );
+  }
+
   return null;
 }
 export default Orders;

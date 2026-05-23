@@ -486,13 +486,299 @@ const SELLER_STYLES = `
   .nxmp-ai-text { max-width:520px; font-size:0.88rem; }
   .nxmp-ai-btn { white-space:nowrap; }
 
+  .nxmp-summary {
+    margin-bottom: 2.5rem;
+  }
+  .nxmp-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+    background: var(--ar-surface);
+    border: 1px solid var(--ar-outline-variant);
+    padding: 2rem;
+  }
+  .nxmp-summary-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .nxmp-summary-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ar-secondary);
+    font-weight: 600;
+  }
+  .nxmp-summary-value {
+    font-size: 2.6rem;
+    font-weight: 300;
+    color: var(--ar-primary);
+    letter-spacing: -0.04em;
+  }
+
+  .nxmp-controls {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .nxmp-section-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--ar-on-surface);
+    letter-spacing: -0.01em;
+    margin-bottom: 0.25rem;
+  }
+  .nxmp-section-sub {
+    font-size: 0.85rem;
+    color: var(--ar-on-surface-variant);
+  }
+  .nxmp-controls-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .nxmp-search {
+    position: relative;
+  }
+  .nxmp-search input {
+    height: 40px;
+    width: 260px;
+    padding: 0 2.4rem 0 0.95rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--ar-outline-variant);
+    background: var(--ar-surface-low);
+    color: var(--ar-on-surface);
+    font-size: 0.84rem;
+  }
+  .nxmp-search-icon {
+    position: absolute;
+    right: 0.7rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--ar-on-surface-variant);
+    font-size: 0.9rem;
+  }
+  .nxmp-new-btn {
+    height: 40px;
+    padding: 0 1.4rem;
+    border-radius: 0.5rem;
+    background: var(--ar-primary);
+    color: var(--ar-primary-contrast);
+    border: none;
+    font-weight: 600;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: opacity 0.2s ease;
+  }
+  .nxmp-new-btn:hover { opacity: 0.9; }
+
+  .nxmp-filterbar {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid var(--ar-outline-variant);
+    margin-bottom: 1.5rem;
+  }
+  .nxmp-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    min-width: 200px;
+  }
+  .nxmp-filter label {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    color: var(--ar-secondary);
+  }
+  .nxmp-filter select,
+  .nxmp-filter input[type='range'] {
+    width: 100%;
+  }
+  .nxmp-filter input[type='range'] {
+    accent-color: var(--ar-accent);
+  }
+  .nxmp-filter select {
+    height: 40px;
+    padding: 0 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--ar-outline-variant);
+    background: var(--ar-surface-low);
+    color: var(--ar-on-surface);
+    font-size: 0.84rem;
+  }
+  html[data-theme='dark'] .nxmp-filter select,
+  html[data-theme='dark'] .nxmp-sortsel {
+    background: var(--ar-surface-solid);
+    color: var(--ar-on-surface);
+    color-scheme: dark;
+  }
+  html[data-theme='dark'] .nxmp-filter select option,
+  html[data-theme='dark'] .nxmp-sortsel option {
+    background: var(--ar-surface-solid);
+    color: var(--ar-on-surface);
+  }
+  .nxmp-filter-val {
+    font-size: 0.75rem;
+    color: var(--ar-on-surface-variant);
+  }
+  .nxmp-filter-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .nxmp-filter-btn {
+    height: 40px;
+    padding: 0 1.1rem;
+    border: 1px solid var(--ar-outline-variant);
+    background: var(--ar-primary);
+    color: var(--ar-primary-contrast);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+  }
+  .nxmp-filter-btn.ghost {
+    background: transparent;
+    color: var(--ar-on-surface-variant);
+  }
+
+  .nxmp-sortsel {
+    background: var(--ar-surface-low);
+    color: var(--ar-on-surface);
+    border: 1px solid var(--ar-outline-variant);
+  }
+
+  .nxmp-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .nxmp-loading {
+    text-align: center;
+    padding: 3rem;
+    color: var(--ar-on-surface-variant);
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .nxmp-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .nxmp-row {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    padding: 1rem;
+    border: 1px solid var(--ar-outline-variant);
+    background: var(--ar-surface);
+    transition: background 0.2s ease;
+  }
+  .nxmp-row:hover { background: var(--ar-surface-low); }
+  .nxmp-row-media {
+    width: 84px;
+    height: 84px;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background: var(--ar-bg-alt);
+    flex-shrink: 0;
+  }
+  .nxmp-row-media img { width: 100%; height: 100%; object-fit: cover; }
+  .nxmp-row-noimg {
+    width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+    color: var(--ar-secondary); font-size: 0.75rem;
+  }
+  .nxmp-row-grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: minmax(180px, 1.2fr) minmax(160px, 1fr) minmax(140px, 1fr) auto;
+    gap: 1rem;
+    align-items: center;
+  }
+  .nxmp-row-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--ar-on-surface);
+    margin-bottom: 0.25rem;
+  }
+  .nxmp-row-meta {
+    font-size: 0.72rem;
+    color: var(--ar-on-surface-variant);
+    letter-spacing: 0.04em;
+  }
+  .nxmp-row-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--ar-secondary);
+    margin-bottom: 0.35rem;
+    display: block;
+  }
+  .nxmp-row-value {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+  }
+  .nxmp-row-price {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ar-primary);
+  }
+  .nxmp-row-stock {
+    font-size: 0.78rem;
+    color: var(--ar-on-surface-variant);
+  }
+  .nxmp-row-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--ar-on-surface);
+  }
+  .nxmp-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+  }
+  .nxmp-row-status.low .nxmp-status-dot { background: #f59e0b; }
+  .nxmp-row-status.out .nxmp-status-dot { background: #dc2626; }
+  .nxmp-row-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.6rem;
+  }
+
+  .nxmp-row-actions .nxmp-btn-edit,
+  .nxmp-row-actions .nxmp-btn-del {
+    text-decoration: underline;
+    background: transparent;
+    border: none;
+    padding: 0;
+    height: auto;
+  }
+
+  .nxmp-row-actions .nxmp-btn-del { color: var(--ar-error); }
+
   @media (max-width:900px) {
     .sd-grid { grid-template-columns:repeat(2, minmax(0, 1fr)); }
     .sd-hero { flex-direction:column; }
     .sd-status { width:100%; }
     .sd-detail { grid-template-columns:1fr; }
-    .nxmp-sidebar { display:none; }
-    .nxmp-stats { grid-template-columns:repeat(2,1fr); }
+    .nxmp-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .nxmp-row-grid { grid-template-columns: 1fr; align-items: flex-start; }
+    .nxmp-row-actions { justify-content: flex-start; }
     .sd-page, .nxmp-page { padding:2.5rem 1.5rem 4rem; }
     .nxmp-ai { flex-direction:column; align-items:flex-start; }
   }
@@ -501,7 +787,12 @@ const SELLER_STYLES = `
     .sd-nav, .sd-page, .nxmp-page { padding-left:1.25rem; padding-right:1.25rem; }
     .sd-grid { grid-template-columns:1fr; }
     .sd-form-row, .sd-detail-grid, .nxpm-f-row { grid-template-columns:1fr; }
-    .nxmp-grid { grid-template-columns:1fr; }
+    .nxmp-summary-grid { grid-template-columns: 1fr; }
+    .nxmp-controls { flex-direction: column; align-items: flex-start; }
+    .nxmp-controls-actions { width: 100%; }
+    .nxmp-search input { width: 100%; }
+    .nxmp-row { flex-direction: column; align-items: flex-start; }
+    .nxmp-row-media { width: 100%; height: 180px; }
   }
 `;
 

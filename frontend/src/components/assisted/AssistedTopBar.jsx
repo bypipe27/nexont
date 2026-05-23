@@ -7,7 +7,7 @@ import { useHybridCart } from '../../hooks/useHybridCart';
 const NAV_LINKS = [
   { key: 'tienda', label: 'Tienda', to: '/' },
   { key: 'recomendados', label: 'Recomendados', to: '/recomendados' },
-  { key: 'tendencias', label: 'Tendencias', to: '/' },
+  { key: 'tendencias', label: 'Tendencias', to: '/#tendencias' },
 ];
 
 const STYLES = `

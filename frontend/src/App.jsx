@@ -14,12 +14,16 @@ import Profile from './pages/Profile';
 import PrivateRoute from './components/PrivateRoute';
 import ChatWidget from './components/ChatWidget';
 import HelpCenter from './components/HelpCenter';
+import Footer from './components/Footer';
 import SellerProfile from './pages/SellerProfile';
+import { useTheme } from './context/ThemeContext';
 
 function App() {
   const [stripePromise, setStripePromise] = useState(null);
   const [isReady, setIsReady] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
 
   useEffect(() => {
     const initStripe = async () => {
@@ -69,6 +73,7 @@ function App() {
           <Route path="/my-products" element={<PrivateRoute><MyProducts /></PrivateRoute>} />
           <Route path="/cart" element={<PrivateRoute><Elements stripe={stripePromise}><Cart /></Elements></PrivateRoute>} />
         </Routes>
+        <Footer />
       </BrowserRouter>
 
       <HelpCenter />
@@ -78,16 +83,22 @@ function App() {
           onClick={() => setShowChat(true)}
           style={{
             position: 'fixed', bottom: 32, right: 32, zIndex: 999,
-            background: '#2d6cdf', color: '#fff', border: 'none',
+            background: isDark ? '#ffffff' : '#000000',
+            color: isDark ? '#09090b' : '#ffffff',
+            border: 'none',
             borderRadius: '50%', width: 64, height: 64,
-            boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
-            fontSize: 32, cursor: 'pointer',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
+            cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            transition: 'background 0.2s',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           }}
+          onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.1) translateY(-4px)'}
+          onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1) translateY(0)'}
           aria-label="Abrir chat"
         >
-          💬
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>
+          </svg>
         </button>
       )}
       {showChat && <ChatWidget onClose={() => setShowChat(false)} />}

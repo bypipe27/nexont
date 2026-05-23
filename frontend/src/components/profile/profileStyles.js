@@ -11,6 +11,39 @@ const PROFILE_STYLES = `
     font-family: 'Inter', sans-serif;
   }
 
+  .pf-nav {
+    height: 64px;
+    background: var(--ar-surface);
+    border-bottom: 1px solid var(--ar-outline-variant);
+    display: flex;
+    align-items: center;
+    padding: 0 2rem;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .pf-nav-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--ar-on-surface);
+    text-decoration: none;
+    letter-spacing: -0.02em;
+  }
+
+  .pf-nav-brand img {
+    width: 28px;
+    height: 28px;
+  }
+
+  .pf-nav-wordmark {
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--ar-on-surface);
+  }
+
   .pf-layout {
     max-width: 1160px;
     margin: 0 auto;

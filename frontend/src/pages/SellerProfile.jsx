@@ -1,282 +1,10 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../api/api';
 import { useHybridCart } from '../hooks/useHybridCart';
 import { useTheme } from '../context/ThemeContext';
 import AssistedTopBar from '../components/assisted/AssistedTopBar';
-
-const SELLER_STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,200;0,300;0,400;0,600;0,700;1,200;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap');
-
-  .sp-root {
-    min-height: 100vh;
-    background: var(--cream);
-    font-family: 'DM Sans', sans-serif;
-    color: var(--ink);
-  }
-
-  /* NAV */
-  .sp-nav {
-    position: sticky; top: 0; z-index: 200;
-    height: 68px;
-    background: rgba(245,240,232,0.94);
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border);
-    display: flex; align-items: center;
-    padding: 0 3rem; gap: 1.5rem;
-  }
-  [data-theme="dark"] .sp-nav {
-    background: rgba(14,12,10,0.94);
-  }
-  .sp-nav-brand {
-    display: flex; align-items: center; gap: 0.75rem;
-    text-decoration: none; flex-shrink: 0;
-  }
-  .sp-nav-brand img { height: 28px; }
-  .sp-nav-wordmark {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.6rem; font-weight: 600;
-    color: var(--ink); letter-spacing: 0.06em;
-  }
-  .sp-nav-back {
-    display: flex; align-items: center; gap: 0.4rem;
-    height: 36px; padding: 0 1rem;
-    background: transparent; border: 1px solid var(--border);
-    color: var(--ink-soft); font-size: 0.75rem;
-    font-weight: 500; letter-spacing: 0.08em;
-    text-transform: uppercase; cursor: pointer;
-    transition: all 0.18s; font-family: 'DM Sans', sans-serif;
-    text-decoration: none;
-  }
-  .sp-nav-back:hover { background: var(--ink); color: var(--cream); border-color: var(--ink); }
-
-  /* SELLER HERO */
-  .sp-hero {
-    border-bottom: 1px solid var(--border);
-    padding: 3.5rem 3rem;
-    background: var(--cream-dark);
-  }
-  .sp-hero-inner {
-    max-width: 860px;
-    display: flex; align-items: flex-start; gap: 2.5rem;
-    flex-wrap: wrap;
-  }
-
-  /* AVATAR */
-  .sp-avatar-wrap { flex-shrink: 0; }
-  .sp-avatar {
-    width: 88px; height: 88px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 2rem; font-weight: 400;
-    border: 2px solid var(--border);
-    overflow: hidden; flex-shrink: 0;
-  }
-  .sp-avatar img { width: 100%; height: 100%; object-fit: cover; }
-  .sp-avatar-initials {
-    width: 100%; height: 100%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.8rem;
-  }
-
-  /* SELLER INFO */
-  .sp-info { flex: 1; }
-  .sp-eyebrow {
-    font-size: 0.6rem; font-weight: 600; letter-spacing: 0.25em;
-    text-transform: uppercase; color: var(--ink-soft);
-    margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.6rem;
-  }
-  .sp-eyebrow::before {
-    content: ''; display: block; width: 24px; height: 1px; background: var(--ink-soft);
-  }
-  .sp-seller-name {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 2.8rem; font-weight: 200;
-    color: var(--ink); line-height: 1.05;
-    letter-spacing: -0.02em; margin-bottom: 1rem;
-  }
-  .sp-meta {
-    display: flex; gap: 2rem; flex-wrap: wrap;
-  }
-  .sp-meta-item {
-    display: flex; align-items: center; gap: 0.45rem;
-    font-size: 0.78rem; color: var(--ink-soft);
-  }
-  .sp-meta-item strong { color: var(--ink); font-weight: 600; }
-
-  /* STATS BAR */
-  .sp-stats {
-    display: flex; gap: 0;
-    border: 1px solid var(--border);
-    margin-top: 2rem; max-width: 460px;
-    background: var(--white);
-  }
-  .sp-stat {
-    flex: 1; padding: 1rem 1.25rem;
-    border-right: 1px solid var(--border);
-  }
-  .sp-stat:last-child { border-right: none; }
-  .sp-stat-val {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 2rem; font-weight: 200; color: var(--ink);
-    display: block; line-height: 1; margin-bottom: 0.25rem;
-  }
-  .sp-stat-lbl {
-    font-size: 0.58rem; color: var(--ink-ghost);
-    text-transform: uppercase; letter-spacing: 0.14em; display: block;
-  }
-
-  .sp-review-section {
-    margin-top: 1.5rem;
-    border: 1px solid var(--border);
-    background: var(--white);
-    padding: 1.25rem;
-  }
-  .sp-review-head {
-    display: flex; justify-content: space-between; align-items: flex-end;
-    gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;
-  }
-  .sp-review-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.35rem; font-weight: 300; color: var(--ink);
-  }
-  .sp-review-sub { font-size: 0.72rem; color: var(--ink-soft); }
-  .sp-review-list { display: grid; gap: 0.75rem; }
-  .sp-review-card {
-    padding: 0.95rem 1rem;
-    border: 1px solid var(--border);
-    background: var(--cream);
-  }
-  .sp-review-row { display: flex; justify-content: space-between; gap: 1rem; margin-bottom: 0.35rem; flex-wrap: wrap; }
-  .sp-review-name { font-size: 0.82rem; font-weight: 600; color: var(--ink); }
-  .sp-review-date { font-size: 0.68rem; color: var(--ink-ghost); text-transform: uppercase; letter-spacing: 0.12em; }
-  .sp-review-stars { color: var(--amber); font-size: 0.72rem; margin-bottom: 0.45rem; }
-  .sp-review-comment { font-size: 0.84rem; color: var(--ink-mid); line-height: 1.75; }
-  .sp-review-empty { font-size: 0.85rem; color: var(--ink-soft); line-height: 1.8; }
-
-  /* PRODUCTS SECTION */
-  .sp-section { padding: 3rem; }
-  .sp-section-head {
-    display: flex; align-items: flex-end; justify-content: space-between;
-    margin-bottom: 2.5rem; padding-bottom: 1.25rem;
-    border-bottom: 1px solid var(--border);
-  }
-  .sp-section-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 2rem; font-weight: 200; color: var(--ink);
-    letter-spacing: -0.01em;
-  }
-  .sp-count {
-    font-size: 0.75rem; color: var(--ink-ghost); letter-spacing: 0.06em;
-  }
-
-  /* PRODUCT GRID */
-  .sp-pgrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
-    gap: 0;
-    border-top: 1px solid var(--border);
-    border-left: 1px solid var(--border);
-  }
-  .sp-pcard {
-    border-right: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    cursor: pointer; transition: background 0.15s;
-    display: flex; flex-direction: column;
-  }
-  .sp-pcard:hover { background: var(--cream-dark); }
-  .sp-pcard-img {
-    aspect-ratio: 1; overflow: hidden;
-    background: var(--cream-dark); position: relative;
-  }
-  .sp-pcard-img img {
-    width: 100%; height: 100%; object-fit: cover;
-    transition: transform 0.5s;
-  }
-  .sp-pcard:hover .sp-pcard-img img { transform: scale(1.05); }
-  .sp-pcard-badge {
-    position: absolute; top: 0.6rem; left: 0.6rem;
-    background: var(--white); color: var(--ink);
-    font-size: 0.52rem; font-weight: 600; letter-spacing: 0.14em;
-    text-transform: uppercase; padding: 0.2rem 0.5rem;
-    border: 1px solid var(--border);
-  }
-  .sp-pcard-body { padding: 1rem; flex: 1; display: flex; flex-direction: column; }
-  .sp-pcard-name {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.05rem; font-weight: 300; color: var(--ink);
-    margin-bottom: 0.25rem; line-height: 1.25;
-  }
-  .sp-pcard-price {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.2rem; font-weight: 300; color: var(--amber);
-    margin-bottom: 0.35rem;
-  }
-  .sp-pcard-stars { color: var(--amber); font-size: 0.65rem; margin-bottom: 0.6rem; }
-  .sp-pcard-add-row { display: flex; gap: 0.3rem; }
-  .sp-qty {
-    width: 44px; height: 30px; text-align: center;
-    background: var(--white); border: 1px solid var(--border);
-    color: var(--ink); font-size: 0.78rem; outline: none;
-    font-family: 'DM Sans', sans-serif;
-  }
-  .sp-add-btn {
-    flex: 1; height: 30px; border: none;
-    font-size: 0.65rem; font-weight: 500; cursor: pointer;
-    letter-spacing: 0.1em; text-transform: uppercase;
-    font-family: 'DM Sans', sans-serif; transition: all 0.15s;
-  }
-  .sp-add-btn.ok { background: var(--ink); color: var(--cream); }
-  .sp-add-btn.ok:hover { background: var(--ink-mid); }
-  .sp-add-btn.out { background: var(--cream-dark); color: var(--ink-ghost); cursor: not-allowed; }
-
-  /* EMPTY */
-  .sp-empty {
-    padding: 4rem 2rem; text-align: center;
-    border: 1px solid var(--border);
-  }
-  .sp-empty-title {
-    font-family: 'Cormorant Garamond', serif;
-    font-size: 1.8rem; font-weight: 200; color: var(--ink);
-    margin-bottom: 0.6rem;
-  }
-  .sp-empty-txt { font-size: 0.85rem; color: var(--ink-soft); line-height: 1.8; }
-
-  /* ALERTS */
-  .sp-alert-err { background: #FEF2F2; border: 1px solid #FCA5A5; padding: 0.7rem 1rem; margin-bottom: 1rem; color: #DC2626; font-size: 0.82rem; }
-  .sp-alert-ok  { background: #F0FDF4; border: 1px solid #86EFAC; padding: 0.7rem 1rem; margin-bottom: 1rem; color: #16A34A; font-size: 0.82rem; }
-
-  /* LOADING SKELETON */
-  .sp-skel-hero { padding: 3.5rem 3rem; border-bottom: 1px solid var(--border); background: var(--cream-dark); }
-  .sp-skel-line {
-    height: 12px; border-radius: 0; margin-bottom: 0.75rem;
-    background: linear-gradient(90deg, var(--cream-dark) 25%, var(--cream) 50%, var(--cream-dark) 75%);
-    background-size: 200% 100%; animation: sp-shim 1.4s infinite;
-  }
-  .sp-skel-circle {
-    width: 88px; height: 88px; border-radius: 50%;
-    background: linear-gradient(90deg, var(--cream-dark) 25%, var(--cream) 50%, var(--cream-dark) 75%);
-    background-size: 200% 100%; animation: sp-shim 1.4s infinite;
-    flex-shrink: 0;
-  }
-  @keyframes sp-shim { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-
-  @media (max-width: 768px) {
-    .sp-hero { padding: 2.5rem 1.5rem; }
-    .sp-section { padding: 2rem 1.5rem; }
-    .sp-nav { padding: 0 1.5rem; }
-    .sp-seller-name { font-size: 2rem; }
-    .sp-pgrid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
-  }
-`;
-
-// Inyectar estilos una sola vez
-if (!document.getElementById('sp-styles')) {
-  const el = document.createElement('style');
-  el.id = 'sp-styles';
-  el.textContent = SELLER_STYLES;
-  document.head.appendChild(el);
-}
+import './SellerProfile.css';
 
 // Colores para avatares de iniciales
 const AVATAR_COLORS = [
@@ -344,13 +72,7 @@ export default function SellerProfile() {
   // --- LOADING ---
   if (loading) return (
     <div className="sp-root" data-theme={theme}>
-      <nav className="sp-nav">
-        <Link to="/" className="sp-nav-brand">
-          <img src="/resources/icon.png" alt="Nexont" />
-          <span className="sp-nav-wordmark">Nexont</span>
-        </Link>
-        <button className="sp-nav-back" onClick={() => navigate(-1)}>← Volver</button>
-      </nav>
+      <AssistedTopBar active="tienda" />
       <div className="sp-skel-hero">
         <div style={{ display: 'flex', gap: '2.5rem', alignItems: 'flex-start' }}>
           <div className="sp-skel-circle" />
@@ -380,20 +102,11 @@ export default function SellerProfile() {
   // --- ERROR ---
   if (error) return (
     <div className="sp-root" data-theme={theme}>
-      <nav className="sp-nav">
-        <Link to="/" className="sp-nav-brand">
-          <img src="/resources/icon.png" alt="Nexont" />
-          <span className="sp-nav-wordmark">Nexont</span>
-        </Link>
-        <button className="sp-nav-back" onClick={() => navigate(-1)}>← Volver</button>
-      </nav>
-      <div style={{ padding: '4rem 3rem', textAlign: 'center' }}>
-        <div style={{ fontFamily: 'Cormorant Garamond, serif', fontSize: '2rem', fontWeight: 200, color: 'var(--ink)', marginBottom: '0.75rem' }}>Vendedor no encontrado</div>
-        <p style={{ fontSize: '0.85rem', color: 'var(--ink-soft)', marginBottom: '2rem' }}>{error}</p>
-        <button
-          onClick={() => navigate('/')}
-          style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'var(--ink)', color: 'var(--cream)', border: 'none', padding: '0 2rem', height: '44px', cursor: 'pointer', fontSize: '0.78rem', letterSpacing: '0.1em', textTransform: 'uppercase', fontFamily: 'DM Sans, sans-serif' }}
-        >
+      <AssistedTopBar active="tienda" />
+      <div className="sp-error-wrap">
+        <div className="sp-error-title">Vendedor no encontrado</div>
+        <p className="sp-error-text">{error}</p>
+        <button onClick={() => navigate('/')} className="sp-error-btn">
           Ir al inicio →
         </button>
       </div>
@@ -462,41 +175,6 @@ export default function SellerProfile() {
                 <span className="sp-stat-lbl">Reseñas</span>
               </div>
             </div>
-
-            <div className="sp-review-section">
-              <div className="sp-review-head">
-                <div>
-                  <div className="sp-review-title">Opiniones de compradores</div>
-                  <div className="sp-review-sub">
-                    {reviewSummary.totalReviews > 0
-                      ? `${reviewSummary.totalReviews} reseña${reviewSummary.totalReviews !== 1 ? 's' : ''} registradas`
-                      : 'Aún no hay reseñas para este vendedor.'}
-                  </div>
-                </div>
-                {reviewSummary.totalReviews > 0 && (
-                  <div style={{ color: 'var(--amber)', fontSize: '0.85rem', letterSpacing: '0.08em' }}>
-                    {stars(reviewSummary.averageRating)}
-                  </div>
-                )}
-              </div>
-
-              {reviewSummary.recentReviews?.length > 0 ? (
-                <div className="sp-review-list">
-                  {reviewSummary.recentReviews.map((review) => (
-                    <div key={review.id} className="sp-review-card">
-                      <div className="sp-review-row">
-                        <div className="sp-review-name">{review.reviewerName}</div>
-                        <div className="sp-review-date">{new Date(review.createdAt).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
-                      </div>
-                      <div className="sp-review-stars">{stars(review.rating)}</div>
-                      <div className="sp-review-comment">{review.comment || 'Sin comentario'}</div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="sp-review-empty">Todavía no hay comentarios visibles para este vendedor.</div>
-              )}
-            </div>
           </div>
         </div>
       </section>
@@ -556,6 +234,52 @@ export default function SellerProfile() {
             ))}
           </div>
         )}
+      </section>
+
+      <section className="sp-section">
+        <div className="sp-section-head">
+          <div>
+            <div style={{ fontSize: '0.6rem', fontWeight: 600, letterSpacing: '0.22em', textTransform: 'uppercase', color: 'var(--ink-soft)', marginBottom: '0.4rem' }}>
+              Opiniones
+            </div>
+            <div className="sp-section-title">Reseñas de compradores</div>
+          </div>
+          <div className="sp-count">{reviewSummary.totalReviews} reseña{reviewSummary.totalReviews !== 1 ? 's' : ''}</div>
+        </div>
+
+        <div className="sp-review-section">
+          <div className="sp-review-head">
+            <div>
+              <div className="sp-review-sub">
+                {reviewSummary.totalReviews > 0
+                  ? 'Comentarios recientes sobre la experiencia de compra.'
+                  : 'Aún no hay reseñas para este vendedor.'}
+              </div>
+            </div>
+            {reviewSummary.totalReviews > 0 && (
+              <div style={{ color: 'var(--amber)', fontSize: '0.85rem', letterSpacing: '0.08em' }}>
+                {stars(reviewSummary.averageRating)}
+              </div>
+            )}
+          </div>
+
+          {reviewSummary.recentReviews?.length > 0 ? (
+            <div className="sp-review-list">
+              {reviewSummary.recentReviews.map((review) => (
+                <div key={review.id} className="sp-review-card">
+                  <div className="sp-review-row">
+                    <div className="sp-review-name">{review.reviewerName}</div>
+                    <div className="sp-review-date">{new Date(review.createdAt).toLocaleDateString('es-CO', { year: 'numeric', month: 'short', day: 'numeric' })}</div>
+                  </div>
+                  <div className="sp-review-stars">{stars(review.rating)}</div>
+                  <div className="sp-review-comment">{review.comment || 'Sin comentario'}</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="sp-review-empty">Todavía no hay comentarios visibles para este vendedor.</div>
+          )}
+        </div>
       </section>
     </div>
   );

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api/api';
+import { useTheme } from '../context/ThemeContext';
 import AssistedTopBar from '../components/assisted/AssistedTopBar';
 import DarkVeil from '../components/animations/DarkVeil';
 import { ensureAuthStyles } from '../components/auth/authStyles';
@@ -14,6 +15,8 @@ function Register() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [loading, setLoading] = useState(false);
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
   const handleSubmit = async e => {
     e.preventDefault(); setError(null); setSuccess(null); setLoading(true);
@@ -25,12 +28,20 @@ function Register() {
     finally { setLoading(false); }
   };
   return (
-    <div className="nx-auth-root">
+    <div className="nx-auth-root" data-theme={theme}>
       <AssistedTopBar />
-      <main className="nx-auth-main">
+      <main className="nx-auth-main register">
         <section className="nx-auth-visual">
           <div className="nx-auth-visual-bg">
-            <DarkVeil hueShift={220} noiseIntensity={0} scanlineIntensity={0} speed={0.35} scanlineFrequency={0} warpAmount={0.2} isDark />
+            <DarkVeil 
+              hueShift={isDark ? 0 : 210} 
+              noiseIntensity={0} 
+              scanlineIntensity={0} 
+              speed={0.35} 
+              scanlineFrequency={0} 
+              warpAmount={0.2} 
+              isDark={isDark} 
+            />
           </div>
           <div className="nx-auth-visual-content">
             <div className="nx-auth-kicker">Únete hoy</div>
@@ -38,8 +49,7 @@ function Register() {
               Crea tu cuenta y empieza a <em>vender</em>
             </h1>
             <p className="nx-auth-desc">
-              Regístrate con una interfaz alineada al dashboard principal y conserva
-              la misma experiencia visual en toda la aplicación.
+              Regístrate con una interfaz alineada al dashboard principal y conserva la misma experiencia visual en toda la aplicación.
             </p>
             <div className="nx-auth-points">
               {[

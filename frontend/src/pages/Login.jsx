@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/api';
+import { useTheme } from '../context/ThemeContext';
 import AssistedTopBar from '../components/assisted/AssistedTopBar';
 import DarkVeil from '../components/animations/DarkVeil';
 import { ensureAuthStyles } from '../components/auth/authStyles';
@@ -13,6 +14,8 @@ function Login() {
   const [form, setForm] = useState({ correo: '', contrasena: '' });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
   const navigate = useNavigate();
   const handleChange = e => setForm({ ...form, [e.target.name]: e.target.value });
   const handleSubmit = async e => {
@@ -27,21 +30,28 @@ function Login() {
     finally { setLoading(false); }
   };
   return (
-    <div className="nx-auth-root">
+    <div className="nx-auth-root" data-theme={theme}>
       <AssistedTopBar />
-      <main className="nx-auth-main">
+      <main className="nx-auth-main login">
         <section className="nx-auth-visual">
           <div className="nx-auth-visual-bg">
-            <DarkVeil hueShift={215} noiseIntensity={0} scanlineIntensity={0} speed={0.35} scanlineFrequency={0} warpAmount={0.18} isDark />
+            <DarkVeil 
+              hueShift={isDark ? 0 : 210} 
+              noiseIntensity={0} 
+              scanlineIntensity={0} 
+              speed={0.35} 
+              scanlineFrequency={0} 
+              warpAmount={0.18} 
+              isDark={isDark} 
+            />
           </div>
           <div className="nx-auth-visual-content">
             <div className="nx-auth-kicker">Marketplace colombiano</div>
             <h1 className="nx-auth-title">
-              Bienvenido<br />de vuelta a <em>Nexont</em>
+              Bienvenido de vuelta a <em>Nexont</em>
             </h1>
             <p className="nx-auth-desc">
-              Accede a tu cuenta para continuar con una experiencia visual consistente,
-              rápida y alineada con el nuevo lenguaje de la aplicación.
+              Accede a tu cuenta para continuar con una experiencia visual consistente, rápida y alineada con el nuevo lenguaje de la aplicación.
             </p>
             <div className="nx-auth-points">
               {[
@@ -54,6 +64,10 @@ function Login() {
                   <div><strong>{title}</strong><span>{text}</span></div>
                 </div>
               ))}
+            </div>
+            <div className="nx-auth-mini">
+              <div className="nx-auth-mini-card"><strong>100%</strong><span>Compatibilidad con autenticación existente</span></div>
+              <div className="nx-auth-mini-card"><strong>Responsive</strong><span>Se adapta a móviles y escritorio</span></div>
             </div>
           </div>
         </section>

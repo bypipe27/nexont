@@ -63,9 +63,10 @@ const AUTH_STYLES = `
 
   .nx-auth-visual {
     position: relative;
-    padding: 4rem 4rem 4.5rem;
+    padding: 3rem 4rem;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
+    justify-content: center;
     min-height: calc(100vh - 68px);
     border-right: 1px solid var(--ar-outline-variant);
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.44));
@@ -86,14 +87,15 @@ const AUTH_STYLES = `
   .nx-auth-visual-content {
     position: relative;
     z-index: 1;
-    max-width: 560px;
+    max-width: 900px;
+    width: 100%;
   }
 
   .nx-auth-kicker {
     display: inline-flex;
     align-items: center;
     gap: 0.65rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
     font-size: 0.62rem;
     letter-spacing: 0.28em;
     text-transform: uppercase;
@@ -132,10 +134,10 @@ const AUTH_STYLES = `
 
   .nx-auth-desc {
     font-size: 1rem;
-    line-height: 1.8;
+    line-height: 1.7;
     color: var(--ar-on-surface-variant);
-    max-width: 470px;
-    margin-bottom: 2rem;
+    max-width: 620px;
+    margin-bottom: 1.5rem;
   }
 
   html[data-theme='dark'] .nx-auth-desc {
@@ -144,17 +146,21 @@ const AUTH_STYLES = `
 
   .nx-auth-points {
     display: grid;
-    gap: 0.9rem;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
   }
 
   .nx-auth-point {
     display: flex;
-    gap: 0.9rem;
+    flex-direction: column;
+    gap: 0.6rem;
     align-items: flex-start;
-    padding: 0.95rem 1rem;
+    padding: 1.25rem;
     border: 1px solid var(--ar-outline-variant);
     background: rgba(255, 255, 255, 0.62);
     backdrop-filter: blur(12px);
+    height: 100%;
   }
 
   html[data-theme='dark'] .nx-auth-point {
@@ -163,11 +169,12 @@ const AUTH_STYLES = `
   }
 
   .nx-auth-point-bullet {
-    width: 8px;
-    height: 8px;
-    border-radius: 999px;
-    background: linear-gradient(135deg, #a78bfa, #60a5fa);
-    margin-top: 0.35rem;
+    width: 24px;
+    height: 3px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #7c3aed, #60a5fa);
+    margin-top: 0;
+    margin-bottom: 0.25rem;
     flex-shrink: 0;
   }
 
@@ -197,8 +204,18 @@ const AUTH_STYLES = `
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 3rem 2rem;
+    padding: 2rem;
+    padding-top: 1rem;
+    margin-top: -15rem;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+  }
+
+  .nx-auth-main.login .nx-auth-card-wrap {
+    margin-top: -6rem;
+  }
+
+  .nx-auth-main.register .nx-auth-card-wrap {
+    margin-top: -3.5rem;
   }
 
   html[data-theme='dark'] .nx-auth-card-wrap {
@@ -207,8 +224,8 @@ const AUTH_STYLES = `
 
   .nx-auth-card {
     width: 100%;
-    max-width: 430px;
-    padding: 2rem;
+    max-width: 560px;
+    padding: 3rem;
     border: 1px solid var(--ar-outline-variant);
     background: rgba(255, 255, 255, 0.82);
     backdrop-filter: blur(18px);
@@ -250,7 +267,7 @@ const AUTH_STYLES = `
     line-height: 1;
     font-weight: 800;
     letter-spacing: -0.04em;
-    margin-bottom: 0.55rem;
+    margin-bottom: 0.45rem;
   }
 
   html[data-theme='dark'] .nx-auth-card-title {
@@ -261,7 +278,7 @@ const AUTH_STYLES = `
     font-size: 0.9rem;
     line-height: 1.7;
     color: var(--ar-on-surface-variant);
-    margin-bottom: 1.75rem;
+    margin-bottom: 1.25rem;
   }
 
   html[data-theme='dark'] .nx-auth-card-sub {
@@ -271,7 +288,7 @@ const AUTH_STYLES = `
   .nx-auth-form {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.25rem;
   }
 
   .nx-auth-field label {
@@ -290,12 +307,12 @@ const AUTH_STYLES = `
 
   .nx-auth-input {
     width: 100%;
-    height: 46px;
-    padding: 0 1rem;
+    height: 52px;
+    padding: 0 1.25rem;
     border: 1px solid var(--ar-outline-variant);
     background: rgba(255, 255, 255, 0.92);
     color: var(--ar-on-surface);
-    font-size: 0.92rem;
+    font-size: 1rem;
     outline: none;
     transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
   }
