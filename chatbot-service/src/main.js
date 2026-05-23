@@ -27,7 +27,7 @@ app.use(
   })
 );
 
-app.options('*', cors());
+app.options(/.*/, cors());
 app.use(express.json());
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
