@@ -26,7 +26,7 @@ const registerLimiter = rateLimit({
 // ─── Rate limiter general para API ───────────────────────────────────────────
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // 100 requests por ventana
+  max: 1000, // Aumentado a 1000 para desarrollo (HMR dispara muchas peticiones)
   message: {
     error: 'Demasiadas solicitudes. Intenta de nuevo más tarde.',
   },

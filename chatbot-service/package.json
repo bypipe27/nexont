@@ -5,13 +5,13 @@
     "start": "node src/main.js"
   },
   "dependencies": {
+    "@prisma/client": "^5.22.0",
     "axios": "^1.13.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "groq-sdk": "^0.9.0"
   },
   "devDependencies": {
-    "@prisma/client": "^5.22.0",
     "prisma": "^5.22.0"
   }
 }

@@ -1,9 +1,7 @@
-const { PrismaClient } = require('@prisma/client');
+const prisma = require('../../config/database');
 const cloudinary = require('cloudinary').v2;
 
 cloudinary.config({ cloudinary_url: process.env.CLOUDINARY_URL });
-
-const prisma = new PrismaClient();
 
 // In-memory map to hold verification status per userId.
 // Values: 'pendiente', 'verificado', 'rechazado'
@@ -204,32 +202,14 @@ const getSellerDashboard = async (req, res) => {
         _avg: { promedioCalificacion: true },
         _sum: { totalResenas: true },
       }),
-      Promise.all([
-        prisma.pedido.count({
-          where: {
-            estado: 'PENDIENTE',
-            detalles: { some: { producto: { vendedorId: userId } } },
-          },
-        }),
-        prisma.pedido.count({
-          where: {
-            estado: 'CONFIRMADO',
-            detalles: { some: { producto: { vendedorId: userId } } },
-          },
-        }),
-        prisma.pedido.count({
-          where: {
-            estado: 'ENTREGADO',
-            detalles: { some: { producto: { vendedorId: userId } } },
-          },
-        }),
-        prisma.pedido.count({
-          where: {
-            estado: { in: ['PENDIENTE', 'CONFIRMADO', 'ENTREGADO'] },
-            detalles: { some: { producto: { vendedorId: userId } } },
-          },
-        }),
-      ]),
+      prisma.pedido.groupBy({
+        by: ['estado'],
+        where: {
+          estado: { in: ['PENDIENTE', 'CONFIRMADO', 'ENTREGADO'] },
+          detalles: { some: { producto: { vendedorId: userId } } },
+        },
+        _count: { _all: true },
+      }),
       prisma.detallePedido.findMany({
         where: {
           pedido: { estado: { not: 'CANCELADO' } },
@@ -285,7 +265,11 @@ const getSellerDashboard = async (req, res) => {
       }),
     ]);
 
-    const [pendingOrders, confirmedOrders, deliveredOrders, totalOrders] = soldSummary;
+    const orderCounts = soldSummary;
+    const pendingOrders = orderCounts.find((c) => c.estado === 'PENDIENTE')?._count._all || 0;
+    const confirmedOrders = orderCounts.find((c) => c.estado === 'CONFIRMADO')?._count._all || 0;
+    const deliveredOrders = orderCounts.find((c) => c.estado === 'ENTREGADO')?._count._all || 0;
+    const totalOrders = pendingOrders + confirmedOrders + deliveredOrders;
     const activeProducts = products.filter((product) => product.estaActivo);
     const outOfStockProducts = activeProducts.filter((product) => product.stock === 0).length;
     const lowStockProducts = activeProducts.filter((product) => product.stock > 0 && product.stock <= 3).length;

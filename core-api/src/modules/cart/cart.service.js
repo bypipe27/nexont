@@ -52,20 +52,20 @@ const getCartByUser = async (userId) => {
 
 // ─── Agregar item al carrito ──────────────────────────────────────────────────
 const addItemToCart = async ({ userId, productId, quantity }) => {
-  const product = await prisma.producto.findFirst({
-    where: { id: productId, estaActivo: true },
-    select: { id: true, stock: true },
-  });
+  const [product, existing] = await Promise.all([
+    prisma.producto.findFirst({
+      where: { id: productId, estaActivo: true },
+      select: { id: true, stock: true },
+    }),
+    prisma.itemCarrito.findUnique({
+      where: {
+        usuarioId_productoId: { usuarioId: userId, productoId: productId },
+      },
+      select: { cantidad: true },
+    }),
+  ]);
 
   if (!product) throw new Error('Producto no encontrado');
-
-  // Buscar si ya existe en el carrito
-  const existing = await prisma.itemCarrito.findUnique({
-    where: {
-      usuarioId_productoId: { usuarioId: userId, productoId: productId },
-    },
-    select: { cantidad: true },
-  });
 
   const currentQuantity = existing ? existing.cantidad : 0;
   const finalQuantity   = currentQuantity + quantity;
@@ -87,11 +87,17 @@ const addItemToCart = async ({ userId, productId, quantity }) => {
 
 // ─── Actualizar cantidad de un item ──────────────────────────────────────────
 const updateCartItemQuantity = async ({ userId, productId, quantity }) => {
-  const cartItem = await prisma.itemCarrito.findUnique({
-    where: {
-      usuarioId_productoId: { usuarioId: userId, productoId: productId },
-    },
-  });
+  const [cartItem, product] = await Promise.all([
+    prisma.itemCarrito.findUnique({
+      where: {
+        usuarioId_productoId: { usuarioId: userId, productoId: productId },
+      },
+    }),
+    prisma.producto.findFirst({
+      where: { id: productId, estaActivo: true },
+      select: { id: true, stock: true },
+    }),
+  ]);
 
   if (!cartItem) throw new Error('El producto no está en tu carrito');
 
@@ -104,11 +110,6 @@ const updateCartItemQuantity = async ({ userId, productId, quantity }) => {
     });
     return getCartByUser(userId);
   }
-
-  const product = await prisma.producto.findFirst({
-    where: { id: productId, estaActivo: true },
-    select: { id: true, stock: true },
-  });
 
   if (!product) throw new Error('Producto no encontrado');
 

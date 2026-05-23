@@ -1,13 +1,12 @@
 const jwt = require('jsonwebtoken');
-const { PrismaClient } = require('@prisma/client');
-
-const prisma = new PrismaClient();
+const prisma = require('../../config/database');
 
 // ─── Validar JWT_SECRET al cargar el módulo ──────────────────────────────────
 if (!process.env.JWT_SECRET) {
   console.error('FATAL: JWT_SECRET is not defined in environment variables');
   process.exit(1);
 }
+
 
 // ─── Middleware principal de autenticación ────────────────────────────────────
 const authMiddleware = async (req, res, next) => {
@@ -48,7 +47,7 @@ const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ error: 'Email no verificado' });
     }
 
-    // 3. Adjuntar datos completos del usuario al request
+    // 4. Adjuntar datos completos del usuario al request
     req.user = {
       userId: user.id,
       correo: user.correo,

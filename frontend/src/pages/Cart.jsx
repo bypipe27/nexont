@@ -1,155 +1,186 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import CartItemCard from '../components/cart/CartItemCard';
+import CartSummary from '../components/cart/CartSummary';
+import AssistedTopBar from '../components/assisted/AssistedTopBar';
+import { useTheme } from '../context/ThemeContext';
 import { useHybridCart } from '../hooks/useHybridCart';
 
+
+
+
 const STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,200;0,300;0,400;0,600;1,200;1,300&family=DM+Sans:wght@300;400;500;600&display=swap');
-  :root { --cream:#F5F0E8; --cream-dark:#EDE8DF; --ink:#1A1714; --ink-mid:#3D3830; --ink-soft:#7A7268; --ink-ghost:#B8B0A6; --amber:#C4973A; --white:#FDFBF8; --border:rgba(26,23,20,0.1); }
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;900&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@200..700&display=swap');
 
-  .nxc-root { min-height:100vh; background:var(--cream); font-family:'DM Sans',sans-serif; color:var(--ink); }
-
-  .nxc-bar { position:sticky; top:0; z-index:100; height:68px; background:rgba(245,240,232,0.96); backdrop-filter:blur(16px); border-bottom:1px solid var(--border); display:flex; align-items:center; padding:0 3rem; gap:1rem; }
-  .nxc-brand { display:flex; align-items:center; gap:0.75rem; text-decoration:none; cursor:pointer; }
-  .nxc-brand img { height:28px; }
-  .nxc-brand-name { font-family:'Cormorant Garamond',serif; font-size:1.65rem; font-weight:600; color:var(--ink); letter-spacing:0.06em; }
-  .nxc-sep { width:1px; height:20px; background:var(--border); }
-  .nxc-title-bar { font-size:0.62rem; font-weight:600; letter-spacing:0.22em; text-transform:uppercase; color:var(--ink-soft); }
-  .nxc-gap { flex:1; }
-  .nxc-back { height:36px; padding:0 1.25rem; background:transparent; border:1px solid var(--border); color:var(--ink-soft); font-size:0.7rem; letter-spacing:0.12em; text-transform:uppercase; cursor:pointer; transition:all 0.18s; font-family:'DM Sans',sans-serif; }
-  .nxc-back:hover { background:var(--ink); color:var(--cream); border-color:var(--ink); }
-
-  .nxc-page { max-width:840px; margin:0 auto; padding:4rem 2rem 6rem; }
-
-  .nxc-eyebrow { font-size:0.6rem; font-weight:600; letter-spacing:0.24em; text-transform:uppercase; color:var(--ink-soft); display:flex; align-items:center; gap:0.65rem; margin-bottom:0.65rem; }
-  .nxc-eyebrow::before { content:''; display:block; width:22px; height:1px; background:var(--ink-soft); }
-
-  .nxc-page-title {
-    font-family:'Cormorant Garamond',serif;
-    font-size:3.5rem;
-    font-weight:200;
-    color:var(--ink);
-    margin-bottom:3rem;
-    letter-spacing:-0.025em;
-    line-height:1;
+  :root {
+    --nx-bg: #f7f9fd;
+    --nx-bg-alt: #eceef2;
+    --nx-ink: #191c1f;
+    --nx-muted: #45464c;
+    --nx-soft: #5c5f60;
+    --nx-card: #ffffff;
+    --nx-border: #e2e4e9;
+    --nx-accent: #000000;
+    --nx-accent-soft: #2d3134;
+    --nx-gold: #c4973a;
+    --nx-error: #ba1a1a;
+    --nx-success: #157f3b;
+    --nx-shadow: rgba(0, 0, 0, 0.08);
   }
 
-  .nxc-alert-err { background:#FEF2F2; border:1px solid #FCA5A5; padding:0.7rem 1rem; margin-bottom:1rem; color:#DC2626; font-size:0.82rem; }
-  .nxc-alert-ok  { background:#F0FDF4; border:1px solid #86EFAC; padding:0.7rem 1rem; margin-bottom:1rem; color:#16A34A; font-size:0.82rem; }
+  [data-theme='dark'] {
+    --nx-bg: #09090b;
+    --nx-bg-alt: #18181b;
+    --nx-ink: #fafafa;
+    --nx-muted: #a1a1aa;
+    --nx-soft: #71717a;
+    --nx-card: #18181b;
+    --nx-border: #27272a;
+    --nx-accent: #ffffff;
+    --nx-accent-soft: #f4f4f5;
+    --nx-gold: #fbbf24;
+    --nx-shadow: rgba(0, 0, 0, 0.5);
+  }
 
-  .nxc-empty { padding:5rem 2rem; text-align:center; border:1px solid var(--border); background:var(--white); }
-  .nxc-empty-title { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:200; color:var(--ink); margin-bottom:0.65rem; letter-spacing:-0.015em; }
-  .nxc-empty-sub { font-size:0.85rem; color:var(--ink-soft); }
-
-  .nxc-items { border:1px solid var(--border); background:var(--white); margin-bottom:1.5rem; }
-  .nxc-item { display:grid; grid-template-columns:1fr auto auto auto; gap:1.5rem; align-items:center; padding:1.35rem 1.75rem; border-bottom:1px solid rgba(26,23,20,0.06); transition:background 0.12s; }
-  .nxc-item:last-child { border-bottom:none; }
-  .nxc-item:hover { background:var(--cream); }
-
-  .nxc-item-info { display:flex; align-items:center; gap:1.1rem; }
-  .nxc-item-img { width:64px; height:64px; overflow:hidden; background:var(--cream-dark); flex-shrink:0; border:1px solid var(--border); }
-  .nxc-item-img img { width:100%; height:100%; object-fit:cover; }
-  .nxc-item-noimg { width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:var(--ink-ghost); font-size:0.7rem; }
-  .nxc-item-name { font-family:'Cormorant Garamond',serif; font-size:1.15rem; font-weight:300; color:var(--ink); margin-bottom:0.2rem; letter-spacing:-0.01em; }
-  .nxc-item-price { font-size:0.75rem; color:var(--ink-soft); }
-  .nxc-item-stock { font-size:0.68rem; color:var(--ink-ghost); margin-top:0.1rem; }
-  .nxc-item-unavailable { font-size:0.68rem; color:#DC2626; margin-top:0.25rem; text-transform:uppercase; letter-spacing:0.08em; font-weight:600; }
-  .nxc-item-warning { font-size:0.68rem; color:#B45309; margin-top:0.25rem; }
-
-  .nxc-qty { display:flex; align-items:center; gap:0.5rem; }
-  .nxc-qty-btn { width:30px; height:30px; background:var(--white); border:1px solid var(--border); color:var(--ink-soft); cursor:pointer; font-size:0.9rem; font-weight:500; display:flex; align-items:center; justify-content:center; transition:all 0.15s; }
-  .nxc-qty-btn:hover:not(:disabled) { background:var(--ink); color:var(--cream); border-color:var(--ink); }
-  .nxc-qty-btn:disabled { opacity:0.25; cursor:not-allowed; }
-  .nxc-qty-val { min-width:28px; text-align:center; font-size:0.9rem; font-weight:500; color:var(--ink); }
-
-  .nxc-line-total { font-family:'Cormorant Garamond',serif; font-weight:300; font-size:1.15rem; color:var(--ink); min-width:80px; text-align:right; letter-spacing:-0.01em; }
-
-  .nxc-remove { height:30px; padding:0 0.85rem; background:transparent; border:1px solid rgba(220,38,38,0.25); color:#DC2626; font-size:0.65rem; letter-spacing:0.1em; text-transform:uppercase; cursor:pointer; transition:all 0.15s; font-family:'DM Sans',sans-serif; }
-  .nxc-remove:hover { background:#DC2626; color:white; border-color:#DC2626; }
-
-  .nxc-summary { background:var(--white); border:1px solid var(--border); padding:1.75rem 2rem; }
-  .nxc-summary-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:0.85rem; }
-  .nxc-summary-lbl { font-size:0.72rem; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.12em; }
-  .nxc-summary-val { font-size:0.85rem; color:var(--ink-mid); }
-  .nxc-summary-divider { border:none; border-top:1px solid var(--border); margin:1.25rem 0; }
-  .nxc-summary-total-lbl { font-family:'Cormorant Garamond',serif; font-size:1.2rem; font-weight:300; color:var(--ink); }
-  .nxc-summary-total-val { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:200; color:var(--amber); letter-spacing:-0.02em; }
-
-  .nxc-summary-actions { display:flex; gap:0.85rem; margin-top:1.75rem; }
-  .nxc-checkout-btn { flex:1; height:50px; background:var(--ink); color:var(--cream); font-family:'DM Sans',sans-serif; font-weight:500; font-size:0.76rem; letter-spacing:0.14em; text-transform:uppercase; border:none; cursor:pointer; transition:background 0.2s; }
-  .nxc-checkout-btn:hover { background:var(--ink-mid); }
-  .nxc-clear-btn { height:50px; padding:0 1.75rem; background:transparent; border:1px solid var(--border); color:var(--ink-soft); font-size:0.7rem; letter-spacing:0.12em; text-transform:uppercase; cursor:pointer; transition:all 0.18s; font-family:'DM Sans',sans-serif; }
-  .nxc-clear-btn:hover { border-color:var(--ink); color:var(--ink); }
-`;
-if (!document.getElementById('nxc-styles')) { const el=document.createElement('style'); el.id='nxc-styles'; el.textContent=STYLES; document.head.appendChild(el); }
+  .nx-cart-root {
+    min-height: 100vh;
+    color: var(--nx-ink);
+    font-family: 'Inter', sans-serif;
+    background: var(--nx-bg);
+    transition: background-color 0.25s ease;
+  }
+  .nx-cart-shell { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+  .nx-cart-icon { font-family: 'Material Symbols Outlined'; font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; font-size: 20px; line-height: 1; }
+  .nx-cart-topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 10; background: var(--nx-card); border-bottom: 1px solid var(--nx-border); }
+  .nx-cart-topbar-inner { display: flex; align-items: center; justify-content: space-between; height: 64px; gap: 20px; }
+  .nx-cart-brand { display: flex; align-items: center; gap: 12px; cursor: pointer; font-family: 'Inter', sans-serif; font-size: 20px; font-weight: 900; letter-spacing: -0.02em; }
+  .nx-cart-brand img { width: 32px; height: 32px; }
+  .nx-cart-search { flex: 1; max-width: 420px; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px solid var(--nx-border); border-radius: 10px; background: var(--nx-bg-alt); color: var(--nx-muted); }
+  .nx-cart-search input { color: var(--nx-ink); border: none; outline: none; background: transparent; font-size: 14px; width: 100%; }
+  .nx-cart-actions { display: flex; align-items: center; gap: 12px; }
+  .nx-cart-link { border: none; background: transparent; color: var(--nx-soft); font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; cursor: pointer; }
+  .nx-cart-link:hover { color: var(--nx-ink); }
+  .nx-cart-link-active { color: var(--nx-ink); font-weight: 600; border-bottom: 2px solid var(--nx-ink); padding-bottom: 4px; }
+  .nx-cart-actions-group { display: flex; align-items: center; gap: 12px; padding-left: 12px; border-left: 1px solid var(--nx-border); }
+  .nx-cart-icon-btn { border: 1px solid var(--nx-border); background: var(--nx-card); color: var(--nx-ink); width: 40px; height: 40px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; position: relative; cursor: pointer; }
+  .nx-cart-badge { position: absolute; top: -4px; right: -4px; background: var(--nx-accent); color: #fff; font-size: 10px; font-weight: 600; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  .nx-cart-avatar { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--nx-border); background: linear-gradient(135deg, #d8dbe2 0%, #b8bcc5 100%); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: var(--nx-ink); text-transform: uppercase; overflow: hidden; }
+  .nx-cart-avatar img { width: 100%; height: 100%; object-fit: cover; }
+  .nx-cart-main { padding: 80px 0 100px; animation: nx-fade 0.6s ease; }
+  .nx-cart-hero { margin-bottom: 32px; }
+  .nx-cart-hero span { display: inline-flex; align-items: center; gap: 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.22em; color: var(--nx-soft); }
+  .nx-cart-hero h1 { font-family: 'Inter', sans-serif; font-size: 56px; font-weight: 600; margin: 12px 0 8px; letter-spacing: -0.03em; }
+  .nx-cart-hero p { color: var(--nx-muted); max-width: none; font-size: 1.25rem; line-height: 1.6; white-space: nowrap; }
+  .nx-cart-grid { display: flex; align-items: flex-start; gap: 24px; }
+  .nx-cart-list { flex: 1; display: flex; flex-direction: column; gap: 16px; }
+  .nx-cart-item { display: flex; gap: 18px; padding: 18px; border-radius: 18px; background: var(--nx-card); border: 1px solid var(--nx-border); box-shadow: 0 10px 30px var(--nx-shadow); animation: nx-rise 0.6s ease both; animation-delay: calc(var(--i, 0) * 0.06s); }
+  .nx-cart-item-media { width: 120px; height: 120px; border-radius: 16px; overflow: hidden; background: #f2f4f8; flex-shrink: 0; }
+  .nx-cart-item-media img { width: 100%; height: 100%; object-fit: cover; }
+  .nx-cart-item-noimg { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 22px; color: var(--nx-soft); }
+  .nx-cart-item-body { flex: 1; display: flex; flex-direction: column; gap: 16px; }
+  .nx-cart-item-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .nx-cart-item-header h3 { font-size: 20px; font-weight: 600; margin: 0 0 4px; }
+  .nx-cart-item-header p { color: var(--nx-muted); font-size: 14px; margin: 0; }
+  .nx-cart-item-stock { display: block; color: var(--nx-soft); font-size: 12px; margin-top: 6px; }
+  .nx-cart-item-unavailable { display: block; color: var(--nx-error); font-size: 12px; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.08em; }
+  .nx-cart-item-warning { display: block; color: #a66413; font-size: 12px; margin-top: 6px; }
+  .nx-cart-item-price { font-size: 20px; font-weight: 600; }
+  .nx-cart-item-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .nx-cart-qty { display: inline-flex; align-items: center; gap: 10px; background: var(--nx-bg-alt); border-radius: 999px; padding: 4px 10px; border: 1px solid var(--nx-border); }
+  .nx-cart-qty-btn { border: none; background: transparent; color: var(--nx-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+  .nx-cart-qty-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .nx-cart-qty-val { min-width: 26px; text-align: center; font-weight: 600; }
+  .nx-cart-remove { border: none; background: transparent; color: var(--nx-muted); font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+  .nx-cart-remove:hover { color: var(--nx-error); }
+  .nx-cart-summary { position: sticky; top: 110px; min-width: 320px; max-width: 360px; padding: 24px; border-radius: 20px; background: var(--nx-card); border: 1px solid var(--nx-border); box-shadow: 0 12px 30px var(--nx-shadow); }
+  .nx-cart-summary h2 { font-size: 22px; margin-bottom: 18px; }
+  .nx-cart-summary-list { display: grid; gap: 12px; padding-bottom: 16px; border-bottom: 1px solid var(--nx-border); }
+  .nx-cart-summary-list div { display: flex; justify-content: space-between; font-size: 14px; color: var(--nx-muted); }
+  .nx-cart-summary-list strong { color: var(--nx-ink); font-weight: 600; text-align: right; }
+  .nx-cart-summary-total { display: flex; justify-content: space-between; margin: 18px 0 20px; font-size: 20px; }
+  .nx-cart-summary-total strong { color: #8b5cf6; font-weight: 700; }
+  .nx-cart-primary { width: 100%; border: none; background: var(--nx-accent); color: var(--nx-bg); padding: 14px 18px; border-radius: 999px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.12em; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; }
+  .nx-cart-primary:hover { background: var(--nx-accent-soft); }
+  .nx-cart-ghost { width: 100%; border: 1px solid var(--nx-border); background: transparent; color: var(--nx-muted); padding: 12px 18px; border-radius: 999px; margin-top: 10px; cursor: pointer; }
+  .nx-cart-secure { display: flex; align-items: center; justify-content: center; gap: 8px; color: var(--nx-soft); font-size: 12px; margin-top: 16px; }
+  .nx-cart-alert { padding: 10px 14px; border-radius: 12px; font-size: 13px; margin-bottom: 12px; }
+  .nx-cart-alert.error { border: 1px solid rgba(186, 26, 26, 0.4); background: rgba(186, 26, 26, 0.08); color: var(--nx-error); }
+  .nx-cart-alert.success { border: 1px solid rgba(21, 127, 59, 0.4); background: rgba(21, 127, 59, 0.08); color: var(--nx-success); }
+  .nx-cart-empty { padding: 80px 24px; text-align: center; border-radius: 20px; background: var(--nx-card); border: 1px dashed var(--nx-border); }
+  .nx-cart-empty h3 { font-family: 'Inter', sans-serif; font-size: 28px; margin-bottom: 12px; }
+  .nx-cart-empty p { color: var(--nx-muted); margin: 0; }
+  [data-theme='dark'] .nx-cart-search { background: var(--nx-bg-alt); }
+  @media (max-width: 1024px) { .nx-cart-grid { flex-direction: column; } .nx-cart-summary { position: static; max-width: none; width: 100%; } }
+  @media (max-width: 720px) { .nx-cart-topbar-inner { flex-wrap: wrap; height: auto; padding: 12px 0; } .nx-cart-search { order: 3; width: 100%; } .nx-cart-item { flex-direction: column; align-items: flex-start; } .nx-cart-item-media { width: 100%; height: 180px; } .nx-cart-item-actions { width: 100%; } }
+  @keyframes nx-fade { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes nx-rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  `;
+if (!document.getElementById('nx-cart-styles')) {
+  const el = document.createElement('style');
+  el.id = 'nx-cart-styles';
+  el.textContent = STYLES;
+  document.head.appendChild(el);
+}
 
 function Cart() {
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === 'dark';
+  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user') || 'null'));
   const { cart, loading, error, success, updateCartQuantity, removeCartItem, clearCart } = useHybridCart();
+  const initials = user ? `${(user.nombres || '')[0] || ''}${(user.apellidos || '')[0] || ''}`.toUpperCase() : '';
+
+  useEffect(() => {
+    const handler = () => {
+      const updated = JSON.parse(localStorage.getItem('user') || 'null');
+      setUser(updated);
+    };
+    window.addEventListener('user-updated', handler);
+    return () => window.removeEventListener('user-updated', handler);
+  }, []);
+
   return (
-    <div className="nxc-root">
-      <header className="nxc-bar">
-        <div className="nxc-brand" onClick={() => navigate('/')}><img src="/resources/icone.png" alt="Nexont" /><span className="nxc-brand-name">Nexont</span></div>
-        <div className="nxc-sep" /><span className="nxc-title-bar">Mi Carrito</span>
-        <div className="nxc-gap" />
-        <button className="nxc-back" onClick={() => navigate('/')}>← Volver a tienda</button>
-      </header>
-      <div className="nxc-page">
-        <div className="nxc-eyebrow">Tu selección</div>
-        <h1 className="nxc-page-title">Mi Carrito</h1>
-        {loading && <p style={{ color:'var(--ink-ghost)', fontSize:'0.78rem', letterSpacing:'0.12em', textTransform:'uppercase' }}>Cargando…</p>}
-        {error   && <div className="nxc-alert-err">{error}</div>}
-        {success && <div className="nxc-alert-ok">{success}</div>}
-        {!loading && cart.items.length === 0 ? (
-          <div className="nxc-empty">
-            <div className="nxc-empty-title">Tu carrito está vacío</div>
-            <p className="nxc-empty-sub">Explora el catálogo y agrega productos que te interesen.</p>
+    <div className="nx-cart-root">
+      <AssistedTopBar active="tienda" />
+      <main className="nx-cart-main">
+        <div className="nx-cart-shell">
+          <div className="nx-cart-hero">
+            <span>Mi seleccion</span>
+            <h1>Carrito de compra</h1>
+            <p>Revisa tus productos antes de continuar al checkout.</p>
           </div>
-        ) : !loading && (
-          <>
-            <div className="nxc-items">
-              {cart.items.map(item => {
-                const pid = item.product?.id ?? item.productId;
-                const titulo = item.product?.titulo || 'Producto';
-                const unitPrice = Number(item.product?.price ?? item.product?.precio ?? 0);
-                const lineTotal = unitPrice * item.quantity;
-                const imageUrl = item.product?.imagenes?.[0]?.url || null;
-                const stock = item.product?.stock;
-                const isUnavailable = item.product?.estaActivo === false;
-                const isStockReduced = Number.isFinite(stock) && item.quantity > stock;
-                return (
-                  <div key={pid} className="nxc-item">
-                    <div className="nxc-item-info">
-                      <div className="nxc-item-img">{imageUrl ? <img src={imageUrl} alt={titulo} /> : <div className="nxc-item-noimg">📦</div>}</div>
-                      <div>
-                        <div className="nxc-item-name">{titulo}</div>
-                        <div className="nxc-item-price">${unitPrice.toFixed(2)} c/u</div>
-                        {stock !== undefined && <div className="nxc-item-stock">Stock: {stock}</div>}
-                        {isUnavailable && <div className="nxc-item-unavailable">No disponible</div>}
-                        {!isUnavailable && isStockReduced && <div className="nxc-item-warning">La cantidad agregada supera el stock actual. Máximo disponible: {stock}</div>}
-                      </div>
-                    </div>
-                    <div className="nxc-qty">
-                      <button className="nxc-qty-btn" disabled={isUnavailable} onClick={() => updateCartQuantity(pid, Math.max(1, item.quantity-1))}>−</button>
-                      <span className="nxc-qty-val">{item.quantity}</span>
-                      <button className="nxc-qty-btn" disabled={isUnavailable || (stock !== undefined && item.quantity >= stock)} onClick={() => updateCartQuantity(pid, item.quantity+1)}>+</button>
-                    </div>
-                    <div className="nxc-line-total">${lineTotal.toFixed(2)}</div>
-                    <button className="nxc-remove" onClick={() => removeCartItem(pid)}>Quitar</button>
-                  </div>
-                );
-              })}
+          {loading && <div className="nx-cart-alert">Cargando...</div>}
+          {error && <div className="nx-cart-alert error">{error}</div>}
+          {success && <div className="nx-cart-alert success">{success}</div>}
+          {!loading && cart.items.length === 0 ? (
+            <div className="nx-cart-empty">
+              <h3>Tu carrito esta vacio</h3>
+              <p>Explora el catalogo y agrega productos que te interesen.</p>
             </div>
-            <div className="nxc-summary">
-              <div className="nxc-summary-row"><span className="nxc-summary-lbl">Productos</span><span className="nxc-summary-val">{cart.totalItems}</span></div>
-              <hr className="nxc-summary-divider" />
-              <div className="nxc-summary-row"><span className="nxc-summary-total-lbl">Total</span><span className="nxc-summary-total-val">${Number(cart.subtotal||0).toFixed(2)}</span></div>
-              <div className="nxc-summary-actions">
-                <button className="nxc-checkout-btn" onClick={() => navigate('/orders', { state:{ fromCheckout:true } })}>Continuar compra →</button>
-                <button className="nxc-clear-btn" onClick={clearCart}>Limpiar</button>
-              </div>
+          ) : !loading && (
+            <div className="nx-cart-grid">
+              <section className="nx-cart-list">
+                {cart.items.map((item, index) => (
+                  <CartItemCard
+                    key={item.product?.id ?? item.productId}
+                    item={item}
+                    onUpdateQuantity={updateCartQuantity}
+                    onRemove={removeCartItem}
+                    style={{ '--i': index }}
+                  />
+                ))}
+              </section>
+              <CartSummary
+                totalItems={cart.totalItems}
+                subtotal={cart.subtotal}
+                onCheckout={() => navigate('/orders', { state: { fromCheckout: true } })}
+                onClear={clearCart}
+              />
             </div>
-          </>
-        )}
-      </div>
+          )}
+        </div>
+      </main>
     </div>
   );
 }

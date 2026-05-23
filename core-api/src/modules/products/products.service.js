@@ -1,5 +1,6 @@
 const prisma = require('../../config/database');
 const { normalizeCategory } = require('../../shared/utils/category.utils');
+const reviewsService = require('../reviews/reviews.service');
 
 // ─── Mapa de condiciones ──────────────────────────────────────────────────────
 const conditionMap = {
@@ -214,7 +215,7 @@ const getMyProducts = async (sellerId) => {
 const getProductsBySellerPublic = async (sellerId) => {
   const id = parseInt(sellerId, 10);
   if (isNaN(id)) throw new Error('ID de vendedor inválido');
- 
+
   const seller = await prisma.usuario.findFirst({
     where: { id, esActivo: true },
     select: {
@@ -225,9 +226,11 @@ const getProductsBySellerPublic = async (sellerId) => {
       fotoPerfil: true,
     },
   });
- 
+
   if (!seller) throw new Error('Vendedor no encontrado');
- 
+
+  const reviewSummary = await reviewsService.getSellerReviewSummary(id);
+
   const products = await prisma.producto.findMany({
     where: { vendedorId: id, estaActivo: true },
     include: {
@@ -238,8 +241,8 @@ const getProductsBySellerPublic = async (sellerId) => {
     },
     orderBy: { creadoEn: 'desc' },
   });
- 
-  return { seller, products, totalProductos: products.length };
+
+  return { seller: { ...seller, reviewSummary }, products, totalProductos: products.length, reviewSummary };
 };
 
 module.exports = {

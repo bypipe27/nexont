@@ -18,6 +18,7 @@ const cartRoutes = require('./modules/cart/cart.routes');
 const ordersRoutes = require('./modules/orders/orders.routes');
 const paymentsRoutes = require('./modules/payments/payments.routes');
 const notificationsRoutes = require('./modules/notifications/notifications.routes');
+const reviewsRoutes = require('./modules/reviews/reviews.routes');
 
 const app = express();
 
@@ -73,6 +74,7 @@ app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads'))); // <
 // ─── Rutas públicas ─────────────────────────────────────────────────────────
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/products', productsRoutes); // GET es público, POST/PUT/DELETE protegidos internamente
+app.use('/api/v1/reviews', reviewsRoutes);
 
 
 // ─── Rutas protegidas (requieren JWT válido) ─────────────────────────────────
