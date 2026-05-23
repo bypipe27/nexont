@@ -6,8 +6,10 @@ const CartContext = createContext();
 
 const EMPTY_CART = { items: [], totalItems: 0, subtotal: 0 };
 const CART_UPDATED_EVENT = 'nexont:cart-updated';
+const apiBase = import.meta.env.VITE_API_BASE?.replace(/\/+$/, '');
+const apiBaseUrl = apiBase ? `${apiBase}/api/v1` : '/api/v1';
 const cartApi = axios.create({
-  baseURL: '/api/v1',
+  baseURL: apiBaseUrl,
   headers: { 'Content-Type': 'application/json' },
 });
 

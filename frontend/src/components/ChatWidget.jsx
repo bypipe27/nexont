@@ -16,6 +16,7 @@ const getUserContextAndRole = () => {
 const ChatWidget = ({ onClose, initialInput = '' }) => {
   const { theme } = useTheme();
   const isDark = theme === 'dark';
+  const chatbotUrl = import.meta.env.VITE_CHATBOT_URL || '/chat';
 
   // Cargar mensajes iniciales desde localStorage o usar el saludo por defecto
   const [messages, setMessages] = useState(() => {
@@ -47,7 +48,7 @@ const ChatWidget = ({ onClose, initialInput = '' }) => {
     setInput('');
     setLoading(true);
     try {
-      const url = '/chat';
+      const url = chatbotUrl;
       const { contexto, rol } = getUserContextAndRole();
       const res = await fetch(url, {
         method: 'POST',

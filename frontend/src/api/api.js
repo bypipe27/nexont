@@ -1,8 +1,12 @@
 import axios from 'axios';
 
-// Usa rutas relativas para que el proxy de Vite las redirija al backend
+const apiBase = import.meta.env.VITE_API_BASE?.replace(/\/+$/, '');
+const apiBaseUrl = apiBase ? `${apiBase}/api/v1` : '/api/v1';
+const refreshUrl = apiBase ? `${apiBase}/api/v1/auth/refresh` : '/api/v1/auth/refresh';
+
+// Usa VITE_API_BASE en produccion y rutas relativas en dev
 const api = axios.create({
-  baseURL: '/api/v1',
+  baseURL: apiBaseUrl,
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -73,7 +77,7 @@ api.interceptors.response.use(
       }
 
       try {
-        const { data } = await axios.post('/api/v1/auth/refresh', { refreshToken });
+        const { data } = await axios.post(refreshUrl, { refreshToken });
 
         localStorage.setItem('token', data.token);
         localStorage.setItem('refreshToken', data.refreshToken);
