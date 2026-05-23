@@ -1,6 +1,7 @@
 
 import express from 'express';
 import dotenv from 'dotenv';
+import cors from 'cors';
 import Groq from 'groq-sdk';
 import { SYSTEM_PROMPTS } from './prompt.js';
 import { TOOLS_COMPRADOR, TOOLS_VENDEDOR } from './tools.js';
@@ -8,6 +9,25 @@ import * as queries from './queries.js';
 
 dotenv.config();
 const app = express();
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(',').map((origin) => origin.trim())
+  : [];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (!allowedOrigins.length || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error('No permitido por CORS'));
+    },
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
+
+app.options('*', cors());
 app.use(express.json());
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
