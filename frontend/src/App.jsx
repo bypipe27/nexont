@@ -1,22 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Elements } from '@stripe/react-stripe-js';
-import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Orders from './pages/Orders';
-import VerifyEmail from './pages/VerifyEmail';
-import Dashboard from './pages/Dashboard';
-import MyProducts from './pages/MyProducts';
-import Cart from './pages/Cart';
-import AssistedRecommendations from './pages/AssistedRecommendations';
-import Profile from './pages/Profile';
 import PrivateRoute from './components/PrivateRoute';
-import ChatWidget from './components/ChatWidget';
-import HelpCenter from './components/HelpCenter';
 import Footer from './components/Footer';
-import SellerProfile from './pages/SellerProfile';
 import { useTheme } from './context/ThemeContext';
+
+const Home = lazy(() => import('./pages/Home'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const Orders = lazy(() => import('./pages/Orders'));
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const MyProducts = lazy(() => import('./pages/MyProducts'));
+const Cart = lazy(() => import('./pages/Cart'));
+const AssistedRecommendations = lazy(() => import('./pages/AssistedRecommendations'));
+const Profile = lazy(() => import('./pages/Profile'));
+const SellerProfile = lazy(() => import('./pages/SellerProfile'));
+const HelpCenter = lazy(() => import('./components/HelpCenter'));
+const ChatWidget = lazy(() => import('./components/ChatWidget'));
 
 function App() {
   const [stripePromise, setStripePromise] = useState(null);
@@ -56,27 +57,28 @@ function App() {
   return (
     <>
       <BrowserRouter>
-        <Routes>
-          {/* Rutas públicas */}
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/tienda" element={<Navigate to="/" replace />} />
-          <Route path="/recomendados" element={<AssistedRecommendations />} />
-          <Route path="/seller/:sellerId" element={<SellerProfile />} />
+        <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>Cargando...</div>}>
+          <Routes>
+            {/* Rutas públicas */}
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/tienda" element={<Navigate to="/" replace />} />
+            <Route path="/recomendados" element={<AssistedRecommendations />} />
+            <Route path="/seller/:sellerId" element={<SellerProfile />} />
 
-          {/* Rutas protegidas */}
-          <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-          <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
-          <Route path="/orders" element={<PrivateRoute><Elements stripe={stripePromise}><Orders /></Elements></PrivateRoute>} />
-          <Route path="/my-products" element={<PrivateRoute><MyProducts /></PrivateRoute>} />
-          <Route path="/cart" element={<PrivateRoute><Elements stripe={stripePromise}><Cart /></Elements></PrivateRoute>} />
-        </Routes>
-        <Footer />
+            {/* Rutas protegidas */}
+            <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+            <Route path="/profile" element={<PrivateRoute><Profile /></PrivateRoute>} />
+            <Route path="/orders" element={<PrivateRoute><Elements stripe={stripePromise}><Orders /></Elements></PrivateRoute>} />
+            <Route path="/my-products" element={<PrivateRoute><MyProducts /></PrivateRoute>} />
+            <Route path="/cart" element={<PrivateRoute><Elements stripe={stripePromise}><Cart /></Elements></PrivateRoute>} />
+          </Routes>
+          <Footer />
+          <HelpCenter />
+        </Suspense>
       </BrowserRouter>
-
-      <HelpCenter />
 
       {!showChat && (
         <button
@@ -101,7 +103,11 @@ function App() {
           </svg>
         </button>
       )}
-      {showChat && <ChatWidget onClose={() => setShowChat(false)} />}
+      {showChat && (
+        <Suspense fallback={null}>
+          <ChatWidget onClose={() => setShowChat(false)} />
+        </Suspense>
+      )}
     </>
   );
 }
