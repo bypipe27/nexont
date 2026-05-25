@@ -115,7 +115,7 @@ const SELLER_STYLES = `
     font-size: 0.58rem;
     letter-spacing: 0.16em;
     text-transform: uppercase;
-    color: var(--ar-secondary);
+    color: var(--ar-on-surface-variant);
     margin-bottom: 0.35rem;
   }
 
@@ -209,7 +209,7 @@ const SELLER_STYLES = `
     font-size: 0.58rem;
     text-transform: uppercase;
     letter-spacing: 0.16em;
-    color: var(--ar-secondary);
+    color: var(--ar-on-surface-variant);
     margin-bottom: 0.6rem;
   }
 
