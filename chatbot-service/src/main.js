@@ -158,7 +158,7 @@ export async function chat({ rol, historial = [], mensaje, contexto = {} }) {
 }
 
 // Endpoint avanzado usando el sistema de prompts y queries
-app.post('/chat', async (req, res) => {
+const chatHandler = async (req, res) => {
   // Log de la URL y método de la petición
   console.log(`[CHATBOT] Petición recibida: ${req.method} ${req.originalUrl}`);
   console.log('[CHATBOT] Body recibido:', JSON.stringify(req.body, null, 2));
@@ -171,6 +171,14 @@ app.post('/chat', async (req, res) => {
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
+};
+
+app.post('/chat', chatHandler);
+app.post('/', chatHandler); // Soporte en la raíz por si la variable de entorno no incluye /chat
+
+// Health check endpoint para Render y verificaciones
+app.get('/', (req, res) => {
+  res.json({ status: 'ok', service: 'nexont-chatbot-service', version: '1.0.0' });
 });
 
 const PORT = process.env.PORT || 3000;
