@@ -291,6 +291,7 @@ const STYLES = `
     font-size: 14px;
     color: var(--ar-on-surface-variant);
   }
+  .nx-toolbar-r { display: flex; align-items: center; gap: 12px; }
   .nx-view-toggle { display: flex; border: 1px solid var(--ar-outline-variant); border-radius: 8px; overflow: hidden; }
   .nx-vbtn {
     width: 36px; height: 36px;
@@ -546,9 +547,48 @@ const STYLES = `
 
   @media (max-width: 960px) {
     .nx-catalog { flex-direction: column; }
-    .nx-sidebar { width: 100%; position: static; }
-    .nx-assist-hero-card { flex-direction: column; text-align: center; padding: 32px; }
+    .nx-sidebar { width: 100%; position: static; margin-bottom: 24px; }
+    .nx-assist-hero-card { flex-direction: column; text-align: center; padding: 32px; gap: 24px; }
     .nx-assist-desc { max-width: 100%; }
+  }
+
+  @media (max-width: 768px) {
+    .nx-hero { padding: 48px 16px 64px; }
+    .nx-hero-h1 { font-size: clamp(2.5rem, 8vw, 3.5rem); }
+    .nx-hero-p { font-size: 1.1rem; margin-bottom: 32px; }
+    .nx-hero-actions { flex-direction: column; gap: 12px; }
+    .nx-hero-actions .nx-btn-primary, .nx-hero-actions .nx-btn-outline { width: 100%; justify-content: center; }
+    
+    .nx-hero-stats { flex-direction: column; gap: 32px; margin-top: 48px; padding-top: 32px; }
+    .nx-hstat-val { font-size: 32px; }
+    
+    .nx-section { padding: 48px 16px; }
+    .nx-assist-hero-card { padding: 24px; }
+    .nx-assist-title { font-size: 32px; }
+    
+    .nx-catalog { padding: 0 16px 64px; }
+    .nx-section-title { font-size: 28px; }
+    
+    .nx-cat-searchbar { flex-direction: column; }
+    .nx-cat-searchbar button { height: 48px; width: 100%; }
+    
+    .nx-cat-toolbar { flex-direction: column; align-items: flex-start; gap: 16px; }
+    .nx-toolbar-r { width: 100%; flex-direction: column; gap: 12px; align-items: stretch; }
+    .nx-sortsel { width: 100%; height: 42px; }
+    .nx-view-toggle { justify-content: center; }
+    
+    .nx-pgrid { grid-template-columns: 1fr; gap: 16px; }
+    
+    .nx-trends { padding: 48px 16px 64px; }
+    .nx-trends-head { flex-direction: column; align-items: flex-start; gap: 16px; }
+    .nx-trends-title { font-size: 28px; }
+    
+    .nx-modal { margin: 16px; border-radius: 16px; max-height: 90vh; overflow-y: auto; }
+    .nx-modal-body { padding: 24px; }
+    .nx-modal-grid { grid-template-columns: 1fr; gap: 12px; }
+    .nx-pcard-add-row { flex-direction: column; }
+    .nx-qty { width: 100%; }
+    .nx-seller-card { flex-direction: column; text-align: center; }
   }
 `;
 

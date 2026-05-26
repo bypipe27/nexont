@@ -188,6 +188,24 @@ const ChatWidget = ({ onClose, initialInput = '' }) => {
       --cw-shadow: rgba(0, 0, 0, 0.4);
       --cw-focus: rgba(255, 255, 255, 0.1);
     }
+    
+    @media (max-width: 480px) {
+      .cw-root {
+        width: 100vw;
+        height: 100vh;
+        max-height: 100vh;
+        bottom: 0;
+        right: 0;
+        border-radius: 0;
+        border: none;
+      }
+      .cw-header {
+        border-radius: 0;
+      }
+      .cw-input-area {
+        padding-bottom: 24px;
+      }
+    }
   `;
 
   return (

@@ -502,18 +502,24 @@ const AUTH_STYLES = `
   @media (max-width: 920px) {
     .nx-auth-main { grid-template-columns: 1fr; }
     .nx-auth-visual {
-      min-height: 360px;
+      min-height: auto;
       border-right: none;
       border-bottom: 1px solid var(--ar-outline-variant);
-      padding: 2.5rem 1.5rem;
+      padding: 3rem 1.5rem;
     }
-    .nx-auth-card-wrap { padding: 2rem 1rem 2.5rem; }
+    .nx-auth-card-wrap { margin-top: 0; padding: 2rem 1.5rem; }
+    .nx-auth-main.login .nx-auth-card-wrap,
+    .nx-auth-main.register .nx-auth-card-wrap {
+      margin-top: 0;
+    }
   }
 
   @media (max-width: 640px) {
-    .nx-auth-row, .nx-auth-mini { grid-template-columns: 1fr; }
-    .nx-auth-card { padding: 1.4rem; }
+    .nx-auth-row, .nx-auth-mini, .nx-auth-points { grid-template-columns: 1fr; }
+    .nx-auth-card { padding: 1.5rem; width: 100%; border-radius: 12px; }
     .nx-auth-title { font-size: clamp(2.4rem, 12vw, 3.6rem); }
+    .nx-auth-visual { padding: 2rem 1rem; }
+    .nx-auth-card-wrap { padding: 1.5rem 1rem; }
   }
 `;
 

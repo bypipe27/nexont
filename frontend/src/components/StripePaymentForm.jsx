@@ -237,7 +237,11 @@ function StripePaymentForm({ amount, orderId, onPaymentSuccess, onPaymentError, 
         </div>
 
         {/* Fecha y CVC */}
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem' }}>
+        <div className="nx-stripe-date-cvc" style={{ display: 'grid', gap: '1rem' }}>
+          <style>{`
+            .nx-stripe-date-cvc { grid-template-columns: 2fr 1fr; }
+            @media (max-width: 480px) { .nx-stripe-date-cvc { grid-template-columns: 1fr; } }
+          `}</style>
           <div>
             <label style={{ fontSize: '0.75rem', fontWeight: '600', color: '#666', display: 'block', marginBottom: '0.5rem' }}>
               VENCIMIENTO

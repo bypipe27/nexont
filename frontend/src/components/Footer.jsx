@@ -141,6 +141,16 @@ const Footer = () => {
           .nx-footer-links {
             grid-template-columns: repeat(2, 1fr);
           }
+          .nx-footer-bottom {
+            flex-direction: column;
+            gap: 1rem;
+            text-align: center;
+          }
+        }
+        @media (max-width: 480px) {
+          .nx-footer-links {
+            grid-template-columns: 1fr;
+          }
         }
       `}</style>
     </footer>

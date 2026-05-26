@@ -132,7 +132,17 @@ const STYLES = `
   .ar-modal-lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ar-secondary); display: block; margin-bottom: 4px; }
   .ar-modal-val { font-size: 16px; font-weight: 600; }
   .ar-modal-seller { padding: 12px; border-radius: 12px; background: var(--ar-surface-low); }
-  @media (max-width: 720px) { .ar-nav-links { display: none; } .ar-quiz-body { padding: 28px; } .ar-quiz-title { font-size: 32px; } .ar-actions { flex-direction: column; gap: 12px; align-items: stretch; } }
+  @media (max-width: 720px) { 
+    .ar-nav-links { display: none; } 
+    .ar-quiz-body { padding: 24px; } 
+    .ar-quiz-title { font-size: 28px; } 
+    .ar-actions { flex-direction: column; gap: 12px; align-items: stretch; } 
+    .ar-actions button { width: 100%; justify-content: center; }
+    .ar-options-grid { grid-template-columns: 1fr; }
+    .ar-modal-grid { grid-template-columns: 1fr; } 
+    .ar-nav-inner { padding: 0 16px; justify-content: space-between; gap: 12px; }
+    .ar-modal-body { padding: 16px; }
+  }
 `;
 
 const buildSurveySignature = (answers = {}, questions = []) => {

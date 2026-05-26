@@ -11,7 +11,7 @@ function CartTopBar({ cartCount, onHome, onLogin, onCart, isDark, onToggleTheme,
           <input type="text" placeholder="Buscar productos..." aria-label="Buscar productos" />
         </div>
         <nav className="nx-cart-actions">
-          <button className="nx-cart-link nx-cart-link-active" onClick={onCart}>Carrito</button>
+          <button className="nx-cart-link nx-cart-link-active" onClick={onCart}>Carrito</button> 
           <div className="nx-cart-actions-group">
             <button
               className="nx-cart-icon-btn"
